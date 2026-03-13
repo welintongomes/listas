@@ -817,6 +817,10 @@ function renderCnt(){
   const tree=document.createElement('div'); tree.id='it';
   rTree(list.items,tree);
   lv.appendChild(tree);
+  // Seção de orçamento (plugins com renderSection)
+  Object.values(PL).forEach(p=>{
+    if(pon(p.id)&&p.renderSection){ const h=p.renderSection(list); if(h){ const d=document.createElement('div'); d.innerHTML=h; lv.appendChild(d); } }
+  });
 }
 
 function rTree(items,cont){
@@ -994,7 +998,139 @@ function importJ(){ const inp=document.createElement('input'); inp.type='file'; 
   inp.onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader();
     r.onload=ev=>{ try{const d=JSON.parse(ev.target.result);if(d.lists){S=d;save();renderAll();}}catch{alert('Arquivo inválido');} };
     r.readAsText(f); }; inp.click(); }
+// ── 15. ORÇAMENTO ─────────────────────────────────────
+reg('orcamento', {
+  name:'Orçamento', icon:'💰', desc:'Soma valores e horas dos itens marcados', def:false,
+  tb(){
+    return `<button class="tbbtn" onclick="openOrcConfig()">💰 Mão de obra</button>`;
+  },
+  renderSection(list){
+    if(!pon('orcamento')) return '';
+    return calcOrcamento(list);
+  }
+});
 
+function parseValorItem(texto){
+  // Captura número antes de palavras de dinheiro ou tempo
+  // Ex: "10 reais", "1 hora", "30 minutos", "5 conto", "3 pilas"
+  const money = /(\d+(?:[.,]\d+)?)\s*(?:reais?|real|contos?|pilas?|r\$)/gi;
+  const hours  = /(\d+(?:[.,]\d+)?)\s*h(?:oras?|r)?(?:\b)/gi;
+  const mins   = /(\d+(?:[.,]\d+)?)\s*min(?:utos?)?(?:\b)/gi;
+
+  let totalMoney = 0;
+  let totalMinutes = 0;
+
+  let m;
+  while((m = money.exec(texto)) !== null)
+    totalMoney += parseFloat(m[1].replace(',','.'));
+  while((m = hours.exec(texto)) !== null)
+    totalMinutes += parseFloat(m[1].replace(',','.')) * 60;
+  while((m = mins.exec(texto)) !== null)
+    totalMinutes += parseFloat(m[1].replace(',','.'));
+
+  return { totalMoney, totalMinutes };
+}
+
+function calcOrcamento(list){
+  // Pega todos os itens MARCADOS recursivamente
+  const checked = [];
+  const walk = arr => arr.forEach(i => {
+    if(i.checked) checked.push(i);
+    if(i.children) walk(i.children);
+  });
+  walk(list.items);
+
+  if(!checked.length) return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+      <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
+        💰 Marque itens com valores para calcular o orçamento.
+      </div>
+    </div>`;
+
+  const precoHora = parseFloat(S._orcPrecoHora || 100);
+
+  let totalDinheiro = 0;
+  let totalMinutos  = 0;
+  const linhas = [];
+
+  for(const item of checked){
+    const { totalMoney, totalMinutes } = parseValorItem(item.text);
+    if(totalMoney > 0 || totalMinutes > 0){
+      const valorTempo = (totalMinutes / 60) * precoHora;
+      const subtotal   = totalMoney + valorTempo;
+      totalDinheiro   += totalMoney;
+      totalMinutos    += totalMinutes;
+
+      let descTempo = '';
+      if(totalMinutes > 0){
+        const h = Math.floor(totalMinutes/60);
+        const min = Math.round(totalMinutes % 60);
+        descTempo = h > 0 && min > 0 ? `${h}h ${min}min` : h > 0 ? `${h}h` : `${min}min`;
+      }
+
+      linhas.push(`
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(item.text)}</div>
+          <div style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text);flex-shrink:0;text-align:right">
+            ${totalMoney>0 ? `<span style="color:var(--green)">R$ ${totalMoney.toFixed(2).replace('.',',')}</span>` : ''}
+            ${descTempo ? `<span style="color:var(--blue);margin-left:6px">⏱ ${descTempo}</span>` : ''}
+            ${valorTempo>0 ? `<span style="color:var(--orange);margin-left:6px">+R$ ${valorTempo.toFixed(2).replace('.',',')}</span>` : ''}
+          </div>
+        </div>`);
+    }
+  }
+
+  const valorTotalTempo = (totalMinutos / 60) * precoHora;
+  const grandTotal      = totalDinheiro + valorTotalTempo;
+
+  const hTotal   = Math.floor(totalMinutos/60);
+  const minTotal = Math.round(totalMinutos % 60);
+  const tempoStr = hTotal > 0 && minTotal > 0 ? `${hTotal}h ${minTotal}min` : hTotal > 0 ? `${hTotal}h` : minTotal > 0 ? `${minTotal}min` : '';
+
+  if(!linhas.length) return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+      <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
+        💰 Nenhum item marcado contém valores ou horas reconhecíveis.
+      </div>
+    </div>`;
+
+  return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">💰 Orçamento</div>
+        <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3)">
+          mão de obra: R$ ${precoHora.toFixed(2).replace('.',',')}/h
+        </div>
+      </div>
+      ${linhas.join('')}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:4px">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          ${tempoStr ? `<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--blue)">⏱ ${tempoStr} × R$ ${precoHora.toFixed(2).replace('.',',')}/h = R$ ${valorTotalTempo.toFixed(2).replace('.',',')}</div>` : ''}
+          ${totalDinheiro > 0 ? `<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--green)">💵 Materiais: R$ ${totalDinheiro.toFixed(2).replace('.',',')}</div>` : ''}
+        </div>
+        <div style="font-size:18px;font-weight:800;color:var(--accent)">R$ ${grandTotal.toFixed(2).replace('.',',')}</div>
+      </div>
+    </div>`;
+}
+
+function openOrcConfig(){
+  openM('💰 Mão de obra',`
+    <div class="fg">
+      <div class="fl">Preço por hora (R$)</div>
+      <input type="number" id="moh" min="0" step="0.01"
+        placeholder="Ex: 100"
+        value="${S._orcPrecoHora || 100}">
+    </div>
+    <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6">
+      Exemplos reconhecidos nos itens:<br>
+      • <b>10 reais</b> / <b>10 real</b> / <b>10 conto</b> / <b>10 pilas</b><br>
+      • <b>1 hora</b> / <b>1h</b> / <b>30 minutos</b> / <b>30min</b>
+    </div>
+  `, ()=>{
+    const v = parseFloat(document.getElementById('moh').value);
+    if(!isNaN(v) && v >= 0){ S._orcPrecoHora = v; save(); renderCnt(); }
+  });
+}
 // ══════════════════════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════════════════════
