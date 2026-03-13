@@ -105,19 +105,20 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;displa
 .import-acts{display:flex;gap:8px;flex-wrap:wrap}
 
 /* ─── ITEMS ─── */
+pading
 .iblock{display:flex;flex-direction:column;min-width:max-content;width:100%}
 .irow{display:flex;align-items:flex-start;gap:5px;padding:5px 6px;border-radius:8px;transition:background .1s;min-width:max-content;width:100%}
 .irow:active{background:var(--surface2)}
-.itog{width:20px;height:20px;flex-shrink:0;margin-top:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:9px;border-radius:4px;transition:all .15s;user-select:none}
+.itog{padding: 14px; width:20px;height:20px;flex-shrink:0;margin-top:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:9px;border-radius:4px;transition:all .15s;user-select:none}
 .itog.nc{opacity:0;pointer-events:none}
-.icb{width:20px;height:20px;flex-shrink:0;margin-top:5px;appearance:none;-webkit-appearance:none;border:2px solid var(--border);border-radius:6px;cursor:pointer;position:relative;transition:all .2s;background:transparent}
+.icb{width:20px;height:55px;flex-shrink:0;margin-top:5px;appearance:none;-webkit-appearance:none;border:2px solid var(--border);border-radius:6px;cursor:pointer;position:relative;transition:all .2s;background:transparent}
 .icb:checked{background:var(--accent);border-color:var(--accent)}
 .icb:checked::after{content:'';position:absolute;left:4px;top:1px;width:6px;height:10px;border:2px solid white;border-left:none;border-top:none;transform:rotate(45deg)}
 .icb.par{border-color:var(--accent);background:rgba(124,106,247,.15)}
 .icb.par::after{content:'';position:absolute;left:3px;top:7px;width:10px;height:2px;background:var(--accent);border-radius:1px}
 /* ibody ocupa toda a largura restante, texto nunca comprime */
 .ibody{flex:1;min-width:0;padding-top:3px}
-.itext{font-size:14px;line-height:1.5;color:var(--text);outline:none;background:transparent;border:none;font-family:'Syne',sans-serif;cursor:text;white-space:nowrap;display:block;min-height:20px}
+.itext{font-size:16px;line-height:1.5;color:var(--text);outline:none;background:transparent;border:none;font-family:'Syne',sans-serif;cursor:text;white-space:nowrap;display:block;min-height:20px}
 .itext.done{text-decoration:line-through;color:var(--text3)}
 .imeta{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;align-items:center}
 /* iend fica dentro do ibody, abaixo do texto — nunca na lateral */
