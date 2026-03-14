@@ -109,13 +109,13 @@ pading
 .iblock{display:flex;flex-direction:column;min-width:max-content;width:100%}
 .irow{display:flex;align-items:flex-start;gap:5px;padding:5px 6px;border-radius:8px;transition:background .1s;min-width:max-content;width:100%}
 .irow:active{background:var(--surface2)}
-.itog{padding: 14px; width:20px;height:20px;flex-shrink:0;margin-top:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:9px;border-radius:4px;transition:all .15s;user-select:none}
+.itog {padding: 14px 16px 14px 6px;width: 20px;height: 20px;flex-shrink: 0;margin-top: 5px;display: flex;align-items: center;justify-content: center;cursor: pointer;color: var(--text3);font-size: 24px;border-radius: 4px;transition: all .15s;user-select: none;}
 .itog.nc{opacity:0;pointer-events:none}
-.icb{width:20px;height:55px;flex-shrink:0;margin-top:5px;appearance:none;-webkit-appearance:none;border:2px solid var(--border);border-radius:6px;cursor:pointer;position:relative;transition:all .2s;background:transparent}
+.icb{width:28px;height:28px;flex-shrink:0;margin-top:5px;appearance:none;-webkit-appearance:none;border:2px solid var(--border);border-radius:6px;cursor:pointer;position:relative;transition:all .2s;background:transparent}
 .icb:checked{background:var(--accent);border-color:var(--accent)}
-.icb:checked::after{content:'';position:absolute;left:4px;top:1px;width:6px;height:10px;border:2px solid white;border-left:none;border-top:none;transform:rotate(45deg)}
+.icb:checked::after{content:'';position:absolute;left:7px;top:4px;width:6px;height:10px;border:2px solid white;border-left:none;border-top:none;transform:rotate(45deg)}
 .icb.par{border-color:var(--accent);background:rgba(124,106,247,.15)}
-.icb.par::after{content:'';position:absolute;left:3px;top:7px;width:10px;height:2px;background:var(--accent);border-radius:1px}
+.icb.par::after{content:'';position:absolute;left:7px;top:11px;width:10px;height:2px;background:var(--accent);border-radius:1px}
 /* ibody ocupa toda a largura restante, texto nunca comprime */
 .ibody{flex:1;min-width:0;padding-top:3px}
 .itext{font-size:16px;line-height:1.5;color:var(--text);outline:none;background:transparent;border:none;font-family:'Syne',sans-serif;cursor:text;white-space:nowrap;display:block;min-height:20px}
@@ -176,7 +176,7 @@ pading
 .mback.open .msheet{transform:translateY(0)}
 .mhandle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto -4px}
 .mtitle{font-size:16px;font-weight:700}
-.macts{display:flex;gap:8px}
+.macts{margin-top: 18px;display:flex;gap:8px}
 .fg{display:flex;flex-direction:column;gap:6px}
 .fl{font-size:12px;color:var(--text3);font-weight:600;letter-spacing:.5px}
 input[type=text],input[type=date],input[type=url],input[type=number],select,.fta{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:'Syne',sans-serif;font-size:15px;padding:11px 12px;outline:none;width:100%;transition:border-color .2s}
@@ -190,7 +190,7 @@ input:focus,select:focus,.fta:focus{border-color:var(--accent)}
 /* list color swatches */
 .lcswatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s}
 .lcswatch.sel{border-color:white;transform:scale(1.15)}
-.btn{padding:11px 16px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn{margin-top: 11px;padding:11px 16px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
 .btn:active{opacity:.75}.btn.pri{background:var(--accent);border-color:var(--accent);color:white;flex:1}.btn.full{width:100%}.btn.dng{border-color:rgba(232,86,94,.4);color:var(--red)}
 .cpiece{position:fixed;width:8px;height:8px;z-index:999;animation:cfal 1.2s ease-in forwards;pointer-events:none}
 @keyframes cfal{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
@@ -779,6 +779,19 @@ function renderCnt(){
   const es=document.getElementById('es'), lv=document.getElementById('lv'), fab=document.getElementById('fab');
   if(!list){ es.style.display='flex'; lv.style.display='none'; fab.style.display='none'; return; }
   es.style.display='none'; lv.style.display='flex'; fab.style.display='flex';
+  // Quiz mode — substitui toda a view
+  if(pon('quiz') && S._quizAtivo){
+    es.style.display='none'; lv.style.display='flex'; fab.style.display='none';
+    lv.innerHTML=''; // limpa
+    // Header mínimo com nome da lista
+    const qhdr=document.createElement('div');
+    qhdr.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">${esc(list.name)}</div>`;
+    lv.appendChild(qhdr);
+    const qview=document.createElement('div');
+    qview.innerHTML=renderQuiz();
+    lv.appendChild(qview);
+    return; // não renderiza a lista normal
+  }
   lv.innerHTML='';
 
   // Header
@@ -1129,6 +1142,197 @@ function openOrcConfig(){
   `, ()=>{
     const v = parseFloat(document.getElementById('moh').value);
     if(!isNaN(v) && v >= 0){ S._orcPrecoHora = v; save(); renderCnt(); }
+  });
+}
+// ── 16. QUIZ ──────────────────────────────────────────
+reg('quiz', {
+  name:'Quiz / Flashcard', icon:'🧠', desc:'Treino com perguntas e respostas embaralhadas', def:false,
+  tb(){
+    if(!S._quizAtivo) return `<button class="tbbtn" onclick="iniciarQuiz()">🧠 Iniciar Quiz</button>`;
+    return `<button class="tbbtn" onclick="encerrarQuiz()">✕ Sair do Quiz</button>`;
+  }
+});
+
+// ── Estado do quiz ──
+// S._quizAtivo     : bool
+// S._quizPerguntas : [{pai, filhos[], correta}] — lista embaralhada
+// S._quizIdx       : índice atual
+// S._quizPontos    : acertos
+// S._quizTotal     : total respondido
+// S._quizRespondeu : bool — já escolheu nesta pergunta?
+
+function iniciarQuiz(){
+  const list = getL(); if(!list) return;
+
+  // Coleta só itens PAI que têm pelo menos 2 filhos
+  const candidatos = list.items.filter(i => i.children && i.children.length >= 2);
+  if(candidatos.length === 0){
+    alert('Para o quiz, crie itens com pelo menos 2 filhos.\nOs pais serão as perguntas e os filhos as respostas.');
+    return;
+  }
+
+  // Monta perguntas: cada filho do pai é uma opção, o primeiro filho é a "correta"
+  // (ou seja: o usuário define a correta sendo o PRIMEIRO filho)
+  const perguntas = candidatos.map(pai => {
+    const filhos = [...pai.children];
+    const correta = filhos[0].text; // primeiro filho = resposta certa
+    const opcoes = shuffle([...filhos.map(f => f.text)]);
+    return { pergunta: pai.text, opcoes, correta };
+  });
+
+  S._quizAtivo     = true;
+  S._quizPerguntas = shuffle(perguntas);
+  S._quizIdx       = 0;
+  S._quizPontos    = 0;
+  S._quizTotal     = 0;
+  S._quizRespondeu = false;
+  save(); renderAll();
+}
+
+function encerrarQuiz(){
+  S._quizAtivo = false;
+  save(); renderAll();
+}
+
+function shuffle(arr){
+  const a = [...arr];
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function responderQuiz(opcao){
+  if(S._quizRespondeu) return; // já respondeu, aguarda próxima
+  S._quizRespondeu = true;
+  S._quizTotal++;
+  const q = S._quizPerguntas[S._quizIdx];
+  if(opcao === q.correta) S._quizPontos++;
+  save(); renderCnt();
+}
+
+function proximaQuiz(){
+  S._quizIdx++;
+  S._quizRespondeu = false;
+  if(S._quizIdx >= S._quizPerguntas.length){
+    // Terminou todas as perguntas
+    S._quizIdx = 0;
+    S._quizPerguntas = shuffle(S._quizPerguntas); // embaralha de novo pro próximo ciclo
+  }
+  save(); renderCnt();
+}
+
+function renderQuiz(){
+  const perguntas = S._quizPerguntas;
+  const idx       = S._quizIdx;
+  const q         = perguntas[idx];
+  const pontos    = S._quizPontos;
+  const total     = S._quizTotal;
+  const respondeu = S._quizRespondeu;
+  const pct       = total > 0 ? Math.round(pontos / total * 100) : 0;
+  const restantes = perguntas.length;
+
+  // Cores das opções após responder
+  const corOpcao = opcao => {
+    if(!respondeu) return `background:var(--surface2);border-color:var(--border);color:var(--text)`;
+    if(opcao === q.correta) return `background:rgba(62,207,142,.15);border-color:var(--green);color:var(--green)`;
+    return `background:rgba(232,86,94,.08);border-color:rgba(232,86,94,.3);color:var(--text3)`;
+  };
+
+  const iconeOpcao = opcao => {
+    if(!respondeu) return '';
+    if(opcao === q.correta) return '✅ ';
+    return '❌ ';
+  };
+
+  return `
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- Placar -->
+      <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px">
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Pontuação</div>
+          <div style="display:flex;align-items:baseline;gap:6px">
+            <span style="font-size:24px;font-weight:800;color:var(--accent)">${pontos}</span>
+            <span style="font-size:13px;color:var(--text3)">/ ${total} respondidas</span>
+          </div>
+          <div style="background:var(--border);border-radius:99px;height:4px;overflow:hidden;margin-top:2px">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:99px;transition:width .4s"></div>
+          </div>
+        </div>
+        <div style="text-align:center;padding-left:12px;border-left:1px solid var(--border)">
+          <div style="font-size:22px;font-weight:800;color:${pct>=70?'var(--green)':pct>=40?'var(--yellow)':'var(--red)'}">${pct}%</div>
+          <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">${idx+1} / ${restantes}</div>
+        </div>
+      </div>
+
+      <!-- Pergunta -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:18px 16px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">🧠 Pergunta ${idx+1} de ${restantes}</div>
+        <div style="font-size:17px;font-weight:700;color:var(--text);line-height:1.4">${esc(q.pergunta)}</div>
+      </div>
+
+      <!-- Opções -->
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${q.opcoes.map(op => `
+          <button onclick="responderQuiz('${esc(op).replace(/'/g,"&#39;")}')"
+            style="width:100%;padding:13px 16px;border-radius:var(--r);border:1px solid;font-family:'Syne',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-align:left;transition:all .2s;${corOpcao(op)}">
+            ${iconeOpcao(op)}${esc(op)}
+          </button>`).join('')}
+      </div>
+
+      <!-- Botão próxima / feedback -->
+      ${respondeu ? `
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="padding:12px 14px;border-radius:var(--r);background:${q.opcoes.find(o=>o===q.correta)===q.correta?'rgba(62,207,142,.1)':'rgba(62,207,142,.1)'};border:1px solid rgba(62,207,142,.25);font-size:13px;color:var(--green);font-family:'JetBrains Mono',monospace">
+            ✅ Resposta certa: <b>${esc(q.correta)}</b>
+          </div>
+          <button onclick="proximaQuiz()" class="btn pri" style="width:100%;padding:13px">
+            ${idx + 1 >= restantes ? '🔄 Reiniciar Quiz' : 'Próxima →'}
+          </button>
+        </div>` : `
+        <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;text-align:center">
+          Toque em uma opção para responder
+        </div>`}
+
+      <!-- Botão sair -->
+      <button onclick="encerrarQuiz()" class="btn" style="width:100%">✕ Encerrar Quiz</button>
+    </div>`;
+}
+// plugin estrelas
+reg('stars', {
+  name: 'Avaliação ⭐',
+  icon: '⭐',
+  desc: 'Dê estrelas aos itens',
+  def: false,
+
+  // Botão que aparece em cada item
+  abtn(item) {
+    return `<button class="iabtn"
+      onclick="setStars('${item.id}')">⭐</button>`;
+  },
+
+  // Badge exibido abaixo do texto
+  meta(item) {
+    if(!item.stars) return '';
+    return '⭐'.repeat(item.stars);
+  }
+});
+
+function setStars(id) {
+  const l = getL();
+  const item = find(l.items, id);
+  openM('Avaliar item', `
+    <div class="fg">
+      <div class="fl">Estrelas (1-5)</div>
+      <input type="number" id="mst"
+        min="1" max="5"
+        value="${item?.stars||3}">
+    </div>
+  `, () => {
+    const v = +document.getElementById('mst').value;
+    if(item) { item.stars = v; save(); renderCnt(); }
   });
 }
 // ══════════════════════════════════════════════════════
