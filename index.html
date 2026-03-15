@@ -1864,7 +1864,7 @@ reg('ponto', {
       .ponto-wrap{display:flex;flex-direction:column;gap:12px}
       .ponto-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
       .ponto-title{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;justify-content:space-between}
-      .ponto-mini-grid{display: flex;gap: 6px;flex-wrap: wrap;justify-content: space-around;}
+      .ponto-mini-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
       .ponto-field{display:flex;flex-direction:column;gap:4px}
       .ponto-label{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
       .ponto-input{background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:16px;padding:8px 10px;outline:none;width:100%;transition:border-color .2s;text-align:center}
@@ -1891,6 +1891,7 @@ reg('ponto', {
       .ponto-date-sel{background:var(--bg);border:1px solid var(--accent);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:4px 8px;outline:none}
       .ponto-salvar{width:100%;padding:10px;border-radius:var(--r);border:none;background:var(--accent);color:white;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
       .ponto-salvar:active{opacity:.8;transform:scale(.98)}
+      .ponto-novo-badge{font-size:10px;background:rgba(232,200,74,.15);border:1px solid rgba(232,200,74,.4);color:var(--yellow);padding:1px 7px;border-radius:20px;font-family:'JetBrains Mono',monospace}
     `;
     document.head.appendChild(s);
 
@@ -1901,17 +1902,7 @@ reg('ponto', {
     };
 
     if(!S._pontoDiaAtivo) S._pontoDiaAtivo=pontoHoje();
-
-    // Cria hoje com padrões se não existir
-    const hoje=pontoHoje();
-    const c=S._ponto.config;
-    if(!S._ponto.dias[hoje]){
-      S._ponto.dias[hoje]={
-        entrada:c.entradaPad, saidaAlm:c.saidaAlmPad,
-        retorno:c.retornoPad, saida:c.saidaPad,
-        extras:[], adiantamentos:[]
-      };
-    }
+    // NÃO cria o dia automaticamente — só salva quando usuário clicar em Salvar
   },
 
   tb(){ return `<button class="tbbtn" onclick="pontoAbrir()">🕐 Ponto</button>`; },
@@ -1928,88 +1919,98 @@ reg('ponto', {
   }
 });
 
-// ── Helpers de tempo ──
+// ── Helpers ──
 function pontoHoje(){ return new Date().toISOString().slice(0,10); }
 function hhmm(str){ if(!str||!str.includes(':')) return 0; const[h,m]=str.split(':').map(Number); return h*60+(m||0); }
-function minsToStr(mins){
-  const a=Math.abs(mins), h=Math.floor(a/60), m=a%60;
-  return `${h}h${m.toString().padStart(2,'0')}`;
-}
+function minsToStr(mins){ const a=Math.abs(mins),h=Math.floor(a/60),m=a%60; return `${h}h${m.toString().padStart(2,'0')}`; }
 function fmtData(key){
   const[y,mo,d]=key.split('-');
   const nomes=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   return `${nomes[new Date(+y,+mo-1,+d).getDay()]} ${d}/${mo}`;
 }
 
-// ── Calcula horas de um dia ──
+// ── Estado temporário dos campos em edição (não salvo) ──
+// Usamos S._pontoRascunho para guardar valores enquanto digita
+function pontoGetRascunho(key){
+  if(!S._pontoRascunho) S._pontoRascunho={};
+  const c=S._ponto.config;
+  // Se já existe dia salvo, parte dele; senão parte do padrão
+  if(!S._pontoRascunho[key]){
+    const base = S._ponto.dias[key]
+      ? {...S._ponto.dias[key]}
+      : {entrada:c.entradaPad,saidaAlm:c.saidaAlmPad,retorno:c.retornoPad,saida:c.saidaPad,extras:[],adiantamentos:[]};
+    S._pontoRascunho[key]=base;
+  }
+  return S._pontoRascunho[key];
+}
+
 function calcDia(dia){
   const c=S._ponto.config;
   if(!dia||!dia.entrada||!dia.saida) return {totalMin:0,jornadaMin:0,diffMin:0,totalStr:'--',jornadaStr:'--',diffStr:'--',ok:false};
-  const ep=hhmm(c.entradaPad), sap=hhmm(c.saidaAlmPad), rp=hhmm(c.retornoPad), sp=hhmm(c.saidaPad);
+  const ep=hhmm(c.entradaPad),sap=hhmm(c.saidaAlmPad),rp=hhmm(c.retornoPad),sp=hhmm(c.saidaPad);
   const jornadaMin=(sap-ep)+(sp-rp);
   const entrada=hhmm(dia.entrada);
-  const saidaAlm=dia.saidaAlm?hhmm(dia.saidaAlm):sap;
-  const retorno=dia.retorno?hhmm(dia.retorno):rp;
   const saida=hhmm(dia.saida);
-  let totalMin=Math.max(0,saidaAlm-entrada)+Math.max(0,saida-retorno);
+  let totalMin=0;
+  // Dia parcial: saída antes do almoço OU sem horário de almoço preenchido
+  const temAlmoco = dia.saidaAlm && dia.retorno;
+  const saidaAntesAlmoco = saida <= sap;
+  if(!temAlmoco || saidaAntesAlmoco){
+    totalMin=Math.max(0,saida-entrada);
+  } else {
+    const saidaAlm=hhmm(dia.saidaAlm), retorno=hhmm(dia.retorno);
+    totalMin=Math.max(0,saidaAlm-entrada)+Math.max(0,saida-retorno);
+  }
   (dia.extras||[]).filter(e=>e.tipo==='horas').forEach(e=>{ totalMin+=Math.round(parseFloat(e.valor||0)*60); });
   const diffMin=totalMin-jornadaMin;
   return {
-    totalMin, jornadaMin, diffMin,
-    totalStr:  minsToStr(totalMin),
+    totalMin,jornadaMin,diffMin,
+    totalStr:minsToStr(totalMin),
     jornadaStr:minsToStr(jornadaMin),
-    diffStr:   (diffMin>=0?'+':'-')+minsToStr(Math.abs(diffMin)),
-    ok: diffMin>=0
+    diffStr:(diffMin>=0?'+':'-')+minsToStr(Math.abs(diffMin)),
+    ok:diffMin>=0
   };
 }
 
-// ── Calcula resumo do período ──
 function calcResumo(){
-  const p=S._ponto, c=p.config;
+  const p=S._ponto,c=p.config;
   const keys=Object.keys(p.dias).sort();
-  let totalMin=0, totalAdiant=0, totalServicos=0;
+  let totalMin=0,totalAdiant=0,totalServicos=0;
   for(const key of keys){
-    const d=p.dias[key], r=calcDia(d);
+    const d=p.dias[key];
+    if(d._rascunho) continue; // ignora dias não confirmados
+    const r=calcDia(d);
     totalMin+=r.totalMin;
-    (d.adiantamentos||[]).forEach(e=>{ totalAdiant+=parseFloat(e.valor||0); });
-    (d.extras||[]).filter(e=>e.tipo==='servico').forEach(e=>{ totalServicos+=parseFloat(e.valor||0); });
+    (d.adiantamentos||[]).forEach(e=>{totalAdiant+=parseFloat(e.valor||0);});
+    (d.extras||[]).filter(e=>e.tipo==='servico').forEach(e=>{totalServicos+=parseFloat(e.valor||0);});
   }
   const saldoAnteriorReais=parseFloat(p.saldoAnterior||0);
   const valorHoras=(totalMin/60)*parseFloat(c.valorHora||15);
-  const totalAPagar=Math.max(0, valorHoras+totalServicos+saldoAnteriorReais-totalAdiant);
-  return {totalMin, valorHoras, totalAdiant, totalServicos, saldoAnteriorReais, totalAPagar, keys};
+  const totalAPagar=Math.max(0,valorHoras+totalServicos+saldoAnteriorReais-totalAdiant);
+  return {totalMin,valorHoras,totalAdiant,totalServicos,saldoAnteriorReais,totalAPagar,keys:Object.keys(p.dias).filter(k=>!p.dias[k]._rascunho).sort()};
 }
 
-// ── Render principal ──
 function renderPonto(){
-  const p=S._ponto, c=p.config;
+  const p=S._ponto,c=p.config;
   const hoje=pontoHoje();
   if(!S._pontoDiaAtivo) S._pontoDiaAtivo=hoje;
   const diaAtivo=S._pontoDiaAtivo;
 
-  // Garante que o dia ativo existe com os padrões
-  if(!p.dias[diaAtivo]){
-    p.dias[diaAtivo]={
-      entrada:c.entradaPad, saidaAlm:c.saidaAlmPad,
-      retorno:c.retornoPad, saida:c.saidaPad,
-      extras:[], adiantamentos:[]
-    };
-  }
-
-// Sempre lê direto do state para garantir dados atualizados
-  const dAtivo = S._ponto.dias[diaAtivo];
-  const rAtivo = calcDia(dAtivo);
-  // console.log('dAtivo:', JSON.stringify(dAtivo));
-  // console.log('rAtivo:', JSON.stringify(rAtivo));
+  // Usa rascunho para exibir os campos (não o dia salvo diretamente)
+  const rascunho=pontoGetRascunho(diaAtivo);
+  const diaSalvo=!!p.dias[diaAtivo];
+  const rAtivo=calcDia(rascunho);
   const res=calcResumo();
 
-  // ── Card: Registrar dia ──
   const cardDia=`
     <div class="ponto-card">
       <div class="ponto-title">
         📅 Registrar dia
-        <input type="date" class="ponto-date-sel" value="${diaAtivo}"
-          onchange="pontoMudarData(this.value)">
+        <div style="display:flex;align-items:center;gap:6px">
+          ${!diaSalvo?'<span class="ponto-novo-badge">novo</span>':''}
+          <input type="date" class="ponto-date-sel" value="${diaAtivo}"
+            onchange="pontoMudarData(this.value)">
+        </div>
       </div>
       <div style="text-align:center;font-size:12px;color:var(--text2);font-family:'JetBrains Mono',monospace;font-weight:700">
         ${fmtData(diaAtivo)}${diaAtivo===hoje?' 📍 hoje':''}
@@ -2017,26 +2018,26 @@ function renderPonto(){
       <div class="ponto-mini-grid">
         <div class="ponto-field">
           <div class="ponto-label">Entrada</div>
-          <input class="ponto-input ${dAtivo.entrada===c.entradaPad?'ok':'diff'}"
-            type="time" value="${dAtivo.entrada}"
+          <input class="ponto-input ${rascunho.entrada===c.entradaPad?'ok':'diff'}"
+            type="time" value="${rascunho.entrada}"
             onchange="pontoCampo('${diaAtivo}','entrada',this.value)">
         </div>
         <div class="ponto-field">
           <div class="ponto-label">S. Almoço</div>
-          <input class="ponto-input ${dAtivo.saidaAlm===c.saidaAlmPad?'ok':'diff'}"
-            type="time" value="${dAtivo.saidaAlm}"
+          <input class="ponto-input ${rascunho.saidaAlm===c.saidaAlmPad?'ok':'diff'}"
+            type="time" value="${rascunho.saidaAlm}"
             onchange="pontoCampo('${diaAtivo}','saidaAlm',this.value)">
         </div>
         <div class="ponto-field">
           <div class="ponto-label">Retorno</div>
-          <input class="ponto-input ${dAtivo.retorno===c.retornoPad?'ok':'diff'}"
-            type="time" value="${dAtivo.retorno}"
+          <input class="ponto-input ${rascunho.retorno===c.retornoPad?'ok':'diff'}"
+            type="time" value="${rascunho.retorno}"
             onchange="pontoCampo('${diaAtivo}','retorno',this.value)">
         </div>
         <div class="ponto-field">
           <div class="ponto-label">Saída</div>
-          <input class="ponto-input ${dAtivo.saida===c.saidaPad?'ok':'diff'}"
-            type="time" value="${dAtivo.saida}"
+          <input class="ponto-input ${rascunho.saida===c.saidaPad?'ok':'diff'}"
+            type="time" value="${rascunho.saida}"
             onchange="pontoCampo('${diaAtivo}','saida',this.value)">
         </div>
       </div>
@@ -2046,18 +2047,17 @@ function renderPonto(){
         <span style="color:${rAtivo.ok?'var(--green)':'var(--red)'}">Saldo: <b>${rAtivo.diffStr}</b></span>
       </div>
       ${renderLancamentos(diaAtivo)}
-      <button class="ponto-salvar" onclick="pontoSalvarDia('${diaAtivo}')">
-        ✅ Salvar dia ${fmtData(diaAtivo)}
-      </button>
       <div style="display:flex;gap:8px">
-        <button class="btn" style="flex:1;padding:8px;font-size:12px" onclick="pontoAddLancamento('${diaAtivo}')">
-          ＋ Extra / Serviço / Adiantamento
+        <button class="ponto-salvar" style="flex:1" onclick="pontoSalvarDia('${diaAtivo}')">
+          💾 ${diaSalvo?'Atualizar':'Salvar'} ${fmtData(diaAtivo)}
         </button>
-        <button class="btn dng" style="padding:8px;font-size:12px" onclick="pontoDiaDel('${diaAtivo}')">🗑</button>
+        ${diaSalvo?`<button class="btn dng" style="padding:10px;font-size:16px" onclick="pontoDiaDel('${diaAtivo}')">🗑</button>`:''}
       </div>
+      <button class="btn" style="padding:8px;font-size:12px" onclick="pontoAddLancamento('${diaAtivo}')">
+        ＋ Extra / Serviço / Adiantamento
+      </button>
     </div>`;
 
-  // ── Card: Resumo ──
   const cardResumo=`
     <div class="ponto-card">
       <div class="ponto-title">
@@ -2075,7 +2075,7 @@ function renderPonto(){
           <span class="ponto-val">${(res.totalMin/60).toFixed(2)}h (${minsToStr(res.totalMin)})</span>
         </div>
         <div class="ponto-row">
-          <span class="ponto-key">${(res.totalMin/60).toFixed(2)}h × R$ ${c.valorHora}/h</span>
+          <span class="ponto-key">${(res.totalMin/60).toFixed(2)}h × R$ ${p.config.valorHora}/h</span>
           <span class="ponto-val pos">R$ ${res.valorHoras.toFixed(2).replace('.',',')}</span>
         </div>
         ${res.totalServicos>0?`
@@ -2099,14 +2099,12 @@ function renderPonto(){
       </div>
     </div>`;
 
-  // ── Card: Histórico ──
-  const diasHtml=Object.keys(p.dias).sort().reverse().map(key=>{
-    const d=p.dias[key], r=calcDia(d);
+  const diasHtml=Object.keys(p.dias).filter(k=>!p.dias[k]._rascunho).sort().reverse().map(key=>{
+    const d=p.dias[key],r=calcDia(d);
     const adiantTotal=(d.adiantamentos||[]).reduce((a,e)=>a+parseFloat(e.valor||0),0);
     const servicoTotal=(d.extras||[]).filter(e=>e.tipo==='servico').reduce((a,e)=>a+parseFloat(e.valor||0),0);
     return `
-      <div class="ponto-dia-row ${key===diaAtivo?'aberto':''}"
-        onclick="pontoMudarData('${key}')">
+      <div class="ponto-dia-row ${key===diaAtivo?'aberto':''}" onclick="pontoMudarData('${key}')">
         <div class="ponto-dia-data">${fmtData(key)}${key===hoje?' 📍':''}</div>
         <div class="ponto-dia-res">
           ${d.entrada||'--'} → ${d.saida||'--'}
@@ -2123,16 +2121,17 @@ function renderPonto(){
     <div class="ponto-card">
       <div class="ponto-title">📆 Histórico — toque para editar</div>
       <div class="ponto-dias">
-        ${diasHtml||'<div style="font-size:12px;color:var(--text3)">Nenhum dia registrado.</div>'}
+        ${diasHtml||'<div style="font-size:12px;color:var(--text3)">Nenhum dia salvo ainda.</div>'}
       </div>
     </div>`;
 
   return `<div class="ponto-wrap">${cardDia}${cardResumo}${cardHistorico}</div>`;
 }
 
-// ── Render lançamentos do dia ──
 function renderLancamentos(key){
-  const d=S._ponto.dias[key]; if(!d) return '';
+  // Lança do rascunho se existir, senão do salvo
+  const d=(S._pontoRascunho&&S._pontoRascunho[key]) || S._ponto.dias[key];
+  if(!d) return '';
   const itens=[
     ...(d.extras||[]).map((e,i)=>`
       <div class="ponto-lancamento">
@@ -2154,81 +2153,90 @@ function renderLancamentos(key){
       </div>`)
   ];
   if(!itens.length) return '';
-  return `<div style="display:flex;flex-direction:column;gap:2px;padding:6px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">${itens.join('')}</div>`;
+  return `<div style="display:flex;flex-direction:column;gap:2px;padding:6px 0;border-top:1px solid var(--border)">${itens.join('')}</div>`;
 }
 
 // ── Ações ──
 function pontoAbrir(){
   S._pontoAberto=true;
   if(!S._pontoDiaAtivo) S._pontoDiaAtivo=pontoHoje();
-  // Garante que hoje existe com padrões
-  const hoje=pontoHoje();
-  if(!S._ponto.dias[hoje]){
-    const c=S._ponto.config;
-    S._ponto.dias[hoje]={entrada:c.entradaPad,saidaAlm:c.saidaAlmPad,retorno:c.retornoPad,saida:c.saidaPad,extras:[],adiantamentos:[]};
-  }
+  // Inicializa rascunho do dia ativo sem salvar
+  pontoGetRascunho(S._pontoDiaAtivo);
   renderCnt();
 }
 
 function pontoFechar(){ S._pontoAberto=false; save(); renderCnt(); }
 
-function pontoSalvarDia(key){
-  save();
-  // Feedback visual
-  const btn=document.querySelector('.ponto-salvar');
-  if(btn){
-    const orig=btn.innerHTML;
-    btn.innerHTML='✅ Salvo!';
-    btn.style.background='var(--green)';
-    setTimeout(()=>{ btn.innerHTML=orig; btn.style.background=''; },1500);
+function pontoMudarData(data){
+  S._pontoDiaAtivo=data;
+  // Inicializa rascunho sem salvar no estado
+  pontoGetRascunho(data);
+  renderCnt();
+}
+
+function pontoCampo(key,campo,valor){
+  // Atualiza SOMENTE o rascunho, não salva
+  const rascunho=pontoGetRascunho(key);
+  rascunho[campo]=valor;
+  // Atualiza só o resumo visual sem chamar renderCnt completo
+  const resumo=document.querySelector('.ponto-resumo-dia');
+  if(resumo){
+    const r=calcDia(rascunho);
+    resumo.innerHTML=`
+      <span>Jornada: <b>${r.jornadaStr}</b></span>
+      <span>Trabalhado: <b style="color:var(--text)">${r.totalStr}</b></span>
+      <span style="color:${r.ok?'var(--green)':'var(--red)'}">Saldo: <b>${r.diffStr}</b></span>`;
   }
 }
 
-function pontoMudarData(data){
-  S._pontoDiaAtivo=data;
-  // Cria o dia com os padrões se não existir
-  if(!S._ponto.dias[data]){
-    const c=S._ponto.config;
-    S._ponto.dias[data]={
-      entrada:c.entradaPad, saidaAlm:c.saidaAlmPad,
-      retorno:c.retornoPad, saida:c.saidaPad,
-      extras:[], adiantamentos:[]
-    };
+function pontoSalvarDia(key){
+  // Copia rascunho para o estado salvo
+  const rascunho=pontoGetRascunho(key);
+  S._ponto.dias[key]={...rascunho};
+  delete S._ponto.dias[key]._rascunho;
+  save();
+  renderCnt();
+  setTimeout(()=>{
+    const btn=document.querySelector('.ponto-salvar');
+    if(btn){
+      btn.innerHTML='✅ Salvo!';
+      btn.style.background='var(--green)';
+      setTimeout(()=>renderCnt(),1200);
+    }
+  },50);
+}
+
+function pontoDiaDel(key){
+  openM('🗑 Remover dia',`
+    <div style="font-size:14px;color:var(--text2);text-align:center;padding:8px 0">
+      Remover o dia <b style="color:var(--text)">${fmtData(key)}</b>?<br>
+      <span style="font-size:12px;color:var(--text3)">Esta ação não pode ser desfeita.</span>
+    </div>
+  `,()=>{
+    delete S._ponto.dias[key];
+    // Limpa também o rascunho deste dia
+    if(S._pontoRascunho) delete S._pontoRascunho[key];
+    // Volta para hoje sem criar nada
+    S._pontoDiaAtivo=pontoHoje();
+    pontoGetRascunho(S._pontoDiaAtivo);
+    save();
+    renderCnt();
+  });
+}
+
+function pontoRemLanc(key,tipo,idx){
+  const rascunho=pontoGetRascunho(key);
+  if(tipo==='extra') rascunho.extras.splice(idx,1);
+  else rascunho.adiantamentos.splice(idx,1);
+  // Se dia já foi salvo, atualiza também o salvo
+  if(S._ponto.dias[key]){
+    S._ponto.dias[key]={...rascunho};
     save();
   }
   renderCnt();
 }
 
-function pontoCampo(key,campo,valor){
-  if(!S._ponto.dias[key]){
-    const c=S._ponto.config;
-    S._ponto.dias[key]={entrada:c.entradaPad,saidaAlm:c.saidaAlmPad,retorno:c.retornoPad,saida:c.saidaPad,extras:[],adiantamentos:[]};
-  }
-  S._ponto.dias[key][campo]=valor;
-  save();
-  // Força releitura do state antes de renderizar
-  load();
-  renderCnt();
-}
-
-function pontoDiaDel(key){
-  delete S._ponto.dias[key];
-  S._pontoDiaAtivo=pontoHoje();
-  save(); renderCnt();
-}
-
-function pontoRemLanc(key,tipo,idx){
-  const d=S._ponto.dias[key]; if(!d) return;
-  if(tipo==='extra') d.extras.splice(idx,1);
-  else d.adiantamentos.splice(idx,1);
-  save(); renderCnt();
-}
-
 function pontoAddLancamento(key){
-  if(!S._ponto.dias[key]){
-    const c=S._ponto.config;
-    S._ponto.dias[key]={entrada:c.entradaPad,saidaAlm:c.saidaAlmPad,retorno:c.retornoPad,saida:c.saidaPad,extras:[],adiantamentos:[]};
-  }
   openM('＋ Lançamento',`
     <div class="fg">
       <div class="fl">Tipo</div>
@@ -2251,17 +2259,18 @@ function pontoAddLancamento(key){
     const v=parseFloat(document.getElementById('plv').value||0);
     const desc=document.getElementById('pld').value.trim();
     if(!v||isNaN(v)) return;
-    const d=S._ponto.dias[key];
-    if(t==='horas')   d.extras.push({tipo:'horas',valor:v,desc});
-    if(t==='servico') d.extras.push({tipo:'servico',valor:v,desc});
-    if(t==='adiant')  d.adiantamentos.push({valor:v,desc});
-    save(); renderCnt();
+    const rascunho=pontoGetRascunho(key);
+    if(t==='horas')   rascunho.extras.push({tipo:'horas',valor:v,desc});
+    if(t==='servico') rascunho.extras.push({tipo:'servico',valor:v,desc});
+    if(t==='adiant')  rascunho.adiantamentos.push({valor:v,desc});
+    // Se dia já salvo, persiste imediatamente
+    if(S._ponto.dias[key]){ S._ponto.dias[key]={...rascunho}; save(); }
+    renderCnt();
   });
 }
 
 window.pontoTipoChg=tipo=>{
-  const l=document.getElementById('plt-label');
-  const i=document.getElementById('plv');
+  const l=document.getElementById('plt-label'), i=document.getElementById('plv');
   if(!l||!i) return;
   if(tipo==='horas')  { l.textContent='Quantidade de horas'; i.step='0.25'; i.placeholder='Ex: 1.5'; }
   if(tipo==='servico'){ l.textContent='Valor em R$'; i.step='0.01'; i.placeholder='Ex: 250.00'; }
@@ -2290,21 +2299,23 @@ function pontoConfig(){
     c.retornoPad  =document.getElementById('pcrp').value||'13:30';
     c.saidaPad    =document.getElementById('pcsp').value||'17:00';
     S._ponto.saldoAnterior=parseFloat(document.getElementById('pcsl').value)||0;
+    // Limpa rascunhos para recarregar com novos padrões
+    S._pontoRascunho={};
     save(); renderCnt();
   });
 }
 
 function pontoRelatorio(){
-  const p=S._ponto, c=p.config;
+  const p=S._ponto,c=p.config;
   const res=calcResumo();
   let txt='📋 *RELATÓRIO DE PONTO*\n';
   txt+='━━━━━━━━━━━━━━━━━━━━\n\n';
   for(const key of res.keys){
-    const d=p.dias[key], r=calcDia(d);
+    const d=p.dias[key],r=calcDia(d);
     if(!d.entrada&&!d.saida) continue;
     txt+=`📅 *${fmtData(key)}*\n`;
     txt+=`  ⏰ Entrada: ${d.entrada||'--'}\n`;
-    txt+=`  🍽 Almoço: ${d.saidaAlm||c.saidaAlmPad} → ${d.retorno||c.retornoPad}\n`;
+    if(d.saidaAlm&&d.retorno) txt+=`  🍽 Almoço: ${d.saidaAlm} → ${d.retorno}\n`;
     txt+=`  🏁 Saída: ${d.saida||'--'}\n`;
     if(d.saida) txt+=`  ⏱ Total: ${r.totalStr}  Saldo: ${r.diffStr}\n`;
     (d.extras||[]).forEach(e=>{
@@ -2331,21 +2342,18 @@ function pontoRelatorio(){
     <button class="btn pri full" id="btn-copiar-ponto" style="margin-top:8px">
       📋 Copiar para WhatsApp
     </button>
-  `, null);
+  `,null);
 
-  // Associa o evento após o modal renderizar
   setTimeout(()=>{
     const btn=document.getElementById('btn-copiar-ponto');
     if(!btn) return;
-    btn.addEventListener('click', ()=>{
+    btn.addEventListener('click',()=>{
       navigator.clipboard.writeText(txt).then(()=>{
         btn.textContent='✅ Copiado! Cole no WhatsApp';
         btn.style.background='var(--green)';
-        btn.style.borderColor='var(--green)';
       }).catch(()=>{
-        // Fallback para mobile que bloqueia clipboard
         const ta=document.createElement('textarea');
-        ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+        ta.value=txt; ta.style.cssText='position:fixed;opacity:0';
         document.body.appendChild(ta); ta.focus(); ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
@@ -2353,7 +2361,7 @@ function pontoRelatorio(){
         btn.style.background='var(--green)';
       });
     });
-  }, 150);
+  },150);
 }
 // ══════════════════════════════════════════════════════
 //  BOOT
