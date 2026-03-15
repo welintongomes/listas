@@ -76,6 +76,8 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;displa
 .srch input:focus{border-color:var(--accent);width:200px}
 .srch input::placeholder{color:var(--text3)}
 .sicon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+/* Esconde o botão em telas pequenas (menores que 768px) */
+@media (max-width: 767px) {.tbbtn.pri {display: none;}}
 
 /* ─── CONTENT ─── */
 .cnt{flex:1;overflow:auto;padding:16px;padding-bottom:calc(80px + var(--sab));display:flex;flex-direction:column;gap:14px}
@@ -789,13 +791,28 @@ function renderSB(){
 }
 
 function renderTB(){
-  const parts=[`<button class="tbbtn pri" onclick="addItem()">＋ Item</button>`];
+  const parts=[
+  `<button class="tbbtn pri" onclick="addItem()">＋ Item</button>`,
+  `<div class="tbsep"></div>`,
+  `<button class="tbbtn" onclick="collapseAll()">⏫</button>`, // ⤵
+  `<button class="tbbtn" onclick="resetAll()">🔁</button>`// ↺
+];
   Object.values(PL).forEach(p=>{
     if(pon(p.id)&&p.tb){ const h=p.tb(); if(h){ parts.push('<div class="tbsep"></div>'); parts.push(h); } }
   });
   document.getElementById('tb').innerHTML=parts.join('');
 }
+function collapseAll(){
+  const l=getL(); if(!l) return;
+  const walk = arr => arr.forEach(i=>{ i.collapsed=true; if(i.children?.length) walk(i.children); });
+  walk(l.items); save(); renderCnt();
+}
 
+function resetAll(){
+  const l=getL(); if(!l) return;
+  const walk = arr => arr.forEach(i=>{ i.checked=false; if(i.children?.length) walk(i.children); });
+  walk(l.items); save(); renderCnt();
+}
 function renderCnt(){
   const list=getL();
   const es=document.getElementById('es'), lv=document.getElementById('lv'), fab=document.getElementById('fab');
@@ -2362,6 +2379,677 @@ function pontoRelatorio(){
       });
     });
   },150);
+}
+// ── MÍDIA (Filmes / Livros / Jogos) ───────────────────
+reg('midia', {
+  name:'Mídia (Filmes/Livros/Jogos)', icon:'🎬',
+  desc:'Tela separada para filmes, livros e jogos', def:false,
+  onToggle(on){
+    if(!on){
+      const s=document.getElementById('midiaScreen');
+      const m=document.querySelector('.main');
+      if(s){ s.classList.remove('active'); s.remove(); }
+      if(m) m.style.display='flex';
+      const b=document.getElementById('midiaBtn');
+      if(b) b.remove();
+      document.getElementById('fab').style.display = getL()?'flex':'none';
+    } else {
+      _midiaInit();
+    }
+  }
+});
+
+if(!S._midia) S._midia=[];
+
+const MTIPOS  = {filme:'🎬', livro:'📚', jogo:'🎮'};
+const MSTATUS = {
+  quero:     {label:'Quero',        color:'var(--text3)',   bg:'var(--surface2)'},
+  andamento: {label:'Em andamento', color:'var(--yellow)',  bg:'rgba(232,200,74,.1)'},
+  concluido: {label:'Concluído',    color:'var(--green)',   bg:'rgba(62,207,142,.1)'},
+};
+
+function _midiaInit(){
+  // Cria tela se não existe
+  if(!document.getElementById('midiaScreen')){
+    const s=document.createElement('div');
+    s.id='midiaScreen';
+    s.style.cssText='display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(80px + var(--sab)) 16px;flex-direction:column;gap:14px;height:100%;box-sizing:border-box';
+    document.querySelector('.body').appendChild(s);
+  }
+  // Cria botão no header se não existe
+  if(!document.getElementById('midiaBtn')){
+    const b=document.createElement('button');
+    b.id='midiaBtn'; b.title='Mídia'; b.textContent='🎬';
+    b.className='ibtn';
+    b.onclick=openMidiaScreen;
+    document.querySelector('.hright').prepend(b);
+  }
+}
+
+function openMidiaScreen(){
+  const s=document.getElementById('midiaScreen');
+  const m=document.querySelector('.main');
+  const b=document.getElementById('midiaBtn');
+  const fab=document.getElementById('fab');
+  if(!s||!m) return;
+
+  const isOpen=s.style.display==='flex';
+  if(isOpen){
+    s.style.display='none';
+    m.style.display='flex';
+    b.style.background=''; b.style.color='';
+    fab.style.display=getL()?'flex':'none';
+  } else {
+    m.style.display='none';
+    s.style.display='flex';
+    b.style.background='var(--accent)'; b.style.color='white';
+    fab.style.display='none';
+    _midiaRender();
+  }
+}
+
+function _midiaRender(){
+  const s=document.getElementById('midiaScreen');
+  if(!s||s.style.display!=='flex') return;
+  if(!S._midia) S._midia=[];
+
+  const ft=S._midiaFT||'todos';
+  const fs=S._midiaFS||'todos';
+  const fb=(S._midiaFB||'').toLowerCase();
+
+  let itens=S._midia;
+  if(ft!=='todos') itens=itens.filter(i=>i.tipo===ft);
+  if(fs!=='todos') itens=itens.filter(i=>i.status===fs);
+  if(fb) itens=itens.filter(i=>i.titulo.toLowerCase().includes(fb));
+
+  const tot=S._midia.length;
+  const conc=S._midia.filter(i=>i.status==='concluido').length;
+  const and=S._midia.filter(i=>i.status==='andamento').length;
+  const qro=S._midia.filter(i=>i.status==='quero').length;
+
+  const cards=itens.map(item=>{
+    const tp=MTIPOS[item.tipo]||'📄';
+    const st=MSTATUS[item.status]||MSTATUS.quero;
+    const nota=item.nota?'⭐'.repeat(Math.min(item.nota,5)):'';
+    const datas=[
+      item.dataInicio?`Início: ${item.dataInicio}`:'',
+      item.dataFim?`Fim: ${item.dataFim}`:'',
+    ].filter(Boolean).join(' • ');
+    return `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:24px;flex-shrink:0">${tp}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15px;font-weight:700;color:var(--text);word-break:break-word">${esc(item.titulo)}</div>
+          ${item.ano?`<div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:2px">${item.ano}</div>`:''}
+        </div>
+        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:${st.bg};color:${st.color};border:1px solid ${st.color};white-space:nowrap;flex-shrink:0">${st.label}</span>
+      </div>
+      ${nota?`<div style="font-size:14px">${nota}</div>`:''}
+      ${datas?`<div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">${datas}</div>`:''}
+      ${item.observacoes?`<div style="font-size:12px;color:var(--text2);line-height:1.6;border-left:2px solid var(--border);padding-left:8px;font-style:italic;word-break:break-word">${esc(item.observacoes)}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:2px">
+        <button class="tbbtn" style="flex:1;justify-content:center" onclick="editMidia('${item.id}')">✏️ Editar</button>
+        <button class="tbbtn" style="flex:1;justify-content:center;color:var(--red)" onclick="delMidia('${item.id}')">✕ Remover</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  s.innerHTML=`
+    <!-- Cabeçalho -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="font-size:18px;font-weight:800;color:var(--text)">🎬 Mídia</div>
+      <div style="display:flex;gap:12px;font-family:'JetBrains Mono',monospace;font-size:11px">
+        <span style="color:var(--green)">✅ ${conc}</span>
+        <span style="color:var(--yellow)">▶ ${and}</span>
+        <span style="color:var(--text3)">🔖 ${qro}</span>
+        <span style="color:var(--text3)">Total: ${tot}</span>
+      </div>
+    </div>
+
+    <!-- Filtro tipo -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${['todos','filme','livro','jogo'].map(t=>`
+        <button class="vtab ${ft===t?'on':''}" onclick="setMFiltro('ft','${t}')">${t==='todos'?'Todos':(MTIPOS[t]||'')+' '+t.charAt(0).toUpperCase()+t.slice(1)}</button>
+      `).join('')}
+    </div>
+
+    <!-- Filtro status -->
+    <div style="display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+    flex-direction: row;">
+      ${['todos','quero','andamento','concluido'].map(s=>`
+        <button class="vtab ${fs===s?'on':''}" onclick="setMFiltro('fs','${s}')">${s==='todos'?'Todos os status':(MSTATUS[s]?.label||s)}</button>
+      `).join('')}
+    </div>
+
+    <!-- Busca + Adicionar + Exportar -->
+    <div style="display: grid;
+    gap: 8px;">
+      <input type="text" placeholder="🔍 Buscar título..."
+        value="${esc(S._midiaFB||'')}"
+        oninput="S._midiaFB=this.value;_midiaRender()"
+        style="flex:1;min-width:140px;font-size:13px;padding:9px 12px">
+      <button class="btn pri" style="flex:0;padding:9px 16px" onclick="editMidia(null)">＋ Adicionar</button>
+      <button class="tbbtn" onclick="exportMidia()">📤 Exportar</button>
+    </div>
+
+    <!-- Cards -->
+    ${itens.length
+      ? `<div style="display:flex;flex-direction:column;gap:10px">${cards}</div>`
+      : `<div style="font-size:13px;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:12px 0">Nenhum item encontrado.</div>`
+    }`;
+}
+
+function setMFiltro(campo,valor){
+  if(campo==='ft') S._midiaFT=valor;
+  if(campo==='fs') S._midiaFS=valor;
+  save(); _midiaRender();
+}
+
+function editMidia(id){
+  if(!S._midia) S._midia=[];
+  const item=id?S._midia.find(i=>i.id===id):null;
+  openM(id?'✏️ Editar':'＋ Adicionar Mídia',`
+    <div class="fg"><div class="fl">Tipo</div>
+      <select id="mdt">
+        <option value="filme" ${item?.tipo==='filme'?'selected':''}>🎬 Filme</option>
+        <option value="livro" ${item?.tipo==='livro'?'selected':''}>📚 Livro</option>
+        <option value="jogo"  ${item?.tipo==='jogo' ?'selected':''}>🎮 Jogo</option>
+      </select>
+    </div>
+    <div class="fg"><div class="fl">Título</div>
+      <input type="text" id="mdti" placeholder="Nome..." value="${esc(item?.titulo||'')}">
+    </div>
+    <div class="fg"><div class="fl">Ano</div>
+      <input type="text" id="mdano" placeholder="Ex: 2024" value="${esc(item?.ano||'')}">
+    </div>
+    <div class="fg"><div class="fl">Status</div>
+      <select id="mdst">
+        <option value="quero"     ${item?.status==='quero'    ?'selected':''}>🔖 Quero</option>
+        <option value="andamento" ${item?.status==='andamento'?'selected':''}>▶ Em andamento</option>
+        <option value="concluido" ${item?.status==='concluido'?'selected':''}>✅ Concluído</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="fg" style="flex:1"><div class="fl">Data início</div>
+        <input type="date" id="mddi" value="${item?.dataInicio||''}">
+      </div>
+      <div class="fg" style="flex:1"><div class="fl">Data fim</div>
+        <input type="date" id="mddp" value="${item?.dataFim||''}">
+      </div>
+    </div>
+    <div class="fg"><div class="fl">Nota (1 a 5 ⭐)</div>
+      <input type="number" id="mdno" min="1" max="5" placeholder="1 a 5" value="${item?.nota||''}">
+    </div>
+    <div class="fg"><div class="fl">Observações / Impressões</div>
+      <textarea class="fta" id="mdobs" placeholder="O que achou? Pontos fortes, fracos, momentos marcantes...">${esc(item?.observacoes||'')}</textarea>
+    </div>
+  `,()=>{
+    const novo={
+      id:          item?.id||genId(),
+      tipo:        document.getElementById('mdt').value,
+      titulo:      document.getElementById('mdti').value.trim(),
+      ano:         document.getElementById('mdano').value.trim(),
+      status:      document.getElementById('mdst').value,
+      dataInicio:  document.getElementById('mddi').value,
+      dataFim:     document.getElementById('mddp').value,
+      nota:        parseInt(document.getElementById('mdno').value)||0,
+      observacoes: document.getElementById('mdobs').value.trim(),
+    };
+    if(!novo.titulo) return;
+    if(id){ const idx=S._midia.findIndex(i=>i.id===id); if(idx>=0) S._midia[idx]=novo; }
+    else S._midia.push(novo);
+    save(); _midiaRender();
+  });
+}
+
+function delMidia(id){
+  S._midia=(S._midia||[]).filter(i=>i.id!==id);
+  save(); _midiaRender();
+}
+
+function exportMidia(){
+  if(!S._midia?.length){ alert('Nenhum item para exportar.'); return; }
+  const ft=S._midiaFT||'todos';
+  const fs=S._midiaFS||'todos';
+  let itens=S._midia;
+  if(ft!=='todos') itens=itens.filter(i=>i.tipo===ft);
+  if(fs!=='todos') itens=itens.filter(i=>i.status===fs);
+
+  const grupos={filme:[],livro:[],jogo:[]};
+  itens.forEach(i=>{ if(grupos[i.tipo]) grupos[i.tipo].push(i); });
+
+  let md=`# 🎬 Relatório de Mídia\n_Gerado em ${new Date().toLocaleDateString('pt-BR')}_\n\n`;
+  md+=`**Total:** ${itens.length}`;
+  const conc=itens.filter(i=>i.status==='concluido').length;
+  if(conc) md+=` • ✅ ${conc} concluídos`;
+  md+=`\n\n---\n\n`;
+  for(const [t,lista] of Object.entries(grupos)){
+    if(!lista.length) continue;
+    md+=`## ${MTIPOS[t]} ${t.charAt(0).toUpperCase()+t.slice(1)}s\n\n`;
+    for(const item of lista){
+      const st=MSTATUS[item.status]?.label||item.status;
+      const nota=item.nota?' — '+'⭐'.repeat(item.nota):'';
+      md+=`### ${item.titulo}${item.ano?` (${item.ano})`:''}\n`;
+      md+=`**Status:** ${st}${nota}\n`;
+      if(item.dataInicio) md+=`**Início:** ${item.dataInicio}\n`;
+      if(item.dataFim)    md+=`**Fim:** ${item.dataFim}\n`;
+      if(item.observacoes) md+=`\n> ${item.observacoes.replace(/\n/g,'\n> ')}\n`;
+      md+=`\n`;
+    }
+  }
+
+  const csvRows=['Tipo,Título,Ano,Status,Início,Fim,Nota,Observações'];
+  itens.forEach(i=>csvRows.push([
+    i.tipo,`"${(i.titulo||'').replace(/"/g,'""')}"`,i.ano||'',
+    MSTATUS[i.status]?.label||i.status,
+    i.dataInicio||'',i.dataFim||'',i.nota||'',
+    `"${(i.observacoes||'').replace(/"/g,'""').replace(/\n/g,' ')}"`
+  ].join(',')));
+  const csv=csvRows.join('\n');
+
+  openM('📤 Exportar Relatório',`
+    <div class="view-tabs" style="margin-bottom:4px">
+      <button class="vtab on" id="vt_mmd" onclick="swMExp('md')">Markdown</button>
+      <button class="vtab"    id="vt_mcsv" onclick="swMExp('csv')">CSV</button>
+    </div>
+    <pre style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);overflow:auto;max-height:200px;white-space:pre-wrap" id="mExpPre">${esc(md)}</pre>
+    <div class="macts">
+      <button class="btn" onclick="cpMExp()">📋 Copiar</button>
+      <button class="btn pri" onclick="dlMExp()">⬇ Download</button>
+    </div>
+  `,null);
+
+  window._mExp={md,csv,mode:'md'};
+}
+
+window.swMExp=mode=>{ window._mExp.mode=mode; document.getElementById('mExpPre').textContent=mode==='md'?window._mExp.md:window._mExp.csv; document.getElementById('vt_mmd').classList.toggle('on',mode==='md'); document.getElementById('vt_mcsv').classList.toggle('on',mode==='csv'); };
+window.cpMExp=()=>navigator.clipboard.writeText(window._mExp.mode==='md'?window._mExp.md:window._mExp.csv).then(()=>alert('Copiado!'));
+window.dlMExp=()=>{ const d=window._mExp; const b=new Blob([d.mode==='md'?d.md:d.csv],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`midia_relatorio.${d.mode==='md'?'md':'csv'}`; a.click(); };
+// ── CALCULADORAS PERSONALIZADAS ───────────────────────
+reg('calcbox', {
+  name:'Calculadoras', icon:'🧮',
+  desc:'Calculadoras personalizadas sempre à mão', def:false,
+  onToggle(on){
+    if(!on){
+      const s=document.getElementById('calcScreen');
+      const m=document.querySelector('.main');
+      if(s){ s.style.display='none'; }
+      if(m) m.style.display='flex';
+      const b=document.getElementById('calcBtn');
+      if(b){ b.style.background=''; b.style.color=''; }
+      document.getElementById('fab').style.display=getL()?'flex':'none';
+    } else {
+      _calcInit();
+    }
+  }
+});
+if(!S._calcs) S._calcs=[];// calculadoras salvas pelo usuário
+if(!S._calcVals) S._calcVals={};// valores dos campos em memória
+
+
+// ── CALCULADORAS EMBUTIDAS (templates prontos) ──────
+// Para adicionar uma nova calculadora embutida,
+// basta adicionar um objeto neste array seguindo o padrão:
+//
+//  {
+//    id: 'id-unico',          // string única
+//    nome: 'Nome',            // nome exibido
+//    icon: '⏰',             // emoji
+//    campos: [                // lista de campos de entrada
+//      { id:'c1', label:'Nome do campo', tipo:'time'|'number'|'text', placeholder:'...' }
+//    ],
+//    calcular(vals){          // função que recebe { c1:'valor', c2:'valor', ... }
+//      // faz os cálculos
+//      return [               // retorna array de resultados
+//        { label:'Nome resultado', valor:'valor formatado', destaque:true/false }
+//      ];
+//    }
+//  }
+
+const CALC_BUILTIN = [
+
+  // ── 1. DIFERENÇA DE HORAS ───────────────────────
+  {
+    id:'horas-diff', nome:'Diferença de Horas', icon:'⏰',
+    campos:[
+      {id:'h1', label:'Hora início', tipo:'time', placeholder:'07:00'},
+      {id:'h2', label:'Hora fim',    tipo:'time', placeholder:'18:30'},
+      {id:'hpause', label:'Pausas (minutos)', tipo:'number', placeholder:'60'},
+    ],
+    calcular(v){
+      const toMin=t=>{ const[h,m]=(t||'00:00').split(':').map(Number); return h*60+m; };
+      const ini=toMin(v.h1), fim=toMin(v.h2);
+      const pause=parseInt(v.hpause)||0;
+      let diff=fim-ini; if(diff<0) diff+=1440;
+      const liquido=Math.max(0,diff-pause);
+      const fmt=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+      return[
+        {label:'Total bruto',   valor:fmt(diff),    destaque:false},
+        {label:'Total líquido', valor:fmt(liquido),  destaque:true},
+        {label:'Em decimal',    valor:(liquido/60).toFixed(2)+'h', destaque:false},
+      ];
+    }
+  },
+
+  // ── 2. SOMA DE HORAS ────────────────────────────
+  {
+    id:'horas-soma', nome:'Soma de Horas', icon:'➕',
+    campos:[
+      {id:'hs1', label:'Horas 1 (hh:mm)', tipo:'text', placeholder:'02:30'},
+      {id:'hs2', label:'Horas 2 (hh:mm)', tipo:'text', placeholder:'01:45'},
+      {id:'hs3', label:'Horas 3 (hh:mm)', tipo:'text', placeholder:'00:00'},
+      {id:'hs4', label:'Horas 4 (hh:mm)', tipo:'text', placeholder:'00:00'},
+    ],
+    calcular(v){
+      const toMin=t=>{ const p=(t||'0:0').split(':'); return (parseInt(p[0])||0)*60+(parseInt(p[1])||0); };
+      const total=[v.hs1,v.hs2,v.hs3,v.hs4].reduce((a,x)=>a+toMin(x),0);
+      const fmt=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+      return[
+        {label:'Total',      valor:fmt(total),              destaque:true},
+        {label:'Em decimal', valor:(total/60).toFixed(2)+'h', destaque:false},
+        {label:'Em minutos', valor:total+'min',              destaque:false},
+      ];
+    }
+  },
+
+  // ── 3. SALÁRIO POR HORAS ────────────────────────
+  {
+    id:'salario-hora', nome:'Salário por Horas', icon:'💵',
+    campos:[
+      {id:'sh', label:'Valor por hora (R$)',    tipo:'number', placeholder:'50'},
+      {id:'st', label:'Horas trabalhadas (hh:mm)', tipo:'text',   placeholder:'40:00'},
+      {id:'se', label:'Horas extras (hh:mm)',      tipo:'text',   placeholder:'00:00'},
+      {id:'sm', label:'Multiplicador hora extra',  tipo:'number', placeholder:'1.5'},
+    ],
+    calcular(v){
+      const toH=t=>{ const p=(t||'0:0').split(':'); return (parseInt(p[0])||0)+(parseInt(p[1])||0)/60; };
+      const ph=parseFloat(v.sh)||0;
+      const ht=toH(v.st), he=toH(v.se);
+      const mult=parseFloat(v.sm)||1.5;
+      const normal=ph*ht, extra=ph*mult*he;
+      const fmt=n=>'R$ '+n.toFixed(2).replace('.',',');
+      return[
+        {label:'Horas normais',  valor:fmt(normal),       destaque:false},
+        {label:'Horas extras',   valor:fmt(extra),        destaque:false},
+        {label:'Total',          valor:fmt(normal+extra), destaque:true},
+      ];
+    }
+  },
+
+  // ── 4. PORCENTAGEM ──────────────────────────────
+  {
+    id:'porcento', nome:'Porcentagem', icon:'%',
+    campos:[
+      {id:'pv', label:'Valor',       tipo:'number', placeholder:'200'},
+      {id:'pp', label:'Porcentagem', tipo:'number', placeholder:'15'},
+    ],
+    calcular(v){
+      const val=parseFloat(v.pv)||0, pct=parseFloat(v.pp)||0;
+      const res=val*pct/100;
+      const fmt=n=>n.toFixed(2).replace('.',',');
+      return[
+        {label:`${pct}% de ${fmt(val)}`, valor:fmt(res),       destaque:true},
+        {label:'Valor + %',              valor:fmt(val+res),   destaque:false},
+        {label:'Valor - %',              valor:fmt(val-res),   destaque:false},
+      ];
+    }
+  },
+
+  // ── 5. DIVISÃO DE CONTA ─────────────────────────
+  {
+    id:'rachar-conta', nome:'Rachar a Conta', icon:'🍕',
+    campos:[
+      {id:'rc', label:'Total da conta (R$)', tipo:'number', placeholder:'150'},
+      {id:'rp', label:'Número de pessoas',   tipo:'number', placeholder:'4'},
+      {id:'rg', label:'Gorjeta (%)',          tipo:'number', placeholder:'10'},
+    ],
+    calcular(v){
+      const total=parseFloat(v.rc)||0, pessoas=parseInt(v.rp)||1, gort=parseFloat(v.rg)||0;
+      const comGorj=total*(1+gort/100);
+      const fmt=n=>'R$ '+n.toFixed(2).replace('.',',');
+      return[
+        {label:'Total com gorjeta',   valor:fmt(comGorj),          destaque:false},
+        {label:'Por pessoa (sem)',     valor:fmt(total/pessoas),    destaque:false},
+        {label:'Por pessoa (com)',     valor:fmt(comGorj/pessoas),  destaque:true},
+      ];
+    }
+  },
+
+  // ── 6. IMC ──────────────────────────────────────
+  {
+    id:'imc', nome:'IMC', icon:'⚖️',
+    campos:[
+      {id:'ip', label:'Peso (kg)',    tipo:'number', placeholder:'70'},
+      {id:'ia', label:'Altura (cm)',  tipo:'number', placeholder:'175'},
+    ],
+    calcular(v){
+      const p=parseFloat(v.ip)||0, a=(parseFloat(v.ia)||0)/100;
+      if(!a) return[{label:'Erro',valor:'Altura inválida',destaque:true}];
+      const imc=p/(a*a);
+      const cls=imc<18.5?'Abaixo do peso':imc<25?'Peso normal':imc<30?'Sobrepeso':imc<35?'Obeso grau I':imc<40?'Obeso grau II':'Obeso grau III';
+      return[
+        {label:'IMC',           valor:imc.toFixed(1),  destaque:true},
+        {label:'Classificação', valor:cls,             destaque:false},
+      ];
+    }
+  },
+
+];
+
+function _calcTodos(){ return [...CALC_BUILTIN, ...(S._calcs||[])]; }
+
+function _calcInit(){
+  if(!document.getElementById('calcScreen')){
+    const s=document.createElement('div');
+    s.id='calcScreen';
+    s.style.cssText='display:none;flex:1;overflow-y:auto;padding:16px;flex-direction:column;gap:14px';
+    document.querySelector('.body').appendChild(s);
+  }
+  if(!document.getElementById('calcBtn')){
+    const b=document.createElement('button');
+    b.id='calcBtn'; b.title='Calculadoras'; b.textContent='🧮';
+    b.className='ibtn'; b.onclick=openCalcScreen;
+    document.querySelector('.hright').prepend(b);
+  }
+}
+
+function openCalcScreen(){
+  const s=document.getElementById('calcScreen');
+  const m=document.querySelector('.main');
+  const b=document.getElementById('calcBtn');
+  const fab=document.getElementById('fab');
+  if(!s||!m) return;
+  const isOpen=s.style.display==='flex';
+  if(isOpen){
+    s.style.display='none'; m.style.display='flex';
+    b.style.background=''; b.style.color='';
+    fab.style.display=getL()?'flex':'none';
+  } else {
+    m.style.display='none'; s.style.display='flex';
+    b.style.background='var(--accent)'; b.style.color='white';
+    fab.style.display='none';
+    _calcRender();
+  }
+}
+
+function _calcRender(){
+  const s=document.getElementById('calcScreen');
+  if(!s||s.style.display!=='flex') return;
+  // garante que S._calcVals existe e tem entrada para cada calculadora
+  if(!S._calcVals || typeof S._calcVals !== 'object') S._calcVals={};
+  const todos=_calcTodos();
+  todos.forEach(c=>{ if(!S._calcVals[c.id]) S._calcVals[c.id]={}; });
+
+  const cards=todos.map(calc=>{
+    if(!S._calcVals[calc.id]) S._calcVals[calc.id]={};
+    const vals=S._calcVals[calc.id];
+    const resultados=_calcResultados(calc,vals);
+
+    const campos=calc.campos.map(c=>`
+      <div class="fg">
+        <div class="fl">${c.label}</div>
+        <input type="${c.tipo==='time'?'time':c.tipo==='number'?'number':'text'}"
+          id="cf_${calc.id}_${c.id}"
+          placeholder="${c.placeholder||''}"
+          value="${esc(vals[c.id]||'')}"
+          oninput="_calcInput('${calc.id}','${c.id}',this.value)"
+          style="font-size:15px;padding:10px 12px">
+      </div>`).join('');
+
+    const resHtml=resultados.map(r=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;background:${r.destaque?'rgba(124,106,247,.12)':'var(--bg)'};border:1px solid ${r.destaque?'rgba(124,106,247,.3)':'var(--border)'}">
+        <span style="font-size:12px;color:var(--text3)">${r.label}</span>
+        <span style="font-size:${r.destaque?'20px':'15px'};font-weight:${r.destaque?'800':'600'};font-family:'JetBrains Mono',monospace;color:${r.destaque?'var(--accent)':'var(--text)'}">${r.valor}</span>
+      </div>`).join('');
+
+    const isCustom=!CALC_BUILTIN.find(b=>b.id===calc.id);
+
+    return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r)">
+      <details>
+        <summary style="padding:14px 16px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px">
+          <span style="font-size:20px">${calc.icon}</span>
+          <span style="flex:1">${esc(calc.nome)}</span>
+          ${isCustom?`<button class="iabtn" style="font-size:11px;width:auto;padding:0 8px" onclick="event.preventDefault();event.stopPropagation();editCalc('${calc.id}')">✏️</button>
+          <button class="iabtn" style="font-size:11px;width:auto;padding:0 8px;color:var(--red)" onclick="event.preventDefault();event.stopPropagation();delCalc('${calc.id}')">✕</button>`:''}
+          <span style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">${isCustom?'custom':'builtin'}</span>
+        </summary>
+        <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;flex-direction:column;gap:8px">${campos}</div>
+          <button class="btn pri" onclick="_calcCalc('${calc.id}')">⚡ Calcular</button>
+          <div id="res_${calc.id}" style="display:flex;flex-direction:column;gap:6px">${resHtml}</div>
+        </div>
+      </details>
+    </div>`;
+  }).join('');
+
+  s.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="font-size:18px;font-weight:800;color:var(--text)">🧮 Calculadoras</div>
+      <button class="btn pri" style="flex:0;padding:9px 16px" onclick="novaCalc()">＋ Nova calculadora</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px">
+      💡 Os valores ficam salvos enquanto você navega. Crie suas próprias calculadoras com ＋ Nova calculadora.
+    </div>
+    ${cards}`;
+}
+
+function _calcInput(calcId, campoId, valor){
+  if(!S._calcVals[calcId]) S._calcVals[calcId]={};
+  S._calcVals[calcId][campoId]=valor;
+  // Atualiza resultado em tempo real
+  _calcCalc(calcId, true);
+}
+
+function _calcCalc(calcId, silencioso=false){
+  const calc=_calcTodos().find(c=>c.id===calcId);
+  if(!calc) return;
+  const vals=S._calcVals[calcId]||{};
+
+  // Lê os campos direto do DOM para pegar o valor atual
+  calc.campos.forEach(c=>{
+    const el=document.getElementById(`cf_${calcId}_${c.id}`);
+    if(el){ if(!S._calcVals[calcId]) S._calcVals[calcId]={}; S._calcVals[calcId][c.id]=el.value; }
+  });
+
+  const resultados=_calcResultados(calc, S._calcVals[calcId]||{});
+  save();
+
+  const resEl=document.getElementById(`res_${calcId}`);
+  if(!resEl) return;
+  resEl.innerHTML=resultados.map(r=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;background:${r.destaque?'rgba(124,106,247,.12)':'var(--bg)'};border:1px solid ${r.destaque?'rgba(124,106,247,.3)':'var(--border)'}">
+      <span style="font-size:12px;color:var(--text3)">${r.label}</span>
+      <span style="font-size:${r.destaque?'20px':'15px'};font-weight:${r.destaque?'800':'600'};font-family:'JetBrains Mono',monospace;color:${r.destaque?'var(--accent)':'var(--text)'}">${r.valor}</span>
+    </div>`).join('');
+}
+
+function _calcResultados(calc, vals){
+  try{ return calc.calcular(vals)||[]; }
+  catch(e){ return [{label:'Erro',valor:String(e.message),destaque:true}]; }
+}
+
+// ── CRIAR / EDITAR CALCULADORA PERSONALIZADA ────────
+function novaCalc(){ editCalc(null); }
+
+function editCalc(id){
+  const item=id?(S._calcs||[]).find(c=>c.id===id):null;
+  const camposJson=item?JSON.stringify(item.campos,null,2):'[\n  {"id":"c1","label":"Valor 1","tipo":"number","placeholder":"0"},\n  {"id":"c2","label":"Valor 2","tipo":"number","placeholder":"0"}\n]';
+  const calcFn=item?item._fn:`function calcular(v){
+  // v.c1, v.c2 são os valores dos campos
+  const a = parseFloat(v.c1)||0;
+  const b = parseFloat(v.c2)||0;
+  return [
+    { label: 'Soma',    valor: (a+b).toFixed(2), destaque: true  },
+    { label: 'Diferença', valor: (a-b).toFixed(2), destaque: false },
+    { label: 'Produto', valor: (a*b).toFixed(2), destaque: false },
+  ];
+}`;
+
+  openM(id?'✏️ Editar Calculadora':'＋ Nova Calculadora',`
+    <div class="fg"><div class="fl">Nome</div>
+      <input type="text" id="cnome" placeholder="Ex: Calculadora de desconto" value="${esc(item?.nome||'')}">
+    </div>
+    <div class="fg"><div class="fl">Ícone (emoji)</div>
+      <input type="text" id="cicon" placeholder="Ex: 💰" value="${esc(item?.icon||'🧮')}" style="font-size:24px;text-align:center">
+    </div>
+    <div class="fg">
+      <div class="fl">Campos (JSON)</div>
+      <textarea class="fta" id="ccampos" style="min-height:120px;font-size:12px">${esc(camposJson)}</textarea>
+      <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6">
+        tipo: "number" | "text" | "time"
+      </div>
+    </div>
+    <div class="fg">
+      <div class="fl">Função de cálculo (JavaScript)</div>
+      <textarea class="fta" id="cfn" style="min-height:180px;font-size:12px;line-height:1.6">${esc(calcFn)}</textarea>
+      <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6">
+        Recebe <code>v</code> com os valores dos campos pelo id.<br>
+        Retorna array: <code>[{label, valor, destaque}]</code>
+      </div>
+    </div>
+    <button class="btn" onclick="_calcTestar()">🧪 Testar</button>
+    <div id="cteste" style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text3)"></div>
+  `,()=>{
+    const nome=document.getElementById('cnome').value.trim();
+    const icon=document.getElementById('cicon').value.trim()||'🧮';
+    const fnTxt=document.getElementById('cfn').value.trim();
+    let campos;
+    try{ campos=JSON.parse(document.getElementById('ccampos').value); }
+    catch(e){ alert('JSON dos campos inválido: '+e.message); return; }
+    let fn;
+    try{ fn=new Function('v', fnTxt.replace(/^function calcular\(v\)\s*\{/,'').replace(/\}$/,'')); }
+    catch(e){ alert('Erro na função: '+e.message); return; }
+    if(!nome) return;
+    const nova={ id:item?.id||genId(), nome, icon, campos, calcular:fn, _fn:fnTxt };
+    if(!S._calcs) S._calcs=[];
+    if(id){ const idx=S._calcs.findIndex(c=>c.id===id); if(idx>=0) S._calcs[idx]=nova; else S._calcs.push(nova); }
+    else S._calcs.push(nova);
+    save(); _calcRender();
+  });
+}
+
+window._calcTestar=()=>{
+  try{
+    const fnTxt=document.getElementById('cfn').value.trim();
+    const campos=JSON.parse(document.getElementById('ccampos').value);
+    const fn=new Function('v', fnTxt.replace(/^function calcular\(v\)\s*\{/,'').replace(/\}$/,''));
+    const fakeVals={};
+    campos.forEach(c=>fakeVals[c.id]=c.placeholder||'0');
+    const res=fn(fakeVals);
+    document.getElementById('cteste').innerHTML=
+      '✅ OK — '+res.map(r=>`${r.label}: ${r.valor}`).join(' | ');
+  }catch(e){
+    document.getElementById('cteste').innerHTML='❌ Erro: '+e.message;
+  }
+};
+
+function delCalc(id){
+  S._calcs=(S._calcs||[]).filter(c=>c.id!==id);
+  save(); _calcRender();
 }
 // ══════════════════════════════════════════════════════
 //  BOOT
