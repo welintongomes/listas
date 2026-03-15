@@ -111,7 +111,7 @@ pading
 .irow:active{background:var(--surface2)}
 .itog {padding: 14px 16px 14px 6px;width: 20px;height: 20px;flex-shrink: 0;margin-top: 5px;display: flex;align-items: center;justify-content: center;cursor: pointer;color: var(--text3);font-size: 24px;border-radius: 4px;transition: all .15s;user-select: none;}
 .itog.nc{opacity:0;pointer-events:none}
-.icb{width:28px;height:28px;flex-shrink:0;margin-top:5px;appearance:none;-webkit-appearance:none;border:2px solid var(--border);border-radius:6px;cursor:pointer;position:relative;transition:all .2s;background:transparent}
+.icb{width:30px;height:28px;flex-shrink:0;margin-top:5px;appearance:none;-webkit-appearance:none;border:2px solid var(--border);border-radius:6px;cursor:pointer;position:relative;transition:all .2s;background:transparent}
 .icb:checked{background:var(--accent);border-color:var(--accent)}
 .icb:checked::after{content:'';position:absolute;left:7px;top:4px;width:6px;height:10px;border:2px solid white;border-left:none;border-top:none;transform:rotate(45deg)}
 .icb.par{border-color:var(--accent);background:rgba(124,106,247,.15)}
@@ -165,7 +165,7 @@ pading
 .kanban-card.done-card{text-decoration:line-through;color:var(--text3)}
 
 /* ─── FAB ─── */
-.fab{position:fixed;right:18px;bottom:calc(18px + var(--sab));width:54px;height:54px;border-radius:50%;background:var(--accent);border:none;color:white;font-size:28px;cursor:pointer;box-shadow:0 4px 22px rgba(124,106,247,.55);display:flex;align-items:center;justify-content:center;z-index:30;transition:all .2s}
+.fab{position:fixed;left:18px;bottom:calc(18px + var(--sab));width:54px;height:54px;border-radius:50%;background:var(--accent);border:none;color:white;font-size:28px;cursor:pointer;box-shadow:0 4px 22px rgba(124,106,247,.55);display:flex;align-items:center;justify-content:center;z-index:30;transition:all .2s}
 .fab:active{transform:scale(.91)}
 @media(min-width:681px){.fab{display:none}}
 
@@ -297,6 +297,23 @@ const PL = {};
 const reg = (id,def) => PL[id] = { id, ...def };
 const pon = id => !!S.plugins[id];
 const togP = id => {
+  // ══════════════════════════════════════════════════════
+//  HOOK SYSTEM — plugins se auto-instalam
+//  Cada plugin pode declarar:
+//    onInit()        → roda uma vez no boot (injetar CSS, etc)
+//    onRenderCnt()   → roda no início do renderCnt (pode retornar true para substituir toda a view)
+//    onRenderTop(lv, list) → roda antes da árvore, recebe o container lv e a lista
+//    onRenderBottom(lv, list) → roda depois da árvore
+// ══════════════════════════════════════════════════════
+function runHook(hook, ...args){
+  for(const p of Object.values(PL)){
+    if(pon(p.id) && p[hook]){
+      const result = p[hook](...args);
+      if(result === true) return true; // plugin tomou conta da view
+    }
+  }
+  return false;
+}
   S.plugins[id] = !S.plugins[id];
   if(PL[id]?.onToggle) PL[id].onToggle(S.plugins[id]);
   save(); renderAll();
@@ -588,7 +605,12 @@ function clrLink(id){ const l=getL();const item=find(l.items,id);if(item){item.l
 // ── 14. VISTA KANBAN ──────────────────────────────────
 reg('kanban', {
   name:'Vista Kanban', icon:'📋', desc:'Visualiza itens em colunas de status', def:false,
-  tb(){ return `<div class="view-tabs"><button class="vtab ${S._view==='list'?'on':''}" onclick="setView('list')">☰ Lista</button><button class="vtab ${S._view==='kanban'?'on':''}" onclick="setView('kanban')">📋 Kanban</button></div>`; }
+  tb(){ return `<div class="view-tabs"><button class="vtab ${S._view==='list'?'on':''}" onclick="setView('list')">☰ Lista</button><button class="vtab ${S._view==='kanban'?'on':''}" onclick="setView('kanban')">📋 Kanban</button></div>`; },
+  onRenderTop(lv, list){
+    if(S._view!=='kanban') return false;
+    const kb=document.createElement('div'); kb.innerHTML=renderKanban(list); lv.appendChild(kb);
+    return true; // substituiu a árvore
+  }
 });
 
 function setView(v){ S._view=v; renderCnt(); }
@@ -778,61 +800,60 @@ function renderCnt(){
   const list=getL();
   const es=document.getElementById('es'), lv=document.getElementById('lv'), fab=document.getElementById('fab');
   if(!list){ es.style.display='flex'; lv.style.display='none'; fab.style.display='none'; return; }
-  es.style.display='none'; lv.style.display='flex'; fab.style.display='flex';
-  // Quiz mode — substitui toda a view
-  if(pon('quiz') && S._quizAtivo){
-    es.style.display='none'; lv.style.display='flex'; fab.style.display='none';
-    lv.innerHTML=''; // limpa
-    // Header mínimo com nome da lista
-    const qhdr=document.createElement('div');
-    qhdr.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">${esc(list.name)}</div>`;
-    lv.appendChild(qhdr);
-    const qview=document.createElement('div');
-    qview.innerHTML=renderQuiz();
-    lv.appendChild(qview);
-    return; // não renderiza a lista normal
-  }
-  lv.innerHTML='';
+  es.style.display='none'; lv.style.display='flex';
 
-  // Header
+  // Hook onRenderCnt — plugin pode substituir toda a view (quiz, foco, etc)
+  lv.innerHTML='';
+  fab.style.display='flex';
+  for(const p of Object.values(PL)){
+    if(pon(p.id) && p.onRenderCnt){
+      const took = p.onRenderCnt(lv, list);
+      if(took){ fab.style.display='none'; return; }
+    }
+  }
+
+  // View normal
   const hdr=document.createElement('div'); hdr.className='lhdr';
   let hdrHtml=`<div class="ltrow"><input class="ltinput" value="${esc(list.name)}" onchange="renL('${list.id}',this.value)" onblur="renL('${list.id}',this.value)"></div>`;
   Object.values(PL).forEach(p=>{ if(pon(p.id)&&p.hdr){ const h=p.hdr(list); if(h) hdrHtml+=h; } });
   hdr.innerHTML=hdrHtml;
   lv.appendChild(hdr);
 
-  // Kanban view
-  if(pon('kanban') && S._view==='kanban'){
-    const kb=document.createElement('div');
-    kb.innerHTML=renderKanban(list);
-    lv.appendChild(kb);
-    return;
+  // Hook onRenderTop — antes da árvore (ex: kanban substitui)
+  let tookTop = false;
+  for(const p of Object.values(PL)){
+    if(pon(p.id) && p.onRenderTop){
+      const took = p.onRenderTop(lv, list);
+      if(took){ tookTop=true; break; }
+    }
   }
 
-  // Import area
-  const imp=document.createElement('details'); imp.className='import';
-  imp.innerHTML=`<summary>📋 Importar por texto</summary>
-    <div class="import-body">
-      <textarea id="ita" placeholder="Um item por linha. Indente para sub-itens:
+  if(!tookTop){
+    // Import
+    const imp=document.createElement('details'); imp.className='import';
+    imp.innerHTML=`<summary>📋 Importar por texto</summary>
+      <div class="import-body">
+        <textarea id="ita" placeholder="Um item por linha. Indente para sub-itens:
 - Tarefa principal
   - Sub-tarefa
-    - Sub-sub-tarefa
 [x] Item já marcado"></textarea>
-      <div class="import-acts">
-        <button class="btn pri" style="flex:1" onclick="doImport()">Importar</button>
-        <button class="btn" onclick="document.getElementById('ita').value=''">Limpar</button>
-      </div>
-      <div class="import-hint">Prefixos: -, *, + • [x] = marcado • Espaços = aninhamento</div>
-    </div>`;
-  lv.appendChild(imp);
+        <div class="import-acts">
+          <button class="btn pri" style="flex:1" onclick="doImport()">Importar</button>
+          <button class="btn" onclick="document.getElementById('ita').value=''">Limpar</button>
+        </div>
+        <div class="import-hint">Prefixos: -, *, + • [x] = marcado • Espaços = aninhamento</div>
+      </div>`;
+    lv.appendChild(imp);
 
-  // Tree
-  const tree=document.createElement('div'); tree.id='it';
-  rTree(list.items,tree);
-  lv.appendChild(tree);
-  // Seção de orçamento (plugins com renderSection)
+    // Árvore de itens
+    const tree=document.createElement('div'); tree.id='it';
+    rTree(list.items,tree);
+    lv.appendChild(tree);
+  }
+
+  // Hook onRenderBottom — depois da árvore (ex: orçamento)
   Object.values(PL).forEach(p=>{
-    if(pon(p.id)&&p.renderSection){ const h=p.renderSection(list); if(h){ const d=document.createElement('div'); d.innerHTML=h; lv.appendChild(d); } }
+    if(pon(p.id) && p.onRenderBottom) p.onRenderBottom(lv, list);
   });
 }
 
@@ -856,9 +877,12 @@ function rTree(items,cont){
       <span class="itog ${hk?'':'nc'}" onclick="togCol('${item.id}')">${item.collapsed?'▶':'▼'}</span>
       <input type="checkbox" class="icb ${cbcls}" ${item.checked?'checked':''} onchange="togChk('${item.id}',this.checked)">
       <div class="ibody">
-        <div class="itext ${item.checked?'done':''}" contenteditable="true" spellcheck="false"
-          onblur="renItem('${item.id}',this.innerText)"
-          onkeydown="ikey(event,'${item.id}')">${esc(item.text)}</div>
+        ${(pon('audio') && item.text && item.text.includes('⟨🎙'))
+        ? `<div class="itext-rich ${item.checked?'done':''}">${renderRichText(item)}</div>`
+        : `<div class="itext ${item.checked?'done':''}" contenteditable="true" spellcheck="false"
+              onblur="renItem('${item.id}',this.innerText)"
+              onkeydown="ikey(event,'${item.id}')">${esc(item.text)}</div>`
+      }
         ${meta?`<div class="imeta">${meta}</div>`:''}
         ${extra}
         <div class="iend">${abtns}</div>
@@ -1011,145 +1035,21 @@ function importJ(){ const inp=document.createElement('input'); inp.type='file'; 
   inp.onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader();
     r.onload=ev=>{ try{const d=JSON.parse(ev.target.result);if(d.lists){S=d;save();renderAll();}}catch{alert('Arquivo inválido');} };
     r.readAsText(f); }; inp.click(); }
-// ── 15. ORÇAMENTO ─────────────────────────────────────
-reg('orcamento', {
-  name:'Orçamento', icon:'💰', desc:'Soma valores e horas dos itens marcados', def:false,
-  tb(){
-    return `<button class="tbbtn" onclick="openOrcConfig()">💰 Mão de obra</button>`;
-  },
-  renderSection(list){
-    if(!pon('orcamento')) return '';
-    return calcOrcamento(list);
-  }
-});
-
-function parseValorItem(texto){
-  // Captura número antes de palavras de dinheiro ou tempo
-  // Ex: "10 reais", "1 hora", "30 minutos", "5 conto", "3 pilas"
-  const money = /(\d+(?:[.,]\d+)?)\s*(?:reais?|real|contos?|pilas?|r\$)/gi;
-  const hours  = /(\d+(?:[.,]\d+)?)\s*h(?:oras?|r)?(?:\b)/gi;
-  const mins   = /(\d+(?:[.,]\d+)?)\s*min(?:utos?)?(?:\b)/gi;
-
-  let totalMoney = 0;
-  let totalMinutes = 0;
-
-  let m;
-  while((m = money.exec(texto)) !== null)
-    totalMoney += parseFloat(m[1].replace(',','.'));
-  while((m = hours.exec(texto)) !== null)
-    totalMinutes += parseFloat(m[1].replace(',','.')) * 60;
-  while((m = mins.exec(texto)) !== null)
-    totalMinutes += parseFloat(m[1].replace(',','.'));
-
-  return { totalMoney, totalMinutes };
-}
-
-function calcOrcamento(list){
-  // Pega todos os itens MARCADOS recursivamente
-  const checked = [];
-  const walk = arr => arr.forEach(i => {
-    if(i.checked) checked.push(i);
-    if(i.children) walk(i.children);
-  });
-  walk(list.items);
-
-  if(!checked.length) return `
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px">
-      <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
-        💰 Marque itens com valores para calcular o orçamento.
-      </div>
-    </div>`;
-
-  const precoHora = parseFloat(S._orcPrecoHora || 100);
-
-  let totalDinheiro = 0;
-  let totalMinutos  = 0;
-  const linhas = [];
-
-  for(const item of checked){
-    const { totalMoney, totalMinutes } = parseValorItem(item.text);
-    if(totalMoney > 0 || totalMinutes > 0){
-      const valorTempo = (totalMinutes / 60) * precoHora;
-      const subtotal   = totalMoney + valorTempo;
-      totalDinheiro   += totalMoney;
-      totalMinutos    += totalMinutes;
-
-      let descTempo = '';
-      if(totalMinutes > 0){
-        const h = Math.floor(totalMinutes/60);
-        const min = Math.round(totalMinutes % 60);
-        descTempo = h > 0 && min > 0 ? `${h}h ${min}min` : h > 0 ? `${h}h` : `${min}min`;
-      }
-
-      linhas.push(`
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-          <div style="font-size:12px;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(item.text)}</div>
-          <div style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text);flex-shrink:0;text-align:right">
-            ${totalMoney>0 ? `<span style="color:var(--green)">R$ ${totalMoney.toFixed(2).replace('.',',')}</span>` : ''}
-            ${descTempo ? `<span style="color:var(--blue);margin-left:6px">⏱ ${descTempo}</span>` : ''}
-            ${valorTempo>0 ? `<span style="color:var(--orange);margin-left:6px">+R$ ${valorTempo.toFixed(2).replace('.',',')}</span>` : ''}
-          </div>
-        </div>`);
-    }
-  }
-
-  const valorTotalTempo = (totalMinutos / 60) * precoHora;
-  const grandTotal      = totalDinheiro + valorTotalTempo;
-
-  const hTotal   = Math.floor(totalMinutos/60);
-  const minTotal = Math.round(totalMinutos % 60);
-  const tempoStr = hTotal > 0 && minTotal > 0 ? `${hTotal}h ${minTotal}min` : hTotal > 0 ? `${hTotal}h` : minTotal > 0 ? `${minTotal}min` : '';
-
-  if(!linhas.length) return `
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px">
-      <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
-        💰 Nenhum item marcado contém valores ou horas reconhecíveis.
-      </div>
-    </div>`;
-
-  return `
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:4px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">💰 Orçamento</div>
-        <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3)">
-          mão de obra: R$ ${precoHora.toFixed(2).replace('.',',')}/h
-        </div>
-      </div>
-      ${linhas.join('')}
-      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:4px">
-        <div style="display:flex;flex-direction:column;gap:2px">
-          ${tempoStr ? `<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--blue)">⏱ ${tempoStr} × R$ ${precoHora.toFixed(2).replace('.',',')}/h = R$ ${valorTotalTempo.toFixed(2).replace('.',',')}</div>` : ''}
-          ${totalDinheiro > 0 ? `<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--green)">💵 Materiais: R$ ${totalDinheiro.toFixed(2).replace('.',',')}</div>` : ''}
-        </div>
-        <div style="font-size:18px;font-weight:800;color:var(--accent)">R$ ${grandTotal.toFixed(2).replace('.',',')}</div>
-      </div>
-    </div>`;
-}
-
-function openOrcConfig(){
-  openM('💰 Mão de obra',`
-    <div class="fg">
-      <div class="fl">Preço por hora (R$)</div>
-      <input type="number" id="moh" min="0" step="0.01"
-        placeholder="Ex: 100"
-        value="${S._orcPrecoHora || 100}">
-    </div>
-    <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6">
-      Exemplos reconhecidos nos itens:<br>
-      • <b>10 reais</b> / <b>10 real</b> / <b>10 conto</b> / <b>10 pilas</b><br>
-      • <b>1 hora</b> / <b>1h</b> / <b>30 minutos</b> / <b>30min</b>
-    </div>
-  `, ()=>{
-    const v = parseFloat(document.getElementById('moh').value);
-    if(!isNaN(v) && v >= 0){ S._orcPrecoHora = v; save(); renderCnt(); }
-  });
-}
-// ── 16. QUIZ ──────────────────────────────────────────
+    // ── 16. QUIZ ──────────────────────────────────────────
 reg('quiz', {
   name:'Quiz / Flashcard', icon:'🧠', desc:'Treino com perguntas e respostas embaralhadas', def:false,
   tb(){
     if(!S._quizAtivo) return `<button class="tbbtn" onclick="iniciarQuiz()">🧠 Iniciar Quiz</button>`;
     return `<button class="tbbtn" onclick="encerrarQuiz()">✕ Sair do Quiz</button>`;
+  },
+  // Hook: substitui toda a view quando ativo
+  onRenderCnt(lv, list){
+    if(!S._quizAtivo) return false;
+    const h=document.createElement('div');
+    h.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">${esc(list.name)}</div>`;
+    lv.appendChild(h);
+    const v=document.createElement('div'); v.innerHTML=renderQuiz(); lv.appendChild(v);
+    return true; // tomou conta
   }
 });
 
@@ -1335,10 +1235,1133 @@ function setStars(id) {
     if(item) { item.stars = v; save(); renderCnt(); }
   });
 }
+//plugin orçamentos
+    reg('orcamento', {
+  name:'Orçamento', icon:'💰', desc:'Soma valores e horas dos itens marcados', def:false,
+  tb(){ return `<button class="tbbtn" onclick="openOrcConfig()">💰 Mão de obra</button>`; },
+  onRenderBottom(lv, list){
+    const h=calcOrcamento(list); if(!h) return;
+    const d=document.createElement('div'); d.innerHTML=h; lv.appendChild(d);
+  }
+});
+
+function parseValorItem(texto){
+  // Captura número antes de palavras de dinheiro ou tempo
+  // Ex: "10 reais", "1 hora", "30 minutos", "5 conto", "3 pilas"
+  const money = /(\d+(?:[.,]\d+)?)\s*(?:reais?|real|contos?|pilas?|r\$)/gi;
+  const hours  = /(\d+(?:[.,]\d+)?)\s*h(?:oras?|r)?(?:\b)/gi;
+  const mins   = /(\d+(?:[.,]\d+)?)\s*min(?:utos?)?(?:\b)/gi;
+
+  let totalMoney = 0;
+  let totalMinutes = 0;
+
+  let m;
+  while((m = money.exec(texto)) !== null)
+    totalMoney += parseFloat(m[1].replace(',','.'));
+  while((m = hours.exec(texto)) !== null)
+    totalMinutes += parseFloat(m[1].replace(',','.')) * 60;
+  while((m = mins.exec(texto)) !== null)
+    totalMinutes += parseFloat(m[1].replace(',','.'));
+
+  return { totalMoney, totalMinutes };
+}
+
+function calcOrcamento(list){
+  // Pega todos os itens MARCADOS recursivamente
+  const checked = [];
+  const walk = arr => arr.forEach(i => {
+    if(i.checked) checked.push(i);
+    if(i.children) walk(i.children);
+  });
+  walk(list.items);
+
+  if(!checked.length) return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+      <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
+        💰 Marque itens com valores para calcular o orçamento.
+      </div>
+    </div>`;
+
+  const precoHora = parseFloat(S._orcPrecoHora || 100);
+
+  let totalDinheiro = 0;
+  let totalMinutos  = 0;
+  const linhas = [];
+
+  for(const item of checked){
+    const { totalMoney, totalMinutes } = parseValorItem(item.text);
+    if(totalMoney > 0 || totalMinutes > 0){
+      const valorTempo = (totalMinutes / 60) * precoHora;
+      const subtotal   = totalMoney + valorTempo;
+      totalDinheiro   += totalMoney;
+      totalMinutos    += totalMinutes;
+
+      let descTempo = '';
+      if(totalMinutes > 0){
+        const h = Math.floor(totalMinutes/60);
+        const min = Math.round(totalMinutes % 60);
+        descTempo = h > 0 && min > 0 ? `${h}h ${min}min` : h > 0 ? `${h}h` : `${min}min`;
+      }
+
+      linhas.push(`
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(item.text)}</div>
+          <div style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text);flex-shrink:0;text-align:right">
+            ${totalMoney>0 ? `<span style="color:var(--green)">R$ ${totalMoney.toFixed(2).replace('.',',')}</span>` : ''}
+            ${descTempo ? `<span style="color:var(--blue);margin-left:6px">⏱ ${descTempo}</span>` : ''}
+            ${valorTempo>0 ? `<span style="color:var(--orange);margin-left:6px">+R$ ${valorTempo.toFixed(2).replace('.',',')}</span>` : ''}
+          </div>
+        </div>`);
+    }
+  }
+
+  const valorTotalTempo = (totalMinutos / 60) * precoHora;
+  const grandTotal      = totalDinheiro + valorTotalTempo;
+
+  const hTotal   = Math.floor(totalMinutos/60);
+  const minTotal = Math.round(totalMinutos % 60);
+  const tempoStr = hTotal > 0 && minTotal > 0 ? `${hTotal}h ${minTotal}min` : hTotal > 0 ? `${hTotal}h` : minTotal > 0 ? `${minTotal}min` : '';
+
+  if(!linhas.length) return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+      <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
+        💰 Nenhum item marcado contém valores ou horas reconhecíveis.
+      </div>
+    </div>`;
+
+  return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">💰 Orçamento</div>
+        <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3)">
+          mão de obra: R$ ${precoHora.toFixed(2).replace('.',',')}/h
+        </div>
+      </div>
+      ${linhas.join('')}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:4px">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          ${tempoStr ? `<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--blue)">⏱ ${tempoStr} × R$ ${precoHora.toFixed(2).replace('.',',')}/h = R$ ${valorTotalTempo.toFixed(2).replace('.',',')}</div>` : ''}
+          ${totalDinheiro > 0 ? `<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--green)">💵 Materiais: R$ ${totalDinheiro.toFixed(2).replace('.',',')}</div>` : ''}
+        </div>
+        <div style="font-size:18px;font-weight:800;color:var(--accent)">R$ ${grandTotal.toFixed(2).replace('.',',')}</div>
+      </div>
+    </div>`;
+}
+
+function openOrcConfig(){
+  openM('💰 Mão de obra',`
+    <div class="fg">
+      <div class="fl">Preço por hora (R$)</div>
+      <input type="number" id="moh" min="0" step="0.01"
+        placeholder="Ex: 100"
+        value="${S._orcPrecoHora || 100}">
+    </div>
+    <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6">
+      Exemplos reconhecidos nos itens:<br>
+      • <b>10 reais</b> / <b>10 real</b> / <b>10 conto</b> / <b>10 pilas</b><br>
+      • <b>1 hora</b> / <b>1h</b> / <b>30 minutos</b> / <b>30min</b>
+    </div>
+  `, ()=>{
+    const v = parseFloat(document.getElementById('moh').value);
+    if(!isNaN(v) && v >= 0){ S._orcPrecoHora = v; save(); renderCnt(); }
+  });
+}
+
+// ── 17. FOCO ──────────────────────────────────────────
+reg('focus', {
+  name:'Modo Foco', icon:'🎯', desc:'Mostra só o caminho que você está expandindo', def:false,
+  tb(){
+    if(!S._focusAtivo) return `<button class="tbbtn" onclick="iniciarFocus()">🎯 Modo Foco</button>`;
+    return `<button class="tbbtn" style="background:rgba(124,106,247,.2);border-color:var(--accent);color:var(--accent)" onclick="encerrarFocus()">🎯 Sair do Foco</button>`;
+  },
+  onRenderCnt(lv, list){
+    if(!S._focusAtivo) return false;
+    const h=document.createElement('div');
+    h.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">${esc(list.name)}</div>`;
+    lv.appendChild(h);
+    const v=document.createElement('div'); v.innerHTML=renderFocus(list); lv.appendChild(v);
+    return true;
+  }
+});
+
+function iniciarFocus(){
+  S._focusAtivo  = true;
+  S._focusPath   = []; // caminho de ids expandidos: [avô, pai, filho...]
+  save(); renderAll();
+}
+
+function encerrarFocus(){
+  S._focusAtivo = false;
+  S._focusPath  = [];
+  save(); renderAll();
+}
+
+function focusEntrar(id){
+  // Entra num item: adiciona ao caminho
+  const list = getL(); if(!list) return;
+  const item = find(list.items, id); if(!item) return;
+
+  // Verifica se o id já está no caminho (voltar para um nível anterior)
+  const idx = S._focusPath.indexOf(id);
+  if(idx !== -1){
+    // Trunca o caminho até este ponto
+    S._focusPath = S._focusPath.slice(0, idx + 1);
+  } else {
+    S._focusPath.push(id);
+  }
+  save(); renderCnt();
+}
+
+function focusVoltar(){
+  S._focusPath.pop();
+  save(); renderCnt();
+}
+
+// Marca/desmarca SOMENTE o item clicado, sem propagar para filhos
+function togChkFocus(id, v){
+  const list = getL(); if(!list) return;
+  const item = find(list.items, id); if(!item) return;
+  item.checked = v; // só este item, sem tocar nos filhos
+  save(); renderCnt();
+}
+
+function renderFocus(list){
+  const path = S._focusPath || [];
+
+  // Descobre os itens a mostrar em cada nível do caminho
+  // Nível 0: filhos diretos da lista (raiz)
+  // Nível N: filhos do item path[N-1]
+
+  let nivelAtual;
+  let itemAtivo = null;
+
+  if(path.length === 0){
+    nivelAtual = list.items;
+  } else {
+    itemAtivo = find(list.items, path[path.length - 1]);
+    nivelAtual = itemAtivo?.children || [];
+  }
+
+  // Monta o breadcrumb (trilha de navegação)
+  const breadcrumb = path.map((id, i) => {
+    const item = find(list.items, id);
+    return `<span onclick="focusEntrar('${id}')"
+      style="cursor:pointer;color:${i === path.length-1 ? 'var(--accent)' : 'var(--text3)'};
+             font-size:12px;font-family:'JetBrains Mono',monospace;
+             text-decoration:${i === path.length-1 ? 'none' : 'underline'}"
+      >${esc(item?.text||'?')}</span>`;
+  });
+
+  const trilha = `
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 12px;
+                background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+                font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
+      <span onclick="encerrarFocus();iniciarFocus()"
+        style="cursor:pointer;color:var(--text3);text-decoration:underline">🎯 raiz</span>
+      ${breadcrumb.map(b => `<span style="color:var(--border)">›</span>${b}`).join('')}
+    </div>`;
+
+  // Botão voltar
+  const btnVoltar = path.length > 0 ? `
+    <button onclick="focusVoltar()" class="btn" style="width:100%;margin-bottom:4px">
+      ← Voltar
+    </button>` : '';
+
+  // Contexto: mostra o item pai atual em destaque
+  const ctxPai = itemAtivo ? `
+    <div style="background:var(--surface2);border:1px solid var(--accent);border-radius:var(--r);
+                padding:14px 16px;display:flex;align-items:center;gap:10px">
+      <input type="checkbox" class="icb ${itemAtivo.checked?'checked':''}"
+        ${itemAtivo.checked?'checked':''}
+        onchange="togChkFocus('${itemAtivo.id}',this.checked)"
+        style="flex-shrink:0">
+    <div style="flex:1;font-size:16px;font-weight:700;color:var(--text);line-height:2.2">
+        ${(pon('audio') && itemAtivo.text && itemAtivo.text.includes('⟨🎙'))
+          ? renderRichText(itemAtivo)
+          : esc(itemAtivo.text)}
+      </div>
+        ${itemAtivo.children?.length ? `<span style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">${itemAtivo.children.length} filho${itemAtivo.children.length>1?'s':''}</span>` : ''}
+    </div>` : '';
+
+  // Lista os itens do nível atual
+const listaItens = nivelAtual.length === 0 ? `
+    <div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;font-family:'JetBrains Mono',monospace">
+      Sem filhos neste item.
+    </div>` :
+    nivelAtual.map(item => {
+      const temFilhos = item.children?.length > 0;
+      const {d, t} = temFilhos ? cp(item.children) : {d:0, t:0};
+
+      // Badges de orçamento
+      let orcHtml = '';
+      if(pon('orcamento')){
+        const {totalMoney, totalMinutes} = parseValorItem(item.text);
+        const precoHora = parseFloat(S._orcPrecoHora || 100);
+        const valorTempo = (totalMinutes/60)*precoHora;
+        const subtotal = totalMoney + valorTempo;
+        if(subtotal > 0){
+          const h=Math.floor(totalMinutes/60), min=Math.round(totalMinutes%60);
+          const tempoStr=h>0&&min>0?`${h}h ${min}min`:h>0?`${h}h`:min>0?`${min}min`:'';
+          orcHtml=`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">
+            ${totalMoney>0?`<span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--green);background:rgba(62,207,142,.1);border:1px solid rgba(62,207,142,.3);padding:1px 7px;border-radius:20px">R$ ${totalMoney.toFixed(2).replace('.',',')}</span>`:''}
+            ${tempoStr?`<span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--blue);background:rgba(79,167,232,.1);border:1px solid rgba(79,167,232,.3);padding:1px 7px;border-radius:20px">⏱ ${tempoStr} = R$ ${valorTempo.toFixed(2).replace('.',',')}</span>`:''}
+            <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--accent);font-weight:700">= R$ ${subtotal.toFixed(2).replace('.',',')}</span>
+          </div>`;
+        }
+      }
+
+      return `
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;transition:border-color .15s">
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" class="icb"
+              ${item.checked?'checked':''}
+              onchange="togChkFocus('${item.id}',this.checked)"
+              style="flex-shrink:0;width:30px;height:28px">
+            <div style="flex:1;font-size:14px;
+                        color:${item.checked?'var(--text3)':'var(--text)'};
+                        text-decoration:${item.checked?'line-through':'none'};
+                        line-height:1.5;cursor:${temFilhos?'pointer':'default'}"
+                 ${temFilhos?`onclick="focusEntrar('${item.id}')"`:''}
+            >${(pon('audio') && item.text && item.text.includes('⟨🎙')) ? renderRichText(item) : esc(item.text)}</div>
+            ${temFilhos?`<div onclick="focusEntrar('${item.id}')" style="display:flex;align-items:center;gap:4px;flex-shrink:0;cursor:pointer;padding:4px">
+              <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3)">${d}/${t}</span>
+              <span style="color:var(--accent);font-size:14px;font-weight:700">›</span>
+            </div>`:''}
+          </div>
+          ${orcHtml}
+        </div>`;
+    }).join('');
+
+// Total orçamento dos itens marcados no nível atual
+  // Total orçamento — soma TODOS os itens marcados da lista inteira, não só do nível atual
+  let orcTotalHtml = '';
+  if(pon('orcamento')){
+    const precoHora = parseFloat(S._orcPrecoHora || 100);
+    let total = 0;
+    let marcados = 0;
+
+    // Coleta todos os itens marcados recursivamente na lista toda
+    const walk = arr => arr.forEach(item => {
+      if(item.checked){
+        const {totalMoney, totalMinutes} = parseValorItem(item.text);
+        const subtotal = totalMoney + (totalMinutes/60)*precoHora;
+        if(subtotal > 0){ total += subtotal; marcados++; }
+      }
+      if(item.children) walk(item.children);
+    });
+    walk(list.items);
+
+    if(total > 0){
+      orcTotalHtml=`<div style="display:flex;align-items:center;justify-content:space-between;
+        background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px">
+        <span style="font-size:12px;color:var(--text2);font-family:'JetBrains Mono',monospace">
+          💰 Total geral marcados (${marcados})
+        </span>
+        <span style="font-size:16px;font-weight:800;color:var(--accent)">
+          R$ ${total.toFixed(2).replace('.',',')}
+        </span>
+      </div>`;
+    }
+  }
+
+  return `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${trilha}
+      ${btnVoltar}
+      ${ctxPai}
+      ${ctxPai && nivelAtual.length > 0 ? `<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);padding:4px 2px">Filhos</div>` : ''}
+      <div style="display:flex;flex-direction:column;gap:6px">${listaItens}</div>
+      ${orcTotalHtml}
+      ${nivelAtual.length > 0 && nivelAtual.some(i=>i.children?.length>0) ? `<div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;text-align:center;padding:4px">Toque no texto para entrar nos filhos ›</div>` : ''}
+    </div>`;
+}
+// ── 18. ÁUDIO INLINE ──────────────────────────────────
+reg('audio', {
+  name:'Áudio Inline', icon:'🎙️', desc:'Áudios embutidos dentro do texto', def:false,
+  abtn(item){
+    return `<button class="iabtn" title="Inserir áudio no cursor" onclick="audioInsert('${item.id}')">🎙️</button>`;
+  }
+});
+
+(()=>{
+  const s = document.createElement('style');
+  s.textContent = `
+    /* texto do item com áudio — não editável diretamente */
+    .itext-rich{font-size:14px;line-height:2.2;color:var(--text);font-family:'Syne',sans-serif;
+                word-break:break-word;display:block;width:100%;min-height:20px;
+                outline:none;cursor:text}
+    .itext-rich.done{text-decoration:line-through;color:var(--text3)}
+
+    /* chip de áudio inline */
+    .aud-chip{display:inline-flex;align-items:center;gap:5px;
+              background:var(--surface2);border:1px solid var(--border);
+              border-radius:20px;padding:3px 8px 3px 6px;
+              margin:0 3px;vertical-align:middle;white-space:nowrap;
+              position:relative;top:-1px}
+    .aud-chip.pending{background:rgba(124,106,247,.1);border-color:rgba(124,106,247,.4)}
+    .aud-chip.recording{background:rgba(232,86,94,.12);border-color:var(--red)}
+
+    /* botão play customizado */
+    .aud-play{width:26px;height:26px;border-radius:50%;border:none;
+              background:var(--accent);color:white;font-size:11px;
+              cursor:pointer;display:flex;align-items:center;justify-content:center;
+              flex-shrink:0;transition:all .15s}
+    .aud-play:active{transform:scale(.9)}
+    .aud-play.playing{background:var(--green)}
+
+    /* barra de progresso custom */
+    .aud-bar-wrap{width:70px;height:4px;background:var(--border);border-radius:99px;
+                  cursor:pointer;flex-shrink:0;position:relative}
+    .aud-bar-fill{height:100%;background:var(--accent);border-radius:99px;
+                  width:0%;transition:width .1s linear;pointer-events:none}
+    .aud-playing .aud-bar-fill{background:var(--green)}
+
+    .aud-time{font-size:10px;font-family:'JetBrains Mono',monospace;
+              color:var(--text3);flex-shrink:0;min-width:28px}
+
+    /* botão gravar */
+    .aud-rec-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;
+                 border-radius:8px;border:1px solid var(--border);background:var(--surface);
+                 color:var(--text2);font-family:'Syne',sans-serif;font-size:11px;
+                 font-weight:600;cursor:pointer;flex-shrink:0}
+    .aud-rec-btn.on{background:rgba(232,86,94,.15);border-color:var(--red);
+                    color:var(--red);animation:audpulse .7s infinite alternate}
+    .aud-del-btn{width:18px;height:18px;border:none;background:transparent;
+                 color:var(--text3);font-size:11px;cursor:pointer;
+                 display:flex;align-items:center;justify-content:center;
+                 flex-shrink:0;border-radius:4px}
+    .aud-del-btn:active{opacity:.6}
+
+    @keyframes audpulse{from{opacity:1}to{opacity:.35}}
+  `;
+  document.head.appendChild(s);
+})();
+
+// ── Estado global de gravação ──
+let _audRec = null, _audChunks = [], _audItemId = null, _audMarkId = null;
+
+// ── Players ativos (audio elements em memória) ──
+const _audPlayers = {}; // markId → HTMLAudioElement
+
+// ── Insere marcador no cursor dentro do itext ──
+function audioInsert(itemId){
+  const list = getL(); if(!list) return;
+  const item = find(list.items, itemId); if(!item) return;
+
+  const markId = genId();
+  const marker = `⟨🎙${markId}⟩`;
+
+  // Tenta inserir no cursor do contenteditable
+  const el = document.querySelector(`[data-id="${itemId}"] .itext`);
+  if(el && el.isContentEditable){
+    el.focus();
+    const sel = window.getSelection();
+    if(sel && sel.rangeCount){
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      const node = document.createTextNode(marker);
+      range.insertNode(node);
+      range.setStartAfter(node);
+      range.collapse(true);
+      sel.removeAllRanges(); sel.addRange(range);
+      item.text = el.innerText;
+    } else {
+      item.text = (item.text||'') + marker;
+    }
+  } else {
+    item.text = (item.text||'') + marker;
+  }
+
+  if(!item.audios) item.audios = {};
+  item.audios[markId] = { src: null };
+  save(); renderCnt();
+
+  // Auto-inicia gravação
+  setTimeout(() => audioStartRec(itemId, markId), 100);
+}
+
+// ── Renderiza o texto com chips de áudio inline ──
+function renderRichText(item){
+  if(!item.text) return '';
+  const audios = item.audios || {};
+
+  // Divide nos marcadores ⟨🎙id⟩
+  const parts = item.text.split(/(⟨🎙[a-z0-9]+⟩)/g);
+
+  return parts.map(part => {
+    const m = part.match(/^⟨🎙([a-z0-9]+)⟩$/);
+    if(!m) return esc(part);
+
+    const markId = m[1];
+    const aud    = audios[markId];
+
+    if(aud && aud.src){
+      // Player customizado
+      return `<span class="aud-chip" id="chip-${markId}">
+        <button class="aud-play" id="play-${markId}"
+          onclick="audioPlayPause('${markId}','${item.id}')">▶</button>
+        <span class="aud-bar-wrap" onclick="audioSeek(event,'${markId}')">
+          <div class="aud-bar-fill" id="bar-${markId}"></div>
+        </span>
+        <span class="aud-time" id="time-${markId}">0:00</span>
+        <button class="aud-del-btn" onclick="audioDel('${item.id}','${markId}')">✕</button>
+      </span>`;
+    } else {
+      // Ainda sem áudio — mostra botões gravar/importar
+      const isRec = _audItemId===item.id && _audMarkId===markId && _audRec;
+      return `<span class="aud-chip pending ${isRec?'recording':''}">
+        <button class="aud-rec-btn ${isRec?'on':''}" id="arec-${markId}"
+          onclick="audioToggleRec('${item.id}','${markId}')">
+          ${isRec ? '⏹ Parar' : '🎙 Gravar'}
+        </button>
+        <button class="aud-rec-btn" onclick="audioImport('${item.id}','${markId}')">📎</button>
+        <button class="aud-del-btn" onclick="audioDel('${item.id}','${markId}')">✕</button>
+      </span>`;
+    }
+  }).join('');
+}
+
+// ── Player customizado ──
+function audioPlayPause(markId, itemId){
+  // Para todos os outros players
+  Object.entries(_audPlayers).forEach(([id, a]) => {
+    if(id !== markId){
+      a.pause();
+      const b = document.getElementById(`play-${id}`);
+      const c = document.getElementById(`chip-${id}`);
+      if(b) b.textContent = '▶';
+      if(c) c.classList.remove('aud-playing');
+    }
+  });
+
+  // Cria o player se não existir
+  if(!_audPlayers[markId]){
+    const list = getL(); if(!list) return;
+    const item = find(list.items, itemId); if(!item) return;
+    const src  = item.audios?.[markId]?.src; if(!src) return;
+
+    const a = new Audio(src);
+    _audPlayers[markId] = a;
+
+    // Atualiza barra e tempo
+    a.ontimeupdate = () => {
+      const pct = a.duration ? (a.currentTime / a.duration * 100) : 0;
+      const bar = document.getElementById(`bar-${markId}`);
+      const tim = document.getElementById(`time-${markId}`);
+      if(bar) bar.style.width = pct + '%';
+      if(tim) tim.textContent = fmtTime(a.currentTime);
+    };
+    a.onended = () => {
+      const b = document.getElementById(`play-${markId}`);
+      const c = document.getElementById(`chip-${markId}`);
+      const bar = document.getElementById(`bar-${markId}`);
+      if(b) b.textContent = '▶';
+      if(c) c.classList.remove('aud-playing');
+      if(bar) bar.style.width = '0%';
+    };
+  }
+
+  const a   = _audPlayers[markId];
+  const btn = document.getElementById(`play-${markId}`);
+  const chip= document.getElementById(`chip-${markId}`);
+
+  if(a.paused){
+    a.play();
+    if(btn)  btn.textContent = '⏸';
+    if(chip) chip.classList.add('aud-playing');
+  } else {
+    a.pause();
+    if(btn)  btn.textContent = '▶';
+    if(chip) chip.classList.remove('aud-playing');
+  }
+}
+
+function audioSeek(event, markId){
+  const a = _audPlayers[markId]; if(!a || !a.duration) return;
+  const rect = event.currentTarget.getBoundingClientRect();
+  const pct  = (event.clientX - rect.left) / rect.width;
+  a.currentTime = pct * a.duration;
+}
+
+function fmtTime(s){
+  const m = Math.floor(s/60);
+  const sec = Math.floor(s%60);
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+// ── Gravação ──
+function audioToggleRec(itemId, markId){
+  if(_audItemId===itemId && _audMarkId===markId && _audRec){
+    _audRec.stop(); return;
+  }
+  if(_audRec){ _audRec.onstop=null; _audRec.stop(); }
+  audioStartRec(itemId, markId);
+}
+
+async function audioStartRec(itemId, markId){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    _audChunks=[]; _audItemId=itemId; _audMarkId=markId;
+    const mime = ['audio/webm','audio/mp4','audio/ogg'].find(t=>MediaRecorder.isTypeSupported(t))||'';
+    _audRec = new MediaRecorder(stream, mime?{mimeType:mime}:{});
+    _audRec.ondataavailable = e=>{ if(e.data.size>0) _audChunks.push(e.data); };
+    _audRec.onstop = ()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      const blob = new Blob(_audChunks,{type:_audRec.mimeType||'audio/webm'});
+      const reader = new FileReader();
+      reader.onload = ev=>{
+        const list=getL(); if(!list) return;
+        const item=find(list.items,itemId); if(!item) return;
+        if(!item.audios) item.audios={};
+        if(!item.audios[markId]) item.audios[markId]={};
+        item.audios[markId].src = ev.target.result;
+        _audRec=null; _audItemId=null; _audMarkId=null;
+        save(); renderCnt();
+      };
+      reader.readAsDataURL(blob);
+    };
+    _audRec.start();
+    // Atualiza visual imediatamente
+    renderCnt();
+  } catch(e){ alert('Microfone inacessível:\n'+e.message); }
+}
+
+function audioImport(itemId, markId){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='audio/*';
+  inp.onchange=e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const list=getL(); if(!list) return;
+      const item=find(list.items,itemId); if(!item) return;
+      if(!item.audios) item.audios={};
+      if(!item.audios[markId]) item.audios[markId]={};
+      item.audios[markId].src=ev.target.result;
+      save(); renderCnt();
+    };
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+}
+
+function audioDel(itemId, markId){
+  const list=getL(); if(!list) return;
+  const item=find(list.items,itemId); if(!item) return;
+  // Remove marcador do texto e o dado
+  item.text=(item.text||'').replace(`⟨🎙${markId}⟩`,'').trim();
+  if(item.audios) delete item.audios[markId];
+  if(_audPlayers[markId]){ _audPlayers[markId].pause(); delete _audPlayers[markId]; }
+  save(); renderCnt();
+}
+
+// ************* plugin registrar horas ******************
+reg('ponto', {
+  name:'Controle de Ponto', icon:'🕐', desc:'Registro de horas, extras e relatório', def:false,
+
+  onInit(){
+    const s=document.createElement('style');
+    s.textContent=`
+      .ponto-wrap{display:flex;flex-direction:column;gap:12px}
+      .ponto-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+      .ponto-title{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;justify-content:space-between}
+      .ponto-mini-grid{display: flex;gap: 6px;flex-wrap: wrap;justify-content: space-around;}
+      .ponto-field{display:flex;flex-direction:column;gap:4px}
+      .ponto-label{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+      .ponto-input{background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:16px;padding:8px 10px;outline:none;width:100%;transition:border-color .2s;text-align:center}
+      .ponto-input:focus{border-color:var(--accent)}
+      .ponto-input.ok{border-color:var(--green)}
+      .ponto-input.diff{border-color:var(--yellow)}
+      .ponto-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)}
+      .ponto-row:last-child{border-bottom:none}
+      .ponto-key{font-size:12px;color:var(--text2);font-family:'JetBrains Mono',monospace}
+      .ponto-val{font-size:13px;font-weight:700;color:var(--text);font-family:'JetBrains Mono',monospace}
+      .ponto-val.pos{color:var(--green)}.ponto-val.neg{color:var(--red)}.ponto-val.warn{color:var(--yellow)}
+      .ponto-total{display:flex;align-items:center;justify-content:space-between;padding:10px 0 0;margin-top:4px;border-top:1px solid var(--border)}
+      .ponto-total-label{font-size:13px;color:var(--text2);font-weight:600}
+      .ponto-total-val{font-size:22px;font-weight:800;color:var(--accent)}
+      .ponto-dias{display:flex;flex-direction:column;gap:6px}
+      .ponto-dia-row{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s}
+      .ponto-dia-row:active{opacity:.8}
+      .ponto-dia-row.aberto{border-color:var(--accent);background:rgba(124,106,247,.05)}
+      .ponto-dia-data{font-size:12px;font-weight:700;color:var(--text);font-family:'JetBrains Mono',monospace;flex-shrink:0;min-width:88px}
+      .ponto-dia-res{font-size:11px;font-family:'JetBrains Mono',monospace;flex:1;color:var(--text3)}
+      .ponto-dia-saldo{font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+      .ponto-resumo-dia{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:11px;font-family:'JetBrains Mono',monospace;padding:6px 0;color:var(--text2)}
+      .ponto-lancamento{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'JetBrains Mono',monospace;padding:3px 0}
+      .ponto-date-sel{background:var(--bg);border:1px solid var(--accent);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:4px 8px;outline:none}
+      .ponto-salvar{width:100%;padding:10px;border-radius:var(--r);border:none;background:var(--accent);color:white;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+      .ponto-salvar:active{opacity:.8;transform:scale(.98)}
+    `;
+    document.head.appendChild(s);
+
+    if(!S._ponto) S._ponto={
+      config:{valorHora:15,entradaPad:'08:00',saidaAlmPad:'12:30',retornoPad:'13:30',saidaPad:'17:00'},
+      saldoAnterior:0,
+      dias:{}
+    };
+
+    if(!S._pontoDiaAtivo) S._pontoDiaAtivo=pontoHoje();
+
+    // Cria hoje com padrões se não existir
+    const hoje=pontoHoje();
+    const c=S._ponto.config;
+    if(!S._ponto.dias[hoje]){
+      S._ponto.dias[hoje]={
+        entrada:c.entradaPad, saidaAlm:c.saidaAlmPad,
+        retorno:c.retornoPad, saida:c.saidaPad,
+        extras:[], adiantamentos:[]
+      };
+    }
+  },
+
+  tb(){ return `<button class="tbbtn" onclick="pontoAbrir()">🕐 Ponto</button>`; },
+
+  onRenderCnt(lv, list){
+    if(!S._pontoAberto) return false;
+    const h=document.createElement('div');
+    h.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">🕐 Controle de Ponto</div>`;
+    lv.appendChild(h);
+    const v=document.createElement('div');
+    v.innerHTML=renderPonto();
+    lv.appendChild(v);
+    return true;
+  }
+});
+
+// ── Helpers de tempo ──
+function pontoHoje(){ return new Date().toISOString().slice(0,10); }
+function hhmm(str){ if(!str||!str.includes(':')) return 0; const[h,m]=str.split(':').map(Number); return h*60+(m||0); }
+function minsToStr(mins){
+  const a=Math.abs(mins), h=Math.floor(a/60), m=a%60;
+  return `${h}h${m.toString().padStart(2,'0')}`;
+}
+function fmtData(key){
+  const[y,mo,d]=key.split('-');
+  const nomes=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  return `${nomes[new Date(+y,+mo-1,+d).getDay()]} ${d}/${mo}`;
+}
+
+// ── Calcula horas de um dia ──
+function calcDia(dia){
+  const c=S._ponto.config;
+  if(!dia||!dia.entrada||!dia.saida) return {totalMin:0,jornadaMin:0,diffMin:0,totalStr:'--',jornadaStr:'--',diffStr:'--',ok:false};
+  const ep=hhmm(c.entradaPad), sap=hhmm(c.saidaAlmPad), rp=hhmm(c.retornoPad), sp=hhmm(c.saidaPad);
+  const jornadaMin=(sap-ep)+(sp-rp);
+  const entrada=hhmm(dia.entrada);
+  const saidaAlm=dia.saidaAlm?hhmm(dia.saidaAlm):sap;
+  const retorno=dia.retorno?hhmm(dia.retorno):rp;
+  const saida=hhmm(dia.saida);
+  let totalMin=Math.max(0,saidaAlm-entrada)+Math.max(0,saida-retorno);
+  (dia.extras||[]).filter(e=>e.tipo==='horas').forEach(e=>{ totalMin+=Math.round(parseFloat(e.valor||0)*60); });
+  const diffMin=totalMin-jornadaMin;
+  return {
+    totalMin, jornadaMin, diffMin,
+    totalStr:  minsToStr(totalMin),
+    jornadaStr:minsToStr(jornadaMin),
+    diffStr:   (diffMin>=0?'+':'-')+minsToStr(Math.abs(diffMin)),
+    ok: diffMin>=0
+  };
+}
+
+// ── Calcula resumo do período ──
+function calcResumo(){
+  const p=S._ponto, c=p.config;
+  const keys=Object.keys(p.dias).sort();
+  let totalMin=0, totalAdiant=0, totalServicos=0;
+  for(const key of keys){
+    const d=p.dias[key], r=calcDia(d);
+    totalMin+=r.totalMin;
+    (d.adiantamentos||[]).forEach(e=>{ totalAdiant+=parseFloat(e.valor||0); });
+    (d.extras||[]).filter(e=>e.tipo==='servico').forEach(e=>{ totalServicos+=parseFloat(e.valor||0); });
+  }
+  const saldoAnteriorReais=parseFloat(p.saldoAnterior||0);
+  const valorHoras=(totalMin/60)*parseFloat(c.valorHora||15);
+  const totalAPagar=Math.max(0, valorHoras+totalServicos+saldoAnteriorReais-totalAdiant);
+  return {totalMin, valorHoras, totalAdiant, totalServicos, saldoAnteriorReais, totalAPagar, keys};
+}
+
+// ── Render principal ──
+function renderPonto(){
+  const p=S._ponto, c=p.config;
+  const hoje=pontoHoje();
+  if(!S._pontoDiaAtivo) S._pontoDiaAtivo=hoje;
+  const diaAtivo=S._pontoDiaAtivo;
+
+  // Garante que o dia ativo existe com os padrões
+  if(!p.dias[diaAtivo]){
+    p.dias[diaAtivo]={
+      entrada:c.entradaPad, saidaAlm:c.saidaAlmPad,
+      retorno:c.retornoPad, saida:c.saidaPad,
+      extras:[], adiantamentos:[]
+    };
+  }
+
+// Sempre lê direto do state para garantir dados atualizados
+  const dAtivo = S._ponto.dias[diaAtivo];
+  const rAtivo = calcDia(dAtivo);
+  // console.log('dAtivo:', JSON.stringify(dAtivo));
+  // console.log('rAtivo:', JSON.stringify(rAtivo));
+  const res=calcResumo();
+
+  // ── Card: Registrar dia ──
+  const cardDia=`
+    <div class="ponto-card">
+      <div class="ponto-title">
+        📅 Registrar dia
+        <input type="date" class="ponto-date-sel" value="${diaAtivo}"
+          onchange="pontoMudarData(this.value)">
+      </div>
+      <div style="text-align:center;font-size:12px;color:var(--text2);font-family:'JetBrains Mono',monospace;font-weight:700">
+        ${fmtData(diaAtivo)}${diaAtivo===hoje?' 📍 hoje':''}
+      </div>
+      <div class="ponto-mini-grid">
+        <div class="ponto-field">
+          <div class="ponto-label">Entrada</div>
+          <input class="ponto-input ${dAtivo.entrada===c.entradaPad?'ok':'diff'}"
+            type="time" value="${dAtivo.entrada}"
+            onchange="pontoCampo('${diaAtivo}','entrada',this.value)">
+        </div>
+        <div class="ponto-field">
+          <div class="ponto-label">S. Almoço</div>
+          <input class="ponto-input ${dAtivo.saidaAlm===c.saidaAlmPad?'ok':'diff'}"
+            type="time" value="${dAtivo.saidaAlm}"
+            onchange="pontoCampo('${diaAtivo}','saidaAlm',this.value)">
+        </div>
+        <div class="ponto-field">
+          <div class="ponto-label">Retorno</div>
+          <input class="ponto-input ${dAtivo.retorno===c.retornoPad?'ok':'diff'}"
+            type="time" value="${dAtivo.retorno}"
+            onchange="pontoCampo('${diaAtivo}','retorno',this.value)">
+        </div>
+        <div class="ponto-field">
+          <div class="ponto-label">Saída</div>
+          <input class="ponto-input ${dAtivo.saida===c.saidaPad?'ok':'diff'}"
+            type="time" value="${dAtivo.saida}"
+            onchange="pontoCampo('${diaAtivo}','saida',this.value)">
+        </div>
+      </div>
+      <div class="ponto-resumo-dia">
+        <span>Jornada: <b>${rAtivo.jornadaStr}</b></span>
+        <span>Trabalhado: <b style="color:var(--text)">${rAtivo.totalStr}</b></span>
+        <span style="color:${rAtivo.ok?'var(--green)':'var(--red)'}">Saldo: <b>${rAtivo.diffStr}</b></span>
+      </div>
+      ${renderLancamentos(diaAtivo)}
+      <button class="ponto-salvar" onclick="pontoSalvarDia('${diaAtivo}')">
+        ✅ Salvar dia ${fmtData(diaAtivo)}
+      </button>
+      <div style="display:flex;gap:8px">
+        <button class="btn" style="flex:1;padding:8px;font-size:12px" onclick="pontoAddLancamento('${diaAtivo}')">
+          ＋ Extra / Serviço / Adiantamento
+        </button>
+        <button class="btn dng" style="padding:8px;font-size:12px" onclick="pontoDiaDel('${diaAtivo}')">🗑</button>
+      </div>
+    </div>`;
+
+  // ── Card: Resumo ──
+  const cardResumo=`
+    <div class="ponto-card">
+      <div class="ponto-title">
+        📊 Resumo do período
+        <button class="iabtn" onclick="pontoConfig()" title="Configurar">⚙️</button>
+      </div>
+      <div>
+        ${res.saldoAnteriorReais!==0?`
+        <div class="ponto-row">
+          <span class="ponto-key">Saldo anterior</span>
+          <span class="ponto-val warn">${res.saldoAnteriorReais>=0?'+':''}R$ ${res.saldoAnteriorReais.toFixed(2).replace('.',',')}</span>
+        </div>`:''}
+        <div class="ponto-row">
+          <span class="ponto-key">Total trabalhado</span>
+          <span class="ponto-val">${(res.totalMin/60).toFixed(2)}h (${minsToStr(res.totalMin)})</span>
+        </div>
+        <div class="ponto-row">
+          <span class="ponto-key">${(res.totalMin/60).toFixed(2)}h × R$ ${c.valorHora}/h</span>
+          <span class="ponto-val pos">R$ ${res.valorHoras.toFixed(2).replace('.',',')}</span>
+        </div>
+        ${res.totalServicos>0?`
+        <div class="ponto-row">
+          <span class="ponto-key">Serviços extras</span>
+          <span class="ponto-val pos">+R$ ${res.totalServicos.toFixed(2).replace('.',',')}</span>
+        </div>`:''}
+        ${res.totalAdiant>0?`
+        <div class="ponto-row">
+          <span class="ponto-key">Adiantamentos</span>
+          <span class="ponto-val neg">-R$ ${res.totalAdiant.toFixed(2).replace('.',',')}</span>
+        </div>`:''}
+      </div>
+      <div class="ponto-total">
+        <span class="ponto-total-label">Total a receber</span>
+        <span class="ponto-total-val">R$ ${res.totalAPagar.toFixed(2).replace('.',',')}</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn pri" style="padding:10px" onclick="pontoRelatorio()">📋 Relatório WhatsApp</button>
+        <button class="btn" style="padding:10px" onclick="pontoFechar()">✕ Fechar</button>
+      </div>
+    </div>`;
+
+  // ── Card: Histórico ──
+  const diasHtml=Object.keys(p.dias).sort().reverse().map(key=>{
+    const d=p.dias[key], r=calcDia(d);
+    const adiantTotal=(d.adiantamentos||[]).reduce((a,e)=>a+parseFloat(e.valor||0),0);
+    const servicoTotal=(d.extras||[]).filter(e=>e.tipo==='servico').reduce((a,e)=>a+parseFloat(e.valor||0),0);
+    return `
+      <div class="ponto-dia-row ${key===diaAtivo?'aberto':''}"
+        onclick="pontoMudarData('${key}')">
+        <div class="ponto-dia-data">${fmtData(key)}${key===hoje?' 📍':''}</div>
+        <div class="ponto-dia-res">
+          ${d.entrada||'--'} → ${d.saida||'--'}
+          ${adiantTotal>0?`<span style="color:var(--orange);margin-left:4px">-R$${adiantTotal.toFixed(0)}</span>`:''}
+          ${servicoTotal>0?`<span style="color:var(--green);margin-left:4px">+R$${servicoTotal.toFixed(0)}</span>`:''}
+        </div>
+        <div class="ponto-dia-saldo" style="color:${r.ok?'var(--green)':d.saida?'var(--red)':'var(--text3)'}">
+          ${d.saida?r.diffStr:'--'}
+        </div>
+      </div>`;
+  }).join('');
+
+  const cardHistorico=`
+    <div class="ponto-card">
+      <div class="ponto-title">📆 Histórico — toque para editar</div>
+      <div class="ponto-dias">
+        ${diasHtml||'<div style="font-size:12px;color:var(--text3)">Nenhum dia registrado.</div>'}
+      </div>
+    </div>`;
+
+  return `<div class="ponto-wrap">${cardDia}${cardResumo}${cardHistorico}</div>`;
+}
+
+// ── Render lançamentos do dia ──
+function renderLancamentos(key){
+  const d=S._ponto.dias[key]; if(!d) return '';
+  const itens=[
+    ...(d.extras||[]).map((e,i)=>`
+      <div class="ponto-lancamento">
+        <span>${e.tipo==='servico'?'🔧':'⏱'}</span>
+        <span style="flex:1;color:var(--text2)">${e.desc||'Extra'}</span>
+        <span style="font-weight:700;color:${e.tipo==='servico'?'var(--green)':'var(--blue)'}">
+          ${e.tipo==='servico'?'R$ '+parseFloat(e.valor).toFixed(2).replace('.',','):e.valor+'h'}
+        </span>
+        <button onclick="pontoRemLanc('${key}','extra',${i})"
+          style="border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:13px;padding:0 4px">✕</button>
+      </div>`),
+    ...(d.adiantamentos||[]).map((e,i)=>`
+      <div class="ponto-lancamento">
+        <span>💵</span>
+        <span style="flex:1;color:var(--text2)">${e.desc||'Adiantamento'}</span>
+        <span style="font-weight:700;color:var(--orange)">-R$ ${parseFloat(e.valor).toFixed(2).replace('.',',')}</span>
+        <button onclick="pontoRemLanc('${key}','adiant',${i})"
+          style="border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:13px;padding:0 4px">✕</button>
+      </div>`)
+  ];
+  if(!itens.length) return '';
+  return `<div style="display:flex;flex-direction:column;gap:2px;padding:6px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">${itens.join('')}</div>`;
+}
+
+// ── Ações ──
+function pontoAbrir(){
+  S._pontoAberto=true;
+  if(!S._pontoDiaAtivo) S._pontoDiaAtivo=pontoHoje();
+  // Garante que hoje existe com padrões
+  const hoje=pontoHoje();
+  if(!S._ponto.dias[hoje]){
+    const c=S._ponto.config;
+    S._ponto.dias[hoje]={entrada:c.entradaPad,saidaAlm:c.saidaAlmPad,retorno:c.retornoPad,saida:c.saidaPad,extras:[],adiantamentos:[]};
+  }
+  renderCnt();
+}
+
+function pontoFechar(){ S._pontoAberto=false; save(); renderCnt(); }
+
+function pontoSalvarDia(key){
+  save();
+  // Feedback visual
+  const btn=document.querySelector('.ponto-salvar');
+  if(btn){
+    const orig=btn.innerHTML;
+    btn.innerHTML='✅ Salvo!';
+    btn.style.background='var(--green)';
+    setTimeout(()=>{ btn.innerHTML=orig; btn.style.background=''; },1500);
+  }
+}
+
+function pontoMudarData(data){
+  S._pontoDiaAtivo=data;
+  // Cria o dia com os padrões se não existir
+  if(!S._ponto.dias[data]){
+    const c=S._ponto.config;
+    S._ponto.dias[data]={
+      entrada:c.entradaPad, saidaAlm:c.saidaAlmPad,
+      retorno:c.retornoPad, saida:c.saidaPad,
+      extras:[], adiantamentos:[]
+    };
+    save();
+  }
+  renderCnt();
+}
+
+function pontoCampo(key,campo,valor){
+  if(!S._ponto.dias[key]){
+    const c=S._ponto.config;
+    S._ponto.dias[key]={entrada:c.entradaPad,saidaAlm:c.saidaAlmPad,retorno:c.retornoPad,saida:c.saidaPad,extras:[],adiantamentos:[]};
+  }
+  S._ponto.dias[key][campo]=valor;
+  save();
+  // Força releitura do state antes de renderizar
+  load();
+  renderCnt();
+}
+
+function pontoDiaDel(key){
+  delete S._ponto.dias[key];
+  S._pontoDiaAtivo=pontoHoje();
+  save(); renderCnt();
+}
+
+function pontoRemLanc(key,tipo,idx){
+  const d=S._ponto.dias[key]; if(!d) return;
+  if(tipo==='extra') d.extras.splice(idx,1);
+  else d.adiantamentos.splice(idx,1);
+  save(); renderCnt();
+}
+
+function pontoAddLancamento(key){
+  if(!S._ponto.dias[key]){
+    const c=S._ponto.config;
+    S._ponto.dias[key]={entrada:c.entradaPad,saidaAlm:c.saidaAlmPad,retorno:c.retornoPad,saida:c.saidaPad,extras:[],adiantamentos:[]};
+  }
+  openM('＋ Lançamento',`
+    <div class="fg">
+      <div class="fl">Tipo</div>
+      <select id="plt" onchange="pontoTipoChg(this.value)">
+        <option value="horas">⏱ Horas extras avulsas</option>
+        <option value="servico">🔧 Serviço extra (R$)</option>
+        <option value="adiant">💵 Adiantamento (R$)</option>
+      </select>
+    </div>
+    <div class="fg">
+      <div class="fl" id="plt-label">Quantidade de horas</div>
+      <input type="number" id="plv" min="0" step="0.25" placeholder="Ex: 1.5">
+    </div>
+    <div class="fg">
+      <div class="fl">Descrição</div>
+      <input type="text" id="pld" placeholder="Ex: polimento, reunião, instalação...">
+    </div>
+  `,()=>{
+    const t=document.getElementById('plt').value;
+    const v=parseFloat(document.getElementById('plv').value||0);
+    const desc=document.getElementById('pld').value.trim();
+    if(!v||isNaN(v)) return;
+    const d=S._ponto.dias[key];
+    if(t==='horas')   d.extras.push({tipo:'horas',valor:v,desc});
+    if(t==='servico') d.extras.push({tipo:'servico',valor:v,desc});
+    if(t==='adiant')  d.adiantamentos.push({valor:v,desc});
+    save(); renderCnt();
+  });
+}
+
+window.pontoTipoChg=tipo=>{
+  const l=document.getElementById('plt-label');
+  const i=document.getElementById('plv');
+  if(!l||!i) return;
+  if(tipo==='horas')  { l.textContent='Quantidade de horas'; i.step='0.25'; i.placeholder='Ex: 1.5'; }
+  if(tipo==='servico'){ l.textContent='Valor em R$'; i.step='0.01'; i.placeholder='Ex: 250.00'; }
+  if(tipo==='adiant') { l.textContent='Valor em R$'; i.step='0.01'; i.placeholder='Ex: 100.00'; }
+};
+
+function pontoConfig(){
+  const c=S._ponto.config;
+  openM('⚙️ Configurações do Ponto',`
+    <div class="fg"><div class="fl">Valor da hora (R$)</div>
+      <input type="number" id="pcvh" value="${c.valorHora}" min="0" step="0.5"></div>
+    <div class="fg"><div class="fl">Entrada padrão</div>
+      <input type="time" id="pcep" value="${c.entradaPad}"></div>
+    <div class="fg"><div class="fl">Saída almoço padrão</div>
+      <input type="time" id="pcsa" value="${c.saidaAlmPad}"></div>
+    <div class="fg"><div class="fl">Retorno padrão</div>
+      <input type="time" id="pcrp" value="${c.retornoPad}"></div>
+    <div class="fg"><div class="fl">Saída padrão</div>
+      <input type="time" id="pcsp" value="${c.saidaPad}"></div>
+    <div class="fg"><div class="fl">Saldo anterior (R$)</div>
+      <input type="number" id="pcsl" value="${S._ponto.saldoAnterior||0}" step="0.01" placeholder="Ex: 150.00"></div>
+  `,()=>{
+    c.valorHora   =parseFloat(document.getElementById('pcvh').value)||15;
+    c.entradaPad  =document.getElementById('pcep').value||'08:00';
+    c.saidaAlmPad =document.getElementById('pcsa').value||'12:30';
+    c.retornoPad  =document.getElementById('pcrp').value||'13:30';
+    c.saidaPad    =document.getElementById('pcsp').value||'17:00';
+    S._ponto.saldoAnterior=parseFloat(document.getElementById('pcsl').value)||0;
+    save(); renderCnt();
+  });
+}
+
+function pontoRelatorio(){
+  const p=S._ponto, c=p.config;
+  const res=calcResumo();
+  let txt='📋 *RELATÓRIO DE PONTO*\n';
+  txt+='━━━━━━━━━━━━━━━━━━━━\n\n';
+  for(const key of res.keys){
+    const d=p.dias[key], r=calcDia(d);
+    if(!d.entrada&&!d.saida) continue;
+    txt+=`📅 *${fmtData(key)}*\n`;
+    txt+=`  ⏰ Entrada: ${d.entrada||'--'}\n`;
+    txt+=`  🍽 Almoço: ${d.saidaAlm||c.saidaAlmPad} → ${d.retorno||c.retornoPad}\n`;
+    txt+=`  🏁 Saída: ${d.saida||'--'}\n`;
+    if(d.saida) txt+=`  ⏱ Total: ${r.totalStr}  Saldo: ${r.diffStr}\n`;
+    (d.extras||[]).forEach(e=>{
+      if(e.tipo==='horas')   txt+=`  ➕ Extra: ${e.desc?e.desc+' ':''}${e.valor}h\n`;
+      if(e.tipo==='servico') txt+=`  🔧 Serviço: ${e.desc?e.desc+' ':''}R$ ${parseFloat(e.valor).toFixed(2).replace('.',',')}\n`;
+    });
+    (d.adiantamentos||[]).forEach(e=>{
+      txt+=`  💵 Adiantamento: ${e.desc?e.desc+' ':''}R$ ${parseFloat(e.valor).toFixed(2).replace('.',',')}\n`;
+    });
+    txt+='\n';
+  }
+  txt+='━━━━━━━━━━━━━━━━━━━━\n';
+  if(res.saldoAnteriorReais!==0)
+    txt+=`📦 Saldo anterior: ${res.saldoAnteriorReais>=0?'+':''}R$ ${res.saldoAnteriorReais.toFixed(2).replace('.',',')}\n`;
+  txt+=`⏱ Total: ${(res.totalMin/60).toFixed(2)}h × R$ ${c.valorHora}/h = R$ ${res.valorHoras.toFixed(2).replace('.',',')}\n`;
+  if(res.totalServicos>0) txt+=`🔧 Serviços: +R$ ${res.totalServicos.toFixed(2).replace('.',',')}\n`;
+  if(res.totalAdiant>0)   txt+=`➖ Adiantamentos: -R$ ${res.totalAdiant.toFixed(2).replace('.',',')}\n`;
+  txt+=`\n💵 *TOTAL A RECEBER: R$ ${res.totalAPagar.toFixed(2).replace('.',',')}*`;
+
+  openM('📋 Relatório',`
+    <pre style="background:var(--bg);border:1px solid var(--border);border-radius:8px;
+      padding:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);
+      white-space:pre;overflow-x:auto;max-height:300px;overflow-y:auto;line-height:1.7">${esc(txt)}</pre>
+    <button class="btn pri full" id="btn-copiar-ponto" style="margin-top:8px">
+      📋 Copiar para WhatsApp
+    </button>
+  `, null);
+
+  // Associa o evento após o modal renderizar
+  setTimeout(()=>{
+    const btn=document.getElementById('btn-copiar-ponto');
+    if(!btn) return;
+    btn.addEventListener('click', ()=>{
+      navigator.clipboard.writeText(txt).then(()=>{
+        btn.textContent='✅ Copiado! Cole no WhatsApp';
+        btn.style.background='var(--green)';
+        btn.style.borderColor='var(--green)';
+      }).catch(()=>{
+        // Fallback para mobile que bloqueia clipboard
+        const ta=document.createElement('textarea');
+        ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        btn.textContent='✅ Copiado!';
+        btn.style.background='var(--green)';
+      });
+    });
+  }, 150);
+}
 // ══════════════════════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════════════════════
 load();
+// Roda onInit de todos os plugins
+Object.values(PL).forEach(p=>{ if(p.onInit) p.onInit(); });
+
 if(!S._view) S._view='list';
 Object.values(PL).forEach(p=>{ if(p.def&&S.plugins[p.id]===undefined) S.plugins[p.id]=true; });
 if(pon('theme')&&PL.theme?.onToggle) PL.theme.onToggle(true);
