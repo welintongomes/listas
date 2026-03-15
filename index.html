@@ -191,7 +191,7 @@ input:focus,select:focus,.fta:focus{border-color:var(--accent)}
 .lcswatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s}
 .lcswatch.sel{border-color:white;transform:scale(1.15)}
 .btn{margin-top: 11px;padding:11px 16px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
-.btn:active{opacity:.75}.btn.pri{background:var(--accent);border-color:var(--accent);color:white;flex:1}.btn.full{width:100%}.btn.dng{border-color:rgba(232,86,94,.4);color:var(--red)}
+.btn:active{opacity:.75}.btn.pri{background:var(--accent);border-color:var(--accent);color:white;flex:1}.btn.full{width:100%}.btn.dng{margin-top: 1px; border-color:rgba(232,86,94,.4);color:var(--red)}
 .cpiece{position:fixed;width:8px;height:8px;z-index:999;animation:cfal 1.2s ease-in forwards;pointer-events:none}
 @keyframes cfal{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -1864,7 +1864,7 @@ reg('ponto', {
       .ponto-wrap{display:flex;flex-direction:column;gap:12px}
       .ponto-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
       .ponto-title{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;justify-content:space-between}
-      .ponto-mini-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+      .ponto-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
       .ponto-field{display:flex;flex-direction:column;gap:4px}
       .ponto-label{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
       .ponto-input{background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:16px;padding:8px 10px;outline:none;width:100%;transition:border-color .2s;text-align:center}
@@ -2022,23 +2022,23 @@ function renderPonto(){
             type="time" value="${rascunho.entrada}"
             onchange="pontoCampo('${diaAtivo}','entrada',this.value)">
         </div>
+                <div class="ponto-field">
+          <div class="ponto-label">Saída</div>
+          <input class="ponto-input ${rascunho.saida===c.saidaPad?'ok':'diff'}"
+            type="time" value="${rascunho.saida}"
+            onchange="pontoCampo('${diaAtivo}','saida',this.value)">
+        </div>
         <div class="ponto-field">
-          <div class="ponto-label">S. Almoço</div>
+          <div class="ponto-label">Saída Almoço</div>
           <input class="ponto-input ${rascunho.saidaAlm===c.saidaAlmPad?'ok':'diff'}"
             type="time" value="${rascunho.saidaAlm}"
             onchange="pontoCampo('${diaAtivo}','saidaAlm',this.value)">
         </div>
         <div class="ponto-field">
-          <div class="ponto-label">Retorno</div>
+          <div class="ponto-label">Retorno Almoço</div>
           <input class="ponto-input ${rascunho.retorno===c.retornoPad?'ok':'diff'}"
             type="time" value="${rascunho.retorno}"
             onchange="pontoCampo('${diaAtivo}','retorno',this.value)">
-        </div>
-        <div class="ponto-field">
-          <div class="ponto-label">Saída</div>
-          <input class="ponto-input ${rascunho.saida===c.saidaPad?'ok':'diff'}"
-            type="time" value="${rascunho.saida}"
-            onchange="pontoCampo('${diaAtivo}','saida',this.value)">
         </div>
       </div>
       <div class="ponto-resumo-dia">
