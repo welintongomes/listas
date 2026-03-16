@@ -114,9 +114,11 @@ pading
 .itog {padding: 14px 16px 14px 6px;width: 20px;height: 20px;flex-shrink: 0;margin-top: 5px;display: flex;align-items: center;justify-content: center;cursor: pointer;color: var(--text3);font-size: 24px;border-radius: 4px;transition: all .15s;user-select: none;}
 .itog.nc{opacity:0;pointer-events:none}
 .icb{width:30px;height:28px;flex-shrink:0;margin-top:5px;appearance:none;-webkit-appearance:none;border:2px solid var(--border);border-radius:6px;cursor:pointer;position:relative;transition:all .2s;background:transparent}
-.icb:checked{background: #1e1c32;border-color:var(--accent)}
+.icb:checked{background:var(--accent);border-color:var(--accent)}
 .icb:checked::after{content:'';position:absolute;left:7px;top:4px;width:6px;height:10px;border:2px solid white;border-left:none;border-top:none;transform:rotate(45deg)}
-.icb.par{border-color:var(--accent);background:rgba(124,106,247,.15)}
+.icb.par{border-color:var(--accent);
+  /* background:rgba(124,106,247,.15) */
+}
 .icb.par::after{content:'';position:absolute;left:7px;
 /* top:11px;
 width:10px;
@@ -2720,6 +2722,48 @@ const CALC_BUILTIN = [
       ];
     }
   },
+  
+  //🧮 Calculadora Científica ULTRA (Expressões completas)
+{
+  id:'calc-cientifica', nome:'Calculadora Científica', icon:'🧮',
+  campos:[
+    {id:'exp', label:'Expressão', tipo:'text', placeholder:'Ex: (1+2)*3-5/6'}
+  ],
+  
+  calcular(v){
+
+    let exp=(v.exp||'')
+      .replace(/,/g,'.')
+      .replace(/π/g,'Math.PI')
+      .replace(/sqrt/g,'Math.sqrt')
+      .replace(/sin/g,'Math.sin')
+      .replace(/cos/g,'Math.cos')
+      .replace(/tan/g,'Math.tan')
+      .replace(/log/g,'Math.log10')
+      .replace(/ln/g,'Math.log')
+      .replace(/abs/g,'Math.abs')
+      .replace(/floor/g,'Math.floor')
+      .replace(/ceil/g,'Math.ceil')
+      .replace(/round/g,'Math.round')
+      .replace(/\^/g,'**')
+      .replace(/(\d+)%/g,'($1/100)');
+
+    let resultado=0;
+
+    try{
+      resultado=Function('"use strict";return ('+exp+')')();
+    }catch(e){
+      return[
+        {label:'Erro',valor:'Expressão inválida',destaque:true}
+      ];
+    }
+
+    return[
+      {label:'Resultado',valor:String(resultado).replace('.',','),destaque:true}
+    ];
+
+  }
+},
 //soma horas
   {
     id:'horas-soma', nome:'Soma de Horas', icon:'➕',
@@ -3210,7 +3254,22 @@ function _calcMontarEstrutura(s){
   area.style.cssText='display:flex;flex-direction:column;gap:10px';
   s.appendChild(area);
 }
+function _calcLimpar(calcId){
+  const calc = _calcTodos().find(c => c.id === calcId);
+  if(!calc) return;
 
+  // Limpa valores no estado
+  if(!S._calcVals) S._calcVals={};
+  if(!S._calcVals[calcId]) S._calcVals[calcId]={};
+  calc.campos.forEach(c=>{
+    S._calcVals[calcId][c.id] = '';
+    const el = document.getElementById(`cf_${calcId}_${c.id}`);
+    if(el) el.value = '';
+  });
+
+  // Atualiza resultados para mostrar valores limpos
+  _calcCalc(calcId);
+}
 // Só atualiza a área dos cards — nunca toca no input de busca
 function _calcAtualizarCards(){
   const area=document.getElementById('calcCardsArea');
@@ -3268,12 +3327,15 @@ function _calcAtualizarCards(){
             onclick="event.preventDefault();event.stopPropagation();editCalc('${calc.id}')">✏️</button>
           <button class="iabtn" style="font-size:11px;width:auto;padding:0 8px;color:var(--red)"
             onclick="event.preventDefault();event.stopPropagation();delCalc('${calc.id}')">✕</button>`:''}
-          <span style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">${isCustom?'custom':'builtin'}</span>
+          <span style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">${isCustom?'criado':'código'}</span>
         </summary>
         <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:10px">
           <div style="display:flex;flex-direction:column;gap:8px">${campos}</div>
-          <button class="btn pri" onclick="_calcCalc('${calc.id}')">⚡ Calcular</button>
+          
           <div id="res_${calc.id}" style="display:flex;flex-direction:column;gap:6px">${resHtml}</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+  <button class="btn" onclick="_calcLimpar('${calc.id}')">🧹 Limpar</button>
+</div>
         </div>
       </details>
     </div>`;
