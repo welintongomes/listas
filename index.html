@@ -114,10 +114,15 @@ pading
 .itog {padding: 14px 16px 14px 6px;width: 20px;height: 20px;flex-shrink: 0;margin-top: 5px;display: flex;align-items: center;justify-content: center;cursor: pointer;color: var(--text3);font-size: 24px;border-radius: 4px;transition: all .15s;user-select: none;}
 .itog.nc{opacity:0;pointer-events:none}
 .icb{width:30px;height:28px;flex-shrink:0;margin-top:5px;appearance:none;-webkit-appearance:none;border:2px solid var(--border);border-radius:6px;cursor:pointer;position:relative;transition:all .2s;background:transparent}
-.icb:checked{background:var(--accent);border-color:var(--accent)}
+.icb:checked{background: #1e1c32;border-color:var(--accent)}
 .icb:checked::after{content:'';position:absolute;left:7px;top:4px;width:6px;height:10px;border:2px solid white;border-left:none;border-top:none;transform:rotate(45deg)}
 .icb.par{border-color:var(--accent);background:rgba(124,106,247,.15)}
-.icb.par::after{content:'';position:absolute;left:7px;top:11px;width:10px;height:2px;background:var(--accent);border-radius:1px}
+.icb.par::after{content:'';position:absolute;left:7px;
+/* top:11px;
+width:10px;
+height:2px;
+background:var(--accent); */
+border-radius:1px}
 /* ibody ocupa toda a largura restante, texto nunca comprime */
 .ibody{flex:1;min-width:0;padding-top:3px}
 .itext{font-size:16px;line-height:1.5;color:var(--text);outline:none;background:transparent;border:none;font-family:'Syne',sans-serif;cursor:text;white-space:nowrap;display:block;min-height:20px}
@@ -219,7 +224,7 @@ code{background:var(--bg);border:1px solid var(--border);border-radius:4px;paddi
 <div class="hdr">
   <button class="ibtn mbtn" onclick="toggleSB()">☰</button>
   <div class="logo">List<span>Flow</span></div>
-  <span class="hpill" id="hpill">0 listas</span>
+  
   <div class="hright">
     <button class="ibtn" onclick="exportJ()" title="Exportar JSON">⬇</button>
     <button class="ibtn" onclick="importJ()" title="Importar JSON">⬆</button>
@@ -232,7 +237,7 @@ code{background:var(--bg);border:1px solid var(--border);border-radius:4px;paddi
     <div class="sb-scroll">
       <div class="sb-label" style="margin-top:4px">Plugins</div>
       <div class="pg" id="pg"></div>
-      <div class="sb-label">Minhas listas</div>
+      <div class="sb-label">Minhas listas <span class="hpill" id="hpill">0 listas</span></div>
       <div class="lents" id="lents"></div>
     </div>
     <div class="sb-foot">
@@ -880,8 +885,11 @@ function rTree(items,cont){
     const row=document.createElement('div'); row.className='irow'; row.dataset.id=item.id;
     const hk=!!item.children?.length;
 
-    let cbcls='';
-    if(!item.checked&&hk){ const{d,t}=cp(item.children); if(d>0&&d<t) cbcls='par'; }
+   let cbcls='';
+    if(hk){
+      const{d,t}=cp(item.children);
+      if(d>0 && d<t) cbcls='par';
+    }
 
     let pfx=''; Object.values(PL).forEach(p=>{ if(pon(p.id)&&p.pfx) pfx+=p.pfx(item)||''; });
     let abtns=`<button class="iabtn" title="Sub-item" onclick="addSub('${item.id}')">⊕</button>`;
@@ -946,11 +954,10 @@ function togChk(id,v){
   const l=getL(); if(!l) return;
   const item=find(l.items,id); if(!item) return;
   item.checked=v;
-  const sa=(arr,val)=>arr.forEach(i=>{i.checked=val;if(i.children)sa(i.children,val)});
-  sa(item.children||[],v);
   save();
   if(pon('celebrate')&&v){ const{d,t}=cp(l.items); if(d===t&&t>0) confetti(); }
   renderCnt();
+  renderSB();
 }
 function togCol(id){ const l=getL(); if(!l) return; const item=find(l.items,id); if(!item) return; item.collapsed=!item.collapsed; save(); renderCnt(); }
 function renItem(id,text){ const l=getL(); if(!l) return; const item=find(l.items,id); if(item){item.text=text.trim()||item.text;save();} }
@@ -2679,7 +2686,7 @@ reg('calcbox', {
       if(s){ s.style.display='none'; }
       if(m) m.style.display='flex';
       const b=document.getElementById('calcBtn');
-      if(b){ b.style.background=''; b.style.color=''; }
+      if(b) b.remove();
       document.getElementById('fab').style.display=getL()?'flex':'none';
     } else {
       _calcInit();
@@ -3409,6 +3416,8 @@ Object.values(PL).forEach(p=>{ if(p.onInit) p.onInit(); });
 
 if(!S._view) S._view='list';
 Object.values(PL).forEach(p=>{ if(p.def&&S.plugins[p.id]===undefined) S.plugins[p.id]=true; });
+// Restaura plugins com onToggle ao recarregar a página
+Object.values(PL).forEach(p=>{ if(pon(p.id) && p.onToggle) p.onToggle(true); });
 if(pon('theme')&&PL.theme?.onToggle) PL.theme.onToggle(true);
 
 if(!S.lists.length){
