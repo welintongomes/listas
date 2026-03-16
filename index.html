@@ -2691,7 +2691,7 @@ if(!S._calcs) S._calcs=[];
 if(!S._calcVals) S._calcVals={};
 
 const CALC_BUILTIN = [
-
+//diferença de horas
   {
     id:'horas-diff', nome:'Diferença de Horas', icon:'⏰',
     campos:[
@@ -2713,7 +2713,7 @@ const CALC_BUILTIN = [
       ];
     }
   },
-
+//soma horas
   {
     id:'horas-soma', nome:'Soma de Horas', icon:'➕',
     campos:[
@@ -2733,7 +2733,7 @@ const CALC_BUILTIN = [
       ];
     }
   },
-
+//calcular salario por hora
   {
     id:'salario-hora', nome:'Salário por Horas', icon:'💵',
     campos:[
@@ -2756,7 +2756,7 @@ const CALC_BUILTIN = [
       ];
     }
   },
-
+//porcentagem
   {
     id:'porcento', nome:'Porcentagem', icon:'%',
     campos:[
@@ -2774,7 +2774,7 @@ const CALC_BUILTIN = [
       ];
     }
   },
-
+//rachar conta com amigos
   {
     id:'rachar-conta', nome:'Rachar a Conta', icon:'🍕',
     campos:[
@@ -2793,7 +2793,7 @@ const CALC_BUILTIN = [
       ];
     }
   },
-
+//calcular imc
   {
     id:'imc', nome:'IMC', icon:'⚖️',
     campos:[
@@ -2801,16 +2801,339 @@ const CALC_BUILTIN = [
       {id:'ia', label:'Altura (cm)', tipo:'number', placeholder:'175'},
     ],
     calcular(v){
-      const p=parseFloat(v.ip)||0, a=(parseFloat(v.ia)||0)/100;
-      if(!a) return[{label:'Erro',valor:'Altura inválida',destaque:true}];
-      const imc=p/(a*a);
-      const cls=imc<18.5?'Abaixo do peso':imc<25?'Peso normal':imc<30?'Sobrepeso':imc<35?'Obeso grau I':imc<40?'Obeso grau II':'Obeso grau III';
+      const p = parseFloat((v.ip+'').replace(',','.'));
+      let a = parseFloat((v.ia+'').replace(',','.'));
+
+      if(a > 3) a = a / 100; // se for cm (175)
+      
+      if(!a || isNaN(a)) return [{label:'Erro',valor:'Altura inválida',destaque:true}];
+
+      const imc = p/(a*a);
+
+      const cls = imc < 18.5 ? 'Abaixo do peso'
+                : imc < 25   ? 'Peso normal'
+                : imc < 30   ? 'Sobrepeso'
+                : imc < 35   ? 'Obeso grau I'
+                : imc < 40   ? 'Obeso grau II'
+                : 'Obeso grau III';
+
       return[
-        {label:'IMC',           valor:imc.toFixed(1), destaque:true},
-        {label:'Classificação', valor:cls,            destaque:false},
+        {label:'IMC',valor:imc.toFixed(1),destaque:true},
+        {label:'Classificação',valor:cls,destaque:false}
       ];
     }
   },
+  //regra de 3
+  {
+  id:'regra3', nome:'Regra de 3', icon:'📊',
+  campos:[
+    {id:'a', label:'Valor A', tipo:'number', placeholder:'10'},
+    {id:'b', label:'Valor B', tipo:'number', placeholder:'20'},
+    {id:'c', label:'Valor C', tipo:'number', placeholder:'5'},
+  ],
+  calcular(v){
+    const a=parseFloat(v.a)||0;
+    const b=parseFloat(v.b)||0;
+    const c=parseFloat(v.c)||0;
+
+    const r=(b*c)/a;
+
+    return[
+      {label:'Resultado',valor:r.toFixed(2).replace('.',','),destaque:true}
+    ];
+  }
+},
+//🛒 3. Desconto
+{
+  id:'desconto', nome:'Desconto', icon:'🏷️',
+  campos:[
+    {id:'vd', label:'Preço', tipo:'number', placeholder:'200'},
+    {id:'pd', label:'Desconto (%)', tipo:'number', placeholder:'10'},
+  ],
+  calcular(v){
+    const preco=parseFloat(v.vd)||0;
+    const pct=parseFloat(v.pd)||0;
+
+    const desc=preco*(pct/100);
+    const final=preco-desc;
+
+    return[
+      {label:'Desconto',valor:'R$ '+desc.toFixed(2).replace('.',','),destaque:false},
+      {label:'Preço final',valor:'R$ '+final.toFixed(2).replace('.',','),destaque:true},
+    ];
+  }
+},
+//⛽ 4. Consumo de combustível
+{
+  id:'consumo', nome:'Consumo de Combustível', icon:'⛽',
+  campos:[
+    {id:'km', label:'Distância (km)', tipo:'number', placeholder:'500'},
+    {id:'lit', label:'Litros usados', tipo:'number', placeholder:'40'},
+  ],
+  calcular(v){
+    const km=parseFloat(v.km)||0;
+    const l=parseFloat(v.lit)||0;
+
+    const res=km/l;
+
+    return[
+      {label:'Km por litro',valor:res.toFixed(2).replace('.',','),destaque:true}
+    ];
+  }
+},
+//📅 6. Diferença de dias
+{
+  id:'dias', nome:'Diferença de Dias', icon:'📅',
+  campos:[
+    {id:'d1', label:'Data inicial', tipo:'date'},
+    {id:'d2', label:'Data final', tipo:'date'},
+  ],
+  calcular(v){
+    const d1=new Date(v.d1);
+    const d2=new Date(v.d2);
+
+    const diff=Math.abs(d2-d1);
+    const dias=diff/(1000*60*60*24);
+
+    return[
+      {label:'Dias',valor:Math.floor(dias),destaque:true}
+    ];
+  }
+},
+//⚡ 7. Consumo de energia
+{
+  id:'energia', nome:'Consumo de Energia', icon:'⚡',
+  campos:[
+    {id:'kw', label:'Potência (W)', tipo:'number', placeholder:'1000'},
+    {id:'h', label:'Horas por dia', tipo:'number', placeholder:'5'},
+    {id:'dias', label:'Dias', tipo:'number', placeholder:'30'},
+    {id:'preco', label:'Preço kWh', tipo:'number', placeholder:'0.80'},
+  ],
+  calcular(v){
+    const w=parseFloat(v.kw)||0;
+    const h=parseFloat(v.h)||0;
+    const d=parseFloat(v.dias)||0;
+    const p=parseFloat(v.preco)||0;
+
+    const kwh=(w/1000)*h*d;
+    const total=kwh*p;
+
+    return[
+      {label:'Consumo kWh',valor:kwh.toFixed(2).replace('.',','),destaque:false},
+      {label:'Custo',valor:'R$ '+total.toFixed(2).replace('.',','),destaque:true},
+    ];
+  }
+},
+//📦 8. Frete por km
+{
+  id:'frete', nome:'Cálculo de Frete', icon:'🚚',
+  campos:[
+    {id:'dist', label:'Distância (km)', tipo:'number', placeholder:'200'},
+    {id:'preco', label:'Preço por km', tipo:'number', placeholder:'2.50'},
+  ],
+  calcular(v){
+    const km=parseFloat(v.dist)||0;
+    const p=parseFloat(v.preco)||0;
+
+    const total=km*p;
+
+    return[
+      {label:'Frete total',valor:'R$ '+total.toFixed(2).replace('.',','),destaque:true}
+    ];
+  }
+},
+//🏦 1. Juros simples
+{
+  id:'juros-simples', nome:'Juros Simples', icon:'💰',
+  campos:[
+    {id:'c', label:'Capital (R$)', tipo:'number', placeholder:'1000'},
+    {id:'i', label:'Taxa (%)', tipo:'number', placeholder:'5'},
+    {id:'t', label:'Tempo', tipo:'number', placeholder:'12'},
+  ],
+  calcular(v){
+    const c=parseFloat(v.c)||0;
+    const i=(parseFloat(v.i)||0)/100;
+    const t=parseFloat(v.t)||0;
+
+    const j=c*i*t;
+    const total=c+j;
+
+    return[
+      {label:'Juros',valor:'R$ '+j.toFixed(2).replace('.',','),destaque:false},
+      {label:'Total',valor:'R$ '+total.toFixed(2).replace('.',','),destaque:true},
+    ];
+  }
+},
+//📈 2. Juros compostos
+{
+  id:'juros-compostos', nome:'Juros Compostos', icon:'📈',
+  campos:[
+    {id:'c', label:'Capital (R$)', tipo:'number', placeholder:'1000'},
+    {id:'i', label:'Taxa (%)', tipo:'number', placeholder:'5'},
+    {id:'t', label:'Períodos', tipo:'number', placeholder:'12'},
+  ],
+  calcular(v){
+    const c=parseFloat(v.c)||0;
+    const i=(parseFloat(v.i)||0)/100;
+    const t=parseFloat(v.t)||0;
+
+    const total=c*Math.pow(1+i,t);
+
+    return[
+      {label:'Montante',valor:'R$ '+total.toFixed(2).replace('.',','),destaque:true}
+    ];
+  }
+},
+//💳 3. Parcelamento
+{
+  id:'parcelamento', nome:'Parcelamento', icon:'💳',
+  campos:[
+    {id:'v', label:'Valor total', tipo:'number', placeholder:'1200'},
+    {id:'p', label:'Parcelas', tipo:'number', placeholder:'12'},
+  ],
+  calcular(v){
+    const val=parseFloat(v.v)||0;
+    const par=parseFloat(v.p)||1;
+
+    const res=val/par;
+
+    return[
+      {label:'Valor da parcela',valor:'R$ '+res.toFixed(2).replace('.',','),destaque:true}
+    ];
+  }
+},
+//📦 4. Preço por unidade
+{
+  id:'preco-unidade', nome:'Preço por Unidade', icon:'🧾',
+  campos:[
+    {id:'v', label:'Preço total', tipo:'number', placeholder:'20'},
+    {id:'q', label:'Quantidade', tipo:'number', placeholder:'5'},
+  ],
+  calcular(v){
+    const val=parseFloat(v.v)||0;
+    const q=parseFloat(v.q)||1;
+
+    const res=val/q;
+
+    return[
+      {label:'Preço unitário',valor:'R$ '+res.toFixed(2).replace('.',','),destaque:true}
+    ];
+  }
+},
+//🧱 5. Área do quarto
+{
+  id:'area', nome:'Área do Cômodo', icon:'📐',
+  campos:[
+    {id:'l', label:'Largura (m)', tipo:'number', placeholder:'4'},
+    {id:'c', label:'Comprimento (m)', tipo:'number', placeholder:'5'},
+  ],
+  calcular(v){
+    const l=parseFloat(v.l)||0;
+    const c=parseFloat(v.c)||0;
+
+    const area=l*c;
+
+    return[
+      {label:'Área',valor:area.toFixed(2).replace('.',',')+' m²',destaque:true}
+    ];
+  }
+},
+//🎨 6. Litros de tinta
+{
+  id:'tinta', nome:'Tinta para Parede', icon:'🎨',
+  campos:[
+    {id:'a', label:'Área (m²)', tipo:'number', placeholder:'50'},
+  ],
+  calcular(v){
+    const area=parseFloat(v.a)||0;
+
+    const tinta=area/10;
+
+    return[
+      {label:'Litros necessários',valor:tinta.toFixed(1).replace('.',','),destaque:true}
+    ];
+  }
+},
+//🚗 7. Custo de viagem
+{
+  id:'viagem', nome:'Custo de Viagem', icon:'🚗',
+  campos:[
+    {id:'km', label:'Distância (km)', tipo:'number', placeholder:'500'},
+    {id:'cons', label:'Km por litro', tipo:'number', placeholder:'12'},
+    {id:'preco', label:'Preço combustível', tipo:'number', placeholder:'6'},
+  ],
+  calcular(v){
+    const km=parseFloat(v.km)||0;
+    const cons=parseFloat(v.cons)||1;
+    const preco=parseFloat(v.preco)||0;
+
+    const litros=km/cons;
+    const total=litros*preco;
+
+    return[
+      {label:'Litros usados',valor:litros.toFixed(2).replace('.',','),destaque:false},
+      {label:'Custo',valor:'R$ '+total.toFixed(2).replace('.',','),destaque:true},
+    ];
+  }
+},
+//🕒 8. Somar horas
+{
+  id:'somar-horas', nome:'Somar Horas', icon:'⏱️',
+  campos:[
+    {id:'h1', label:'Hora 1 (hh:mm)', tipo:'text', placeholder:'02:30'},
+    {id:'h2', label:'Hora 2 (hh:mm)', tipo:'text', placeholder:'01:45'},
+  ],
+  calcular(v){
+    const toMin=t=>{
+      const p=(t||'0:0').split(':');
+      return (parseInt(p[0])||0)*60+(parseInt(p[1])||0);
+    };
+
+    const m=toMin(v.h1)+toMin(v.h2);
+
+    const h=Math.floor(m/60);
+    const min=m%60;
+
+    return[
+      {label:'Total',valor:h+':'+String(min).padStart(2,'0'),destaque:true}
+    ];
+  }
+},
+//⚖️ 9. Converter kg para g
+{
+  id:'kg-g', nome:'Kg para Gramas', icon:'⚖️',
+  campos:[
+    {id:'kg', label:'Quilos', tipo:'number', placeholder:'2'},
+  ],
+  calcular(v){
+    const kg=parseFloat(v.kg)||0;
+
+    return[
+      {label:'Gramas',valor:(kg*1000),destaque:true}
+    ];
+  }
+},
+//📦 10. Peso volumétrico
+{
+  id:'peso-vol', nome:'Peso Volumétrico', icon:'📦',
+  campos:[
+    {id:'c', label:'Comprimento (cm)', tipo:'number'},
+    {id:'l', label:'Largura (cm)', tipo:'number'},
+    {id:'a', label:'Altura (cm)', tipo:'number'},
+  ],
+  calcular(v){
+    const c=parseFloat(v.c)||0;
+    const l=parseFloat(v.l)||0;
+    const a=parseFloat(v.a)||0;
+
+    const res=(c*l*a)/6000;
+
+    return[
+      {label:'Peso volumétrico',valor:res.toFixed(2)+' kg',destaque:true}
+    ];
+  }
+}
+
 
 ];
 
