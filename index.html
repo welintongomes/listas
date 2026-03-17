@@ -918,6 +918,7 @@ function rTree(items,cont){
     blk.appendChild(row);
     if(hk){
       const ch=document.createElement('div'); ch.className=`kids ${item.collapsed?'col':''}`;
+      ch.id=`ch-${item.id}`;
       rTree(item.children,ch); blk.appendChild(ch);
     }
     cont.appendChild(blk);
@@ -1032,11 +1033,89 @@ function confetti(){ const cs=['#7c6af7','#3ecf8e','#e8565e','#e8c84a','#4fa7e8'
     el.style.cssText=`left:${Math.random()*100}vw;top:-10px;background:${cs[Math.floor(Math.random()*cs.length)]};border-radius:${Math.random()>.5?'50%':'2px'};animation-delay:${Math.random()*.5}s;animation-duration:${.8+Math.random()*.8}s;`;
     document.body.appendChild(el); el.addEventListener('animationend',()=>el.remove()); } }
 
-function doSearch(q){ const qu=(q||'').toLowerCase().trim();
+function doSearch(q){
+  const qu=(q||'').toLowerCase().trim();
+  const l=getL();
+
+  // ── Limpa busca anterior ──
   document.querySelectorAll('.irow').forEach(row=>{
-    const txt=row.querySelector('.itext')?.innerText?.toLowerCase()||'';
-    row.classList.toggle('search-hidden',qu&&!txt.includes(qu));
-    row.querySelector('.itext')?.classList.toggle('smatch',!!qu&&txt.includes(qu)); }); }
+    row.classList.remove('search-hidden');
+    const itext=row.querySelector('.itext');
+    if(itext){
+      // Restaura texto original se tinha highlight
+      const orig=itext.getAttribute('data-orig');
+      if(orig){ itext.innerHTML=orig; itext.removeAttribute('data-orig'); }
+    }
+  });
+  // Restaura collapsed original de cada kids
+  if(l){
+    document.querySelectorAll('.kids').forEach(kids=>{
+      const id=(kids.id||'').replace('ch-','');
+      if(!id) return;
+      const item=find(l.items,id);
+      if(item) kids.classList.toggle('col',!!item.collapsed);
+    });
+  }
+
+  if(!qu) return;
+
+  // ── Busca nos DADOS recursivamente ──
+  const matchIds=new Set();
+  const parentIds=new Set();
+
+  function deep(items, pais){
+    if(!items||!items.length) return;
+    for(let i=0;i<items.length;i++){
+      const item=items[i];
+      if((item.text||'').toLowerCase().indexOf(qu)!==-1){
+        matchIds.add(item.id);
+        pais.forEach(function(pid){ parentIds.add(pid); });
+      }
+      deep(item.children, pais.concat([item.id]));
+    }
+  }
+  if(l) deep(l.items,[]);
+
+  // ── Aplica no DOM ──
+  document.querySelectorAll('.irow').forEach(row=>{
+    const id=row.dataset.id;
+    const itext=row.querySelector('.itext');
+
+    if(matchIds.has(id)){
+      // Visível + destaca a palavra encontrada em amarelo
+      row.classList.remove('search-hidden');
+      if(itext){
+        const texto=itext.innerText||'';
+        itext.setAttribute('data-orig', itext.innerHTML);
+        const escaped=esc(texto);
+        const re=new RegExp('('+qu.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+        itext.innerHTML=escaped.replace(re,'<mark style="background:#e8c84a;color:#111;border-radius:3px;padding:0 3px;font-weight:700">$1</mark>');
+      }
+    } else if(parentIds.has(id)){
+      // Pai de um match: visível sem destaque
+      row.classList.remove('search-hidden');
+    } else {
+      // Sem match: esconde
+      row.classList.add('search-hidden');
+    }
+  });
+
+  // ── Expande kids para matches aparecerem ──
+// ── Expande kids para matches aparecerem ──
+  // kids id="ch-XPTO" significa que XPTO é o pai deste grupo
+  // precisamos expandir se XPTO está em parentIds (tem descendente com match)
+  // ou em matchIds (o próprio item tem match e pode ter filhos visíveis)
+  document.querySelectorAll('.kids').forEach(kids=>{
+    const paiId=(kids.id||'').replace('ch-','');
+    if(!paiId) return;
+    // Este kids deve expandir se o pai tem algum descendente com match
+    if(parentIds.has(paiId)){
+      kids.classList.remove('col');
+    } else {
+      kids.classList.add('col');
+    }
+  });
+}
 
 // ══════════════════════════════════════════════════════
 //  MODAL
