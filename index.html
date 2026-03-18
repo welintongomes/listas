@@ -3129,6 +3129,7 @@ function setStars(id) {
 
     // ── Estado global de gravação ──
     let _audRec = null, _audChunks = [], _audItemId = null, _audMarkId = null;
+    let _audPaused = false; // novo
 
     // ── Players ativos (audio elements em memória) ──
     const _audPlayers = {}; // markId → HTMLAudioElement
@@ -3194,19 +3195,34 @@ function setStars(id) {
           <div class="aud-bar-fill" id="bar-${markId}"></div>
         </span>
         <span class="aud-time" id="time-${markId}">0:00</span>
+        ${aud.nome ? `<span style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(aud.nome)}</span>` : ''}
         <button class="aud-del-btn" onclick="audioDel('${item.id}','${markId}')">✕</button>
       </span>`;
         } else {
           // Ainda sem áudio — mostra botões gravar/importar
-          const isRec = _audItemId === item.id && _audMarkId === markId && _audRec;
-          return `<span class="aud-chip pending ${isRec ? 'recording' : ''}">
-        <button class="aud-rec-btn ${isRec ? 'on' : ''}" id="arec-${markId}"
-          onclick="audioToggleRec('${item.id}','${markId}')">
-          ${isRec ? '⏹ Parar' : '🎙 Gravar'}
-        </button>
-        <button class="aud-rec-btn" onclick="audioImport('${item.id}','${markId}')">📎</button>
-        <button class="aud-del-btn" onclick="audioDel('${item.id}','${markId}')">✕</button>
-      </span>`;
+          const isRec     = _audItemId === item.id && _audMarkId === markId && _audRec && !_audPaused;
+        const isPaused  = _audItemId === item.id && _audMarkId === markId && _audRec && _audPaused;
+        const isActive  = isRec || isPaused;
+
+        return `<span class="aud-chip pending ${isRec ? 'recording' : ''}">
+          ${!isActive ? `
+            <button class="aud-rec-btn" id="arec-${markId}"
+              onclick="audioToggleRec('${item.id}','${markId}')">
+              🎙 Gravar
+            </button>
+            <button class="aud-rec-btn" onclick="audioImport('${item.id}','${markId}')">📎</button>
+          ` : `
+            <button class="aud-rec-btn ${isRec ? 'on' : ''}" id="arec-${markId}"
+              onclick="audioToggleRec('${item.id}','${markId}')">
+              ${isRec ? '⏸ Pausar' : '▶ Continuar'}
+            </button>
+            <button class="aud-rec-btn" style="background:rgba(232,86,94,.15);border-color:var(--red);color:var(--red)"
+              onclick="audioStopRec('${item.id}','${markId}')">
+              ⏹ Parar
+            </button>
+          `}
+          <button class="aud-del-btn" onclick="audioDel('${item.id}','${markId}')">✕</button>
+        </span>`;
         }
       }).join('');
     }
@@ -3281,17 +3297,30 @@ function setStars(id) {
 
     // ── Gravação ──
     function audioToggleRec(itemId, markId) {
+      // Se está gravando ou pausado neste chip
       if (_audItemId === itemId && _audMarkId === markId && _audRec) {
-        _audRec.stop(); return;
+        if (_audPaused) {
+          // Retomar
+          _audRec.resume();
+          _audPaused = false;
+          renderCnt();
+        } else {
+          // Pausar
+          _audRec.pause();
+          _audPaused = true;
+          renderCnt();
+        }
+        return;
       }
-      if (_audRec) { _audRec.onstop = null; _audRec.stop(); }
+      // Se estava gravando outro chip, para ele primeiro
+      if (_audRec) { _audRec.onstop = null; _audRec.stop(); _audPaused = false; }
       audioStartRec(itemId, markId);
     }
 
     async function audioStartRec(itemId, markId) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        _audChunks = []; _audItemId = itemId; _audMarkId = markId;
+        _audChunks = []; _audItemId = itemId; _audMarkId = markId; _audPaused = false;
         const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(t => MediaRecorder.isTypeSupported(t)) || '';
         _audRec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
         _audRec.ondataavailable = e => { if (e.data.size > 0) _audChunks.push(e.data); };
@@ -3300,22 +3329,40 @@ function setStars(id) {
           const blob = new Blob(_audChunks, { type: _audRec.mimeType || 'audio/webm' });
           const reader = new FileReader();
           reader.onload = ev => {
-            const list = getL(); if (!list) return;
-            const item = find(list.items, itemId); if (!item) return;
-            if (!item.audios) item.audios = {};
-            if (!item.audios[markId]) item.audios[markId] = {};
-            item.audios[markId].src = ev.target.result;
-            _audRec = null; _audItemId = null; _audMarkId = null;
-            save(); renderCnt();
+            // Pede nome antes de salvar
+            openM('🎙️ Nomear Áudio', `
+          <div class="fg">
+            <div class="fl">Nome do áudio</div>
+            <input type="text" id="audNome" placeholder="Ex: Lembrete, Ideia, Nota..." autofocus>
+          </div>
+          <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:4px">
+            Deixe em branco para usar "Áudio"
+          </div>
+        `, () => {
+              const nome = document.getElementById('audNome')?.value.trim() || 'Áudio';
+              const list = getL(); if (!list) return;
+              const item = find(list.items, itemId); if (!item) return;
+              if (!item.audios) item.audios = {};
+              if (!item.audios[markId]) item.audios[markId] = {};
+              item.audios[markId].src = ev.target.result;
+              item.audios[markId].nome = nome;
+              _audRec = null; _audItemId = null; _audMarkId = null; _audPaused = false;
+              save(); renderCnt();
+            });
           };
           reader.readAsDataURL(blob);
         };
-        _audRec.start();
-        // Atualiza visual imediatamente
+        _audRec.start(100); // coleta chunks a cada 100ms para suportar pause/resume
         renderCnt();
       } catch (e) { alert('Microfone inacessível:\n' + e.message); }
     }
 
+    function audioStopRec(itemId, markId) {
+      if (_audRec && _audItemId === itemId && _audMarkId === markId) {
+        _audPaused = false;
+        _audRec.stop();
+      }
+    }
     function audioImport(itemId, markId) {
       const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'audio/*';
       inp.onchange = e => {
