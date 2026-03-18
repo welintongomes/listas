@@ -5,9 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ListFlow</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧰</text></svg>">
+  <link rel="apple-touch-icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧰</text></svg>">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-
     :root {
       --bg: #0e0e0f;
       --surface: #161618;
@@ -123,7 +126,7 @@
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
-      overflow: hidden;
+      overflow: clip;
       transition: transform .3s cubic-bezier(.4, 0, .2, 1);
       z-index: 40
     }
@@ -219,9 +222,9 @@
       flex-direction: column;
       gap: 3px;
       margin-bottom: 16px;
-      max-height: 280px;
+      max-height: 180px;
       overflow-y: auto;
-      overflow-x: hidden
+      overflow-x: hidden;
     }
 
     .prow {
@@ -306,9 +309,9 @@
       display: flex;
       flex-direction: column;
       gap: 3px;
-      max-height: 320px;
+      max-height: 200px;
       overflow-y: auto;
-      overflow-x: hidden
+      overflow-x: hidden;
     }
 
     .lent {
@@ -3200,11 +3203,11 @@ function setStars(id) {
       </span>`;
         } else {
           // Ainda sem áudio — mostra botões gravar/importar
-          const isRec     = _audItemId === item.id && _audMarkId === markId && _audRec && !_audPaused;
-        const isPaused  = _audItemId === item.id && _audMarkId === markId && _audRec && _audPaused;
-        const isActive  = isRec || isPaused;
+          const isRec = _audItemId === item.id && _audMarkId === markId && _audRec && !_audPaused;
+          const isPaused = _audItemId === item.id && _audMarkId === markId && _audRec && _audPaused;
+          const isActive = isRec || isPaused;
 
-        return `<span class="aud-chip pending ${isRec ? 'recording' : ''}">
+          return `<span class="aud-chip pending ${isRec ? 'recording' : ''}">
           ${!isActive ? `
             <button class="aud-rec-btn" id="arec-${markId}"
               onclick="audioToggleRec('${item.id}','${markId}')">
@@ -3391,6 +3394,336 @@ function setStars(id) {
       save(); renderCnt();
     }
 
+    // ── IMAGENS NOS ITENS ─────────────────────────────────
+    reg('imagens', {
+      name: 'Imagens nos itens', icon: '🖼️',
+      desc: 'Galeria de imagens por item com visualizador', def: false,
+      abtn(item) {
+        return `<button class="iabtn" title="Adicionar imagem" onclick="imgAdd('${item.id}')">🖼️</button>`;
+      },
+      extra(item) {
+        if (!item.imgs || !item.imgs.length) return '';
+        return _imgGaleria(item);
+      }
+    });
+
+    // ── CSS ──────────────────────────────────────────────
+    (() => {
+      const s = document.createElement('style');
+      s.textContent = `
+    .img-galeria{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;padding:4px 0}
+    .img-thumb-wrap{position:relative;flex-shrink:0}
+    .img-thumb{
+      width:64px;height:64px;object-fit:cover;border-radius:8px;
+      border:2px solid var(--border);cursor:pointer;
+      transition:all .2s;display:block;
+    }
+    .img-thumb:active{transform:scale(.93);opacity:.8}
+    .img-thumb-del{
+      position:absolute;top:-5px;right:-5px;
+      width:18px;height:18px;border-radius:50%;
+      background:var(--red);border:none;color:white;
+      font-size:10px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:700;z-index:2;line-height:1;
+    }
+    .img-add-btn{
+      width:64px;height:64px;border-radius:8px;
+      border:2px dashed var(--border);background:var(--surface2);
+      color:var(--text3);font-size:22px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;transition:all .15s;
+    }
+    .img-add-btn:active{opacity:.7;transform:scale(.93)}
+
+    /* Lightbox */
+    .img-lightbox{
+      position:fixed;inset:0;background:rgba(0,0,0,.95);
+      z-index:9999;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      opacity:0;pointer-events:none;transition:opacity .25s;
+    }
+    .img-lightbox.open{opacity:1;pointer-events:all}
+    .img-lb-top{
+      position:absolute;top:0;left:0;right:0;
+      padding:14px 16px;display:flex;align-items:center;
+      justify-content:space-between;z-index:2;
+      background:linear-gradient(to bottom,rgba(0,0,0,.7),transparent);
+    }
+    .img-lb-counter{
+      font-size:13px;font-family:'JetBrains Mono',monospace;
+      color:rgba(255,255,255,.7);
+    }
+    .img-lb-actions{display:flex;gap:8px}
+    .img-lb-btn{
+      width:36px;height:36px;border-radius:10px;border:none;
+      background:rgba(255,255,255,.12);color:white;font-size:16px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      transition:all .15s;
+    }
+    .img-lb-btn:active{opacity:.7;transform:scale(.9)}
+    .img-lb-img{
+      max-width:95vw;max-height:80vh;
+      object-fit:contain;border-radius:8px;
+      user-select:none;touch-action:pinch-zoom;
+    }
+    .img-lb-nav{
+      position:absolute;top:50%;transform:translateY(-50%);
+      width:44px;height:44px;border-radius:50%;border:none;
+      background:rgba(255,255,255,.15);color:white;font-size:20px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      transition:all .15s;z-index:2;
+    }
+    .img-lb-nav:active{background:rgba(255,255,255,.3)}
+    .img-lb-prev{left:12px}
+    .img-lb-next{right:12px}
+    .img-lb-dots{
+      position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+      display:flex;gap:6px;z-index:2;
+    }
+    .img-lb-dot{
+      width:7px;height:7px;border-radius:50%;
+      background:rgba(255,255,255,.3);transition:all .2s;cursor:pointer;
+    }
+    .img-lb-dot.on{background:white;transform:scale(1.2)}
+    .img-lb-nome{
+      position:absolute;bottom:50px;left:0;right:0;text-align:center;
+      font-size:12px;font-family:'JetBrains Mono',monospace;
+      color:rgba(255,255,255,.5);pointer-events:none;padding:0 16px;
+    }
+  `;
+      document.head.appendChild(s);
+    })();
+
+    // ── Estado do lightbox ──
+    let _lbItemId = null, _lbIdx = 0;
+
+    // ── Galeria miniatura ──
+    function _imgGaleria(item) {
+      const imgs = item.imgs || [];
+      const thumbs = imgs.map((img, i) => `
+    <div class="img-thumb-wrap">
+      <img class="img-thumb" src="${img.src}" alt="${esc(img.nome || '')}"
+        onclick="imgOpenLb('${item.id}',${i})" loading="lazy">
+      <button class="img-thumb-del" onclick="imgDel('${item.id}','${img.id}')" title="Remover">✕</button>
+    </div>`).join('');
+
+      return `<div class="img-galeria">
+    ${thumbs}
+    <button class="img-add-btn" onclick="imgAdd('${item.id}')" title="Adicionar imagem">＋</button>
+  </div>`;
+    }
+
+    // ── Adicionar imagem ──
+    function imgAdd(itemId) {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, itemId); if (!item) return;
+
+      // Abre modal para escolher origem
+      openM('🖼️ Adicionar Imagem', `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn pri" style="margin-top:0" onclick="imgFromCamera('${itemId}');closeM()">
+        📷 Câmera / Galeria do celular
+      </button>
+      <button class="btn" style="margin-top:0" onclick="imgFromFile('${itemId}');closeM()">
+        📁 Arquivo do computador
+      </button>
+      <button class="btn" style="margin-top:0" onclick="imgFromUrl('${itemId}')">
+        🔗 URL de imagem
+      </button>
+    </div>
+  `, null);
+    }
+
+    function imgFromCamera(itemId) {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'environment'; inp.multiple = true;
+      inp.onchange = e => _imgProcessFiles(itemId, e.target.files);
+      inp.click();
+    }
+
+    function imgFromFile(itemId) {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true;
+      inp.onchange = e => _imgProcessFiles(itemId, e.target.files);
+      inp.click();
+    }
+
+    function imgFromUrl(itemId) {
+      openM('🔗 URL da imagem', `
+    <div class="fg"><div class="fl">URL</div>
+      <input type="url" id="imgUrl" placeholder="https://exemplo.com/foto.jpg">
+    </div>
+    <div class="fg"><div class="fl">Nome (opcional)</div>
+      <input type="text" id="imgNomeUrl" placeholder="Ex: Foto da peça">
+    </div>
+  `, () => {
+        const url = document.getElementById('imgUrl')?.value.trim();
+        const nome = document.getElementById('imgNomeUrl')?.value.trim() || 'Imagem';
+        if (!url) return;
+        const l = getL(); if (!l) return;
+        const item = find(l.items, itemId); if (!item) return;
+        if (!item.imgs) item.imgs = [];
+        item.imgs.push({ id: 'i' + genId(), src: url, nome });
+        save(); renderCnt();
+      });
+    }
+
+    function _imgProcessFiles(itemId, files) {
+      if (!files || !files.length) return;
+      const l = getL(); if (!l) return;
+      const item = find(l.items, itemId); if (!item) return;
+      if (!item.imgs) item.imgs = [];
+
+      let pending = files.length;
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          // Redimensiona para não pesar tanto
+          const img = new Image();
+          img.onload = () => {
+            const MAX = 1200;
+            let w = img.width, h = img.height;
+            if (w > MAX || h > MAX) {
+              if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+              else { w = Math.round(w * MAX / h); h = MAX; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const src = canvas.toDataURL('image/jpeg', 0.82);
+            item.imgs.push({ id: 'i' + genId(), src, nome: file.name.replace(/\.[^.]+$/, '') });
+            pending--;
+            if (pending === 0) { save(); renderCnt(); }
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ── Deletar imagem ──
+    function imgDel(itemId, imgId) {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, itemId); if (!item) return;
+      item.imgs = (item.imgs || []).filter(i => i.id !== imgId);
+      save(); renderCnt();
+      // Fecha lightbox se estava aberto neste item
+      if (_lbItemId === itemId) imgCloseLb();
+    }
+
+    // ── Lightbox ──
+    function imgOpenLb(itemId, idx) {
+      _lbItemId = itemId; _lbIdx = idx;
+
+      // Cria o lightbox se não existe
+      if (!document.getElementById('imgLb')) {
+        const lb = document.createElement('div');
+        lb.id = 'imgLb'; lb.className = 'img-lightbox';
+        lb.innerHTML = `
+      <div class="img-lb-top">
+        <div class="img-lb-counter" id="lbCounter">1 / 1</div>
+        <div class="img-lb-actions">
+          <button class="img-lb-btn" onclick="imgLbDownload()" title="Baixar">⬇</button>
+          <button class="img-lb-btn" onclick="imgLbDelCurrent()" title="Excluir" style="color:#ff6b6b">✕</button>
+          <button class="img-lb-btn" onclick="imgCloseLb()" title="Fechar">✕</button>
+        </div>
+      </div>
+      <button class="img-lb-nav img-lb-prev" onclick="imgLbNav(-1)">‹</button>
+      <img class="img-lb-img" id="lbImg" src="" alt="">
+      <div class="img-lb-nome" id="lbNome"></div>
+      <button class="img-lb-nav img-lb-next" onclick="imgLbNav(1)">›</button>
+      <div class="img-lb-dots" id="lbDots"></div>`;
+
+        // Swipe no mobile
+        let tx = 0;
+        lb.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+        lb.addEventListener('touchend', e => {
+          const dx = e.changedTouches[0].clientX - tx;
+          if (Math.abs(dx) > 50) imgLbNav(dx < 0 ? 1 : -1);
+        }, { passive: true });
+
+        // Fecha ao clicar no fundo
+        lb.addEventListener('click', e => { if (e.target === lb) imgCloseLb(); });
+        // Fecha com ESC, navega com setas
+        document.addEventListener('keydown', e => {
+          if (!document.getElementById('imgLb')?.classList.contains('open')) return;
+          if (e.key === 'Escape') imgCloseLb();
+          if (e.key === 'ArrowLeft') imgLbNav(-1);
+          if (e.key === 'ArrowRight') imgLbNav(1);
+        });
+
+        document.body.appendChild(lb);
+      }
+
+      _imgLbUpdate();
+      requestAnimationFrame(() => document.getElementById('imgLb').classList.add('open'));
+      document.body.style.overflow = 'hidden';
+    }
+
+    function imgCloseLb() {
+      const lb = document.getElementById('imgLb');
+      if (lb) lb.classList.remove('open');
+      document.body.style.overflow = '';
+      _lbItemId = null;
+    }
+
+    function imgLbNav(dir) {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, _lbItemId); if (!item || !item.imgs?.length) return;
+      _lbIdx = (_lbIdx + dir + item.imgs.length) % item.imgs.length;
+      _imgLbUpdate();
+    }
+
+    function _imgLbUpdate() {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, _lbItemId); if (!item || !item.imgs?.length) return;
+      const imgs = item.imgs;
+      const img = imgs[_lbIdx];
+
+      const el = document.getElementById('lbImg');
+      const counter = document.getElementById('lbCounter');
+      const nome = document.getElementById('lbNome');
+      const dots = document.getElementById('lbDots');
+
+      if (el) { el.src = img.src; el.alt = img.nome || ''; }
+      if (counter) counter.textContent = `${_lbIdx + 1} / ${imgs.length}`;
+      if (nome) nome.textContent = img.nome || '';
+
+      // Dots de navegação
+      if (dots) {
+        dots.innerHTML = imgs.map((_, i) =>
+          `<div class="img-lb-dot ${i === _lbIdx ? 'on' : ''}" onclick="imgLbGoTo(${i})"></div>`
+        ).join('');
+      }
+
+      // Esconde nav se só 1 imagem
+      const navs = document.querySelectorAll('.img-lb-nav');
+      navs.forEach(n => n.style.display = imgs.length > 1 ? 'flex' : 'none');
+    }
+
+    function imgLbGoTo(idx) { _lbIdx = idx; _imgLbUpdate(); }
+
+    function imgLbDownload() {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, _lbItemId); if (!item) return;
+      const img = item.imgs?.[_lbIdx]; if (!img) return;
+      const a = document.createElement('a');
+      a.href = img.src; a.download = img.nome || `imagem_${_lbIdx + 1}`;
+      a.click();
+    }
+
+    function imgLbDelCurrent() {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, _lbItemId); if (!item || !item.imgs) return;
+      const img = item.imgs[_lbIdx]; if (!img) return;
+      item.imgs.splice(_lbIdx, 1);
+      save();
+      if (!item.imgs.length) { imgCloseLb(); renderCnt(); return; }
+      _lbIdx = Math.min(_lbIdx, item.imgs.length - 1);
+      _imgLbUpdate();
+      renderCnt();
+    }
     // ************* plugin registrar horas ******************
     reg('ponto', {
       name: 'Controle de Ponto', icon: '🕐', desc: 'Registro de horas, extras e relatório', def: false,
@@ -3900,6 +4233,7 @@ function setStars(id) {
         });
       }, 150);
     }
+
     // ── MÍDIA (Filmes / Livros / Jogos) ───────────────────
     reg('midia', {
       name: 'Mídia (Filmes/Livros/Jogos)', icon: '🎬',
@@ -4188,6 +4522,7 @@ function setStars(id) {
     window.swMExp = mode => { window._mExp.mode = mode; document.getElementById('mExpPre').textContent = mode === 'md' ? window._mExp.md : window._mExp.csv; document.getElementById('vt_mmd').classList.toggle('on', mode === 'md'); document.getElementById('vt_mcsv').classList.toggle('on', mode === 'csv'); };
     window.cpMExp = () => navigator.clipboard.writeText(window._mExp.mode === 'md' ? window._mExp.md : window._mExp.csv).then(() => alert('Copiado!'));
     window.dlMExp = () => { const d = window._mExp; const b = new Blob([d.mode === 'md' ? d.md : d.csv], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `midia_relatorio.${d.mode === 'md' ? 'md' : 'csv'}`; a.click(); };
+
     // ── CALCULADORAS PERSONALIZADAS ───────────────────────
     reg('calcbox', {
       name: 'Calculadoras', icon: '🧮',
@@ -5294,6 +5629,7 @@ Cogito ergo sum | René Descartes'></textarea>
       const a = document.createElement('a'); a.href = URL.createObjectURL(b);
       a.download = `frases.${d.mode === 'txt' ? 'txt' : 'json'}`; a.click();
     };
+
     // ══════════════════════════════════════════════════════
     //  BOOT
     // ══════════════════════════════════════════════════════
