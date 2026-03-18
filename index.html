@@ -89,7 +89,7 @@
 
     .ibtn {
       width: 36px;
-      height: 36px;
+      height: 46px;
       border-radius: var(--r);
       background: var(--surface2);
       border: 1px solid var(--border);
@@ -461,31 +461,31 @@
       display: none
     }
 
-    .tbsep {
-      width: 1px;
-      height: 20px;
-      background: var(--border);
-      flex-shrink: 0;
-      margin: 0 2px
-    }
+.tbsep {
+    width: 1px;
+    height: 33px;
+    background: var(--border);
+    flex-shrink: 0;
+    margin: 0 2px;
+}
 
-    .tbbtn {
-      padding: 7px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      color: var(--text2);
-      font-family: 'Syne', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all .15s;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      flex-shrink: 0
-    }
+.tbbtn {
+    padding: 8px 7px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
 
     .tbbtn:active {
       opacity: .75;
@@ -503,18 +503,19 @@
       flex-shrink: 0
     }
 
-    .srch input {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      padding: 7px 10px 7px 30px;
-      outline: none;
-      width: 150px;
-      transition: all .2s
-    }
+.srch input {
+    height: 33px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 0px 10px 0px 30px;
+    outline: none;
+    width: 150px;
+    transition: all .2s;
+}
 
     .srch input:focus {
       border-color: var(--accent);
@@ -3355,7 +3356,7 @@ function setStars(id) {
         const s = document.createElement('style');
         s.textContent = `
       .ponto-wrap{display:flex;flex-direction:column;gap:12px}
-      .ponto-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+      .ponto-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:5px;display:flex;flex-direction:column;gap:10px}
       .ponto-title{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;justify-content:space-between}
       .ponto-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
       .ponto-field{display:flex;flex-direction:column;gap:4px}
