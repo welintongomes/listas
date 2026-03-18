@@ -1232,7 +1232,7 @@ background:var(--accent); */
       color: var(--text);
       font-family: 'Syne', sans-serif;
       font-size: 15px;
-      padding: 12px 6px 12px 34px;
+      padding: 5px 6px 5px 34px;
       outline: none;
       width: 100%;
       transition: border-color .2s
@@ -1558,19 +1558,19 @@ background:var(--accent); */
     <div class="overlay" id="ov" onclick="closeSB()"></div>
     <aside class="sidebar" id="sb">
       <div class="sb-scroll">
-        <div class="sb-label">
-          Listas
-          <span class="hpill" id="hpill" style="float:right">0</span>
-        </div>
-        <div class="lents" id="lents"></div>
-      </div>
-      <div class="sb-scroll">
         <div class="sb-label" style="margin-top:4px">
           Plugins
           <span id="sbPluginCount"
             style="float:right;opacity:.5;font-weight:400;text-transform:none;letter-spacing:0"></span>
         </div>
         <div class="pg" id="pg"></div>
+      </div>
+      <div class="sb-scroll">
+        <div class="sb-label">
+          Listas
+          <span class="hpill" id="hpill" style="float:right">0</span>
+        </div>
+        <div class="lents" id="lents"></div>
       </div>
       <div class="sb-search">
         <input type="text" id="sbSearch" placeholder="🔍 Buscar plugin ou lista..."
@@ -5629,7 +5629,312 @@ Cogito ergo sum | René Descartes'></textarea>
       const a = document.createElement('a'); a.href = URL.createObjectURL(b);
       a.download = `frases.${d.mode === 'txt' ? 'txt' : 'json'}`; a.click();
     };
+    // ── VOZ PARA TEXTO ────────────────────────────────────
+    reg('voztext', {
+      name: 'Voz para Texto', icon: '🎤',
+      desc: 'Microfone flutuante em qualquer campo de texto', def: false,
+      onToggle(on) {
+        if (on) _vozInit();
+        else _vozDestroy();
+      }
+    });
 
+    // ── CSS ──────────────────────────────────────────────
+    (() => {
+      const s = document.createElement('style');
+      s.textContent = `
+    .voz-btn{
+      position:fixed;
+      width:36px;height:36px;border-radius:50%;
+      background:var(--surface2);border:2px solid var(--border);
+      color:var(--text2);font-size:16px;cursor:pointer;
+      display:none;align-items:center;justify-content:center;
+      z-index:9998;transition:all .2s;
+      box-shadow:0 2px 12px rgba(0,0,0,.3);
+    }
+    .voz-btn.visible{display:flex}
+    .voz-btn.listening{
+      background:var(--red);border-color:var(--red);color:white;
+      animation:vozpulse .6s infinite alternate;
+    }
+    .voz-btn:active{transform:scale(.9)}
+
+    .voz-overlay{
+      position:fixed;inset:0;
+      background:rgba(0,0,0,.0);
+      z-index:9997;display:none;
+    }
+    .voz-overlay.visible{display:block}
+
+    .voz-banner{
+      position:fixed;bottom:calc(80px + var(--sab));
+      left:50%;transform:translateX(-50%);
+      background:var(--red);color:white;
+      padding:8px 18px;border-radius:99px;
+      font-size:13px;font-weight:700;
+      font-family:'Syne',sans-serif;
+      white-space:nowrap;z-index:9999;
+      display:none;align-items:center;gap:8px;
+      box-shadow:0 4px 20px rgba(232,86,94,.5);
+      animation:vozpulse .6s infinite alternate;
+    }
+    .voz-banner.visible{display:flex}
+    .voz-banner-dot{
+      width:8px;height:8px;border-radius:50%;
+      background:white;flex-shrink:0;
+    }
+
+    .voz-interim{
+      position:fixed;bottom:calc(120px + var(--sab));
+      left:50%;transform:translateX(-50%);
+      background:var(--surface);border:1px solid var(--border);
+      color:var(--text2);padding:8px 16px;border-radius:10px;
+      font-size:13px;font-family:'JetBrains Mono',monospace;
+      max-width:80vw;text-align:center;z-index:9999;
+      display:none;white-space:nowrap;overflow:hidden;
+      text-overflow:ellipsis;
+      box-shadow:0 4px 16px rgba(0,0,0,.3);
+    }
+    .voz-interim.visible{display:block}
+
+    @keyframes vozpulse{
+      from{opacity:1;box-shadow:0 0 0 0 rgba(232,86,94,.4)}
+      to{opacity:.8;box-shadow:0 0 0 8px rgba(232,86,94,0)}
+    }
+  `;
+      document.head.appendChild(s);
+    })();
+
+    // ── Estado ──
+    let _vozRec = null, _vozTarget = null, _vozBtn = null, _vozBanner = null, _vozInterim = null, _vozOverlay = null;
+    let _vozListening = false;
+
+    function _vozInit() {
+      // Cria botão flutuante
+      if (!document.getElementById('vozBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'vozBtn'; btn.className = 'voz-btn'; btn.textContent = '🎤';
+        btn.title = 'Falar'; btn.onclick = _vozToggle;
+        document.body.appendChild(btn);
+      }
+      // Banner de gravando
+      if (!document.getElementById('vozBanner')) {
+        const b = document.createElement('div');
+        b.id = 'vozBanner'; b.className = 'voz-banner';
+        b.innerHTML = `<div class="voz-banner-dot"></div><span>Ouvindo... toque em 🎤 para parar</span>`;
+        document.body.appendChild(b);
+      }
+      // Texto interim
+      if (!document.getElementById('vozInterim')) {
+        const v = document.createElement('div');
+        v.id = 'vozInterim'; v.className = 'voz-interim';
+        document.body.appendChild(v);
+      }
+      // Overlay invisível para detectar clique fora
+      if (!document.getElementById('vozOverlay')) {
+        const o = document.createElement('div');
+        o.id = 'vozOverlay'; o.className = 'voz-overlay';
+        o.onclick = _vozHideBtn;
+        document.body.appendChild(o);
+      }
+
+      _vozBtn = document.getElementById('vozBtn');
+      _vozBanner = document.getElementById('vozBanner');
+      _vozInterim = document.getElementById('vozInterim');
+      _vozOverlay = document.getElementById('vozOverlay');
+
+      // Monitora foco em qualquer campo de texto
+      document.addEventListener('focusin', _vozOnFocus, true);
+      document.addEventListener('focusout', _vozOnBlur, true);
+    }
+
+    function _vozDestroy() {
+      ['vozBtn', 'vozBanner', 'vozInterim', 'vozOverlay'].forEach(id => {
+        document.getElementById(id)?.remove();
+      });
+      document.removeEventListener('focusin', _vozOnFocus, true);
+      document.removeEventListener('focusout', _vozOnBlur, true);
+      _vozStop();
+      _vozBtn = _vozBanner = _vozInterim = _vozOverlay = _vozTarget = null;
+    }
+
+    // Elementos que aceitam voz
+    function _vozEhCampoTexto(el) {
+      if (!el) return false;
+      const tag = el.tagName?.toLowerCase();
+      if (tag === 'input') {
+        const t = el.type?.toLowerCase() || 'text';
+        return ['text', 'search', 'url', 'email', 'password', 'number', 'tel'].includes(t);
+      }
+      if (tag === 'textarea') return true;
+      if (el.isContentEditable) return true;
+      return false;
+    }
+
+    function _vozOnFocus(e) {
+      const el = e.target;
+      if (!_vozEhCampoTexto(el)) return;
+      if (!_vozBtn) return;
+
+      _vozTarget = el;
+      _vozPosicionar(el);
+
+      // Se já está visível só reposiciona, senão mostra
+      _vozBtn.classList.add('visible');
+      _vozOverlay.classList.add('visible');
+    }
+
+    function _vozOnBlur(e) {
+      setTimeout(() => {
+        const active = document.activeElement;
+        // Não esconde se: clicou no botão, está gravando, ou o foco foi para outro campo de texto
+        if (active && active.id === 'vozBtn') return;
+        if (_vozListening) return;
+        if (_vozEhCampoTexto(active)) {
+          // Foco foi para outro campo — reposiciona
+          _vozTarget = active;
+          _vozPosicionar(active);
+          return;
+        }
+        _vozHideBtn();
+      }, 300);
+    }
+
+    function _vozHideBtn() {
+      if (_vozListening) return;
+      _vozBtn?.classList.remove('visible');
+      _vozOverlay?.classList.remove('visible');
+      _vozTarget = null;
+    }
+
+    function _vozPosicionar(el) {
+      if (!_vozBtn) return;
+      const rect = el.getBoundingClientRect();
+      // Tenta posicionar no canto direito do campo
+      let top = rect.top + (rect.height / 2) - 18;
+      let left = rect.right - 44;
+
+      // Garante que não sai da tela
+      top = Math.max(8, Math.min(top, window.innerHeight - 44));
+      left = Math.max(8, Math.min(left, window.innerWidth - 44));
+
+      _vozBtn.style.top = top + 'px';
+      _vozBtn.style.left = left + 'px';
+    }
+
+    // ── Toggle gravação ──
+    function _vozToggle() {
+      if (_vozListening) _vozStop();
+      else _vozStart();
+    }
+
+    function _vozStart() {
+      // Tenta Web Speech API
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        alert('Seu navegador não suporta reconhecimento de voz.\nUse Chrome ou Edge.');
+        return;
+      }
+
+      _vozRec = new SR();
+      _vozRec.continuous = true;
+      _vozRec.interimResults = true;
+      _vozRec.lang = 'pt-BR';
+      _vozRec.maxAlternatives = 1;
+
+      _vozRec.onstart = () => {
+        _vozListening = true;
+        _vozBtn?.classList.add('listening');
+        _vozBanner?.classList.add('visible');
+      };
+
+      _vozRec.onresult = e => {
+        let interim = '', final = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) final += t;
+          else interim += t;
+        }
+
+        // Mostra texto interim
+        if (_vozInterim) {
+          _vozInterim.textContent = interim || final;
+          _vozInterim.classList.toggle('visible', !!(interim || final));
+        }
+
+        // Insere texto final no campo alvo
+        if (final && _vozTarget) {
+          _vozInserir(final);
+        }
+      };
+
+      _vozRec.onerror = e => {
+        if (e.error === 'no-speech') return; // ignora silêncio
+        if (e.error === 'aborted') return;
+        console.warn('Voz erro:', e.error);
+        _vozStop();
+      };
+
+      _vozRec.onend = () => {
+        // Se ainda deve estar ouvindo, reinicia (browser para após silêncio)
+        if (_vozListening) {
+          try { _vozRec.start(); } catch (e) { _vozStop(); }
+        }
+      };
+
+      try { _vozRec.start(); }
+      catch (e) { alert('Erro ao iniciar microfone:\n' + e.message); }
+    }
+
+    function _vozStop() {
+      _vozListening = false;
+      try { _vozRec?.stop(); _vozRec?.abort(); } catch (e) { }
+      _vozRec = null;
+      _vozBtn?.classList.remove('listening');
+      _vozBanner?.classList.remove('visible');
+      if (_vozInterim) {
+        _vozInterim.classList.remove('visible');
+        _vozInterim.textContent = '';
+      }
+    }
+
+    // ── Insere texto no campo focado ──
+    function _vozInserir(texto) {
+      const el = _vozTarget;
+      if (!el) return;
+
+      // Adiciona espaço se necessário
+      const espaco = texto.startsWith(' ') ? '' : ' ';
+
+      if (el.isContentEditable) {
+        // contenteditable (itext, notas, etc)
+        el.focus();
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount) {
+          const range = sel.getRangeAt(0);
+          range.collapse(false);
+          const node = document.createTextNode(espaco + texto);
+          range.insertNode(node);
+          range.setStartAfter(node);
+          range.collapse(true);
+          sel.removeAllRanges(); sel.addRange(range);
+        } else {
+          el.textContent += (espaco + texto);
+        }
+        // Dispara evento para o onblur salvar
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      } else {
+        // input / textarea
+        const start = el.selectionStart ?? el.value.length;
+        const end = el.selectionEnd ?? el.value.length;
+        const antes = el.value.slice(0, start);
+        const depois = el.value.slice(end);
+        el.value = antes + (espaco + texto) + depois;
+        const pos = start + (espaco + texto).length;
+        el.setSelectionRange(pos, pos);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
     // ══════════════════════════════════════════════════════
     //  BOOT
     // ══════════════════════════════════════════════════════
