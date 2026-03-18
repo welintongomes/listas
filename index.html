@@ -53,7 +53,7 @@
       display: flex;
       align-items: center;
       padding: 0 14px;
-      height: 52px;
+      height: 72px;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
@@ -179,27 +179,50 @@
       color: var(--text3);
       padding: 4px 4px 8px
     }
-    .sb-search{
-  padding:10px 12px 0;
-  flex-shrink:0;
-}
-.sb-search input{
-  width:100%;
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-radius:var(--r);
-  color:var(--text);
-  font-family:'Syne',sans-serif;
-  font-size:13px;
-  padding:8px 12px;
-  outline:none;
-  transition:border-color .2s;
-}
-.sb-search input:focus{border-color:var(--accent)}
-.sb-search input::placeholder{color:var(--text3)}
-.prow.sb-hidden{display:none}
-.lent.sb-hidden{display:none}
-    .pg{display:flex;flex-direction:column;gap:3px;margin-bottom:16px;max-height:280px;overflow-y:auto;overflow-x:hidden}
+
+    .sb-search {
+      padding: 10px 12px 0;
+      flex-shrink: 0;
+    }
+
+    .sb-search input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .sb-search input:focus {
+      border-color: var(--accent)
+    }
+
+    .sb-search input::placeholder {
+      color: var(--text3)
+    }
+
+    .prow.sb-hidden {
+      display: none
+    }
+
+    .lent.sb-hidden {
+      display: none
+    }
+
+    .pg {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 16px;
+      max-height: 280px;
+      overflow-y: auto;
+      overflow-x: hidden
+    }
 
     .prow {
       display: flex;
@@ -279,7 +302,14 @@
       transform: translateX(16px)
     }
 
-    .lents{display:flex;flex-direction:column;gap:3px;max-height:320px;overflow-y:auto;overflow-x:hidden}
+    .lents {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 320px;
+      overflow-y: auto;
+      overflow-x: hidden
+    }
 
     .lent {
       display: flex;
@@ -1088,7 +1118,7 @@ background:var(--accent); */
     .fab {
       position: fixed;
       left: 18px;
-      bottom: calc(18px + var(--sab));
+      bottom: calc(148px + var(--sab));
       width: 54px;
       height: 54px;
       border-radius: 50%;
@@ -1436,64 +1466,117 @@ background:var(--accent); */
     .vtab:active {
       opacity: .75
     }
-    .pg::-webkit-scrollbar{width:3px}
-.pg::-webkit-scrollbar-track{background:transparent}
-.pg::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.lents::-webkit-scrollbar{width:3px}
-.lents::-webkit-scrollbar-track{background:transparent}
-.lents::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
-/* x nas barras de pesquisa */
-.srch{position:relative;flex-shrink:0}
-.srch-clear{
-  position:absolute;left:8px;top:50%;transform:translateY(-50%);
-  background:none;border:none;color:var(--text3);font-size:14px;
-  cursor:pointer;padding:2px;line-height:1;display:none;
-}
-.srch-clear.visible{display:flex;align-items:center;justify-content:center}
-.sb-search{position:relative;padding:10px 12px 0}
-.sb-clear{
-  position:absolute;left:24px;top:56%;transform:translateY(-6px);
-  background:none;border:none;color:var(--text3);font-size:14px;
-  cursor:pointer;padding:2px;line-height:1;display:none;
-}
-.sb-clear.visible{display:flex;align-items:center;justify-content:center}
+    .pg::-webkit-scrollbar {
+      width: 3px
+    }
+
+    .pg::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    .pg::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px
+    }
+
+    .lents::-webkit-scrollbar {
+      width: 3px
+    }
+
+    .lents::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    .lents::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px
+    }
+
+    /* x nas barras de pesquisa */
+    .srch {
+      position: relative;
+      flex-shrink: 0
+    }
+
+    .srch-clear {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text3);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 2px;
+      line-height: 1;
+      display: none;
+    }
+
+    .srch-clear.visible {
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .sb-search {
+      position: relative;
+      padding: 10px 12px 0
+    }
+
+    .sb-clear {
+      position: absolute;
+      left: 24px;
+      top: 56%;
+      transform: translateY(-6px);
+      background: none;
+      border: none;
+      color: var(--text3);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 2px;
+      line-height: 1;
+      display: none;
+    }
+
+    .sb-clear.visible {
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
   </style>
 </head>
 
 <body>
 
-  <div class="hdr">
-    <button class="ibtn mbtn" onclick="toggleSB()">☰</button>
-    <div class="logo">List<span>Flow</span></div>
 
-    <div class="hright">
-      <button class="ibtn" onclick="exportJ()" title="Exportar JSON">⬇</button>
-      <button class="ibtn" onclick="importJ()" title="Importar JSON">⬆</button>
-    </div>
-  </div>
 
   <div class="body">
     <div class="overlay" id="ov" onclick="closeSB()"></div>
     <aside class="sidebar" id="sb">
-      
-<div class="sb-scroll">
-  <div class="sb-label" style="margin-top:4px">
-    Plugins
-    <span id="sbPluginCount" style="float:right;opacity:.5;font-weight:400;text-transform:none;letter-spacing:0"></span>
-  </div>
-  <div class="pg" id="pg"></div>
-  <div class="sb-label">
-    Listas
-    <span class="hpill" id="hpill" style="float:right">0</span>
-  </div>
-  <div class="lents" id="lents"></div>
-</div>
-<div class="sb-search">
-  <input type="text" id="sbSearch" placeholder="🔍 Buscar plugin ou lista..."
-  oninput="filterSB(this.value);toggleSbClear(this)">
-<button class="sb-clear" id="sbClear" onclick="clearSBSearch()" title="Limpar">✕</button>
-</div>
+      <div class="sb-scroll">
+        <div class="sb-label">
+          Listas
+          <span class="hpill" id="hpill" style="float:right">0</span>
+        </div>
+        <div class="lents" id="lents"></div>
+      </div>
+      <div class="sb-scroll">
+        
+        <div class="sb-label" style="margin-top:4px">
+          Plugins
+          <span id="sbPluginCount"
+            style="float:right;opacity:.5;font-weight:400;text-transform:none;letter-spacing:0"></span>
+        </div>
+        <div class="pg" id="pg"></div>
+
+      </div>
+      <div class="sb-search">
+        <input type="text" id="sbSearch" placeholder="🔍 Buscar plugin ou lista..."
+          oninput="filterSB(this.value);toggleSbClear(this)">
+        <button class="sb-clear" id="sbClear" onclick="clearSBSearch()" title="Limpar">✕</button>
+      </div>
       <div class="sb-foot">
         <button class="nlbtn" onclick="newList()">＋ Nova lista</button>
         <button class="guidebtn" onclick="openGuide()">📖 Como criar um plugin</button>
@@ -1501,7 +1584,7 @@ background:var(--accent); */
     </aside>
 
     <div class="main">
-      <div class="tb" id="tb"></div>
+
       <div class="cnt" id="cnt">
         <div class="empty" id="es">
           <div class="empty-ico">☑</div>
@@ -1516,14 +1599,22 @@ background:var(--accent); */
   </div>
 
   <button class="fab" id="fab" onclick="addItem()" style="display:none">＋</button>
-
+  <div class="tb" id="tb"></div>
   <div class="mback" id="mb" onclick="onBD(event)">
     <div class="msheet" id="ms">
       <div class="mhandle"></div>
       <div id="mc"></div>
     </div>
   </div>
+  <div class="hdr">
+    <button class="ibtn mbtn" onclick="toggleSB()">☰</button>
+    <div class="logo">List<span>Flow</span></div>
 
+    <div class="hright">
+      <button class="ibtn" onclick="exportJ()" title="Exportar JSON">⬇</button>
+      <button class="ibtn" onclick="importJ()" title="Importar JSON">⬆</button>
+    </div>
+  </div>
   <script>
     // ══════════════════════════════════════════════════════
     //  CORE STATE
@@ -2420,135 +2511,135 @@ function setStars(id) {
       }; inp.click();
     }
     //x funçoes para x nas barras de pesquisa
-    function toggleSrchClear(input){
-  document.getElementById('srchClear')?.classList.toggle('visible', input.value.length > 0);
-}
-function clearSearch(){
-  const inp = document.getElementById('si');
-  if(inp){ inp.value=''; doSearch(''); }
-  document.getElementById('srchClear')?.classList.remove('visible');
-}
-function toggleSbClear(input){
-  document.getElementById('sbClear')?.classList.toggle('visible', input.value.length > 0);
-}
-function clearSBSearch(){
-  const inp = document.getElementById('sbSearch');
-  if(inp){ inp.value=''; filterSB(''); }
-  document.getElementById('sbClear')?.classList.remove('visible');
-}
+    function toggleSrchClear(input) {
+      document.getElementById('srchClear')?.classList.toggle('visible', input.value.length > 0);
+    }
+    function clearSearch() {
+      const inp = document.getElementById('si');
+      if (inp) { inp.value = ''; doSearch(''); }
+      document.getElementById('srchClear')?.classList.remove('visible');
+    }
+    function toggleSbClear(input) {
+      document.getElementById('sbClear')?.classList.toggle('visible', input.value.length > 0);
+    }
+    function clearSBSearch() {
+      const inp = document.getElementById('sbSearch');
+      if (inp) { inp.value = ''; filterSB(''); }
+      document.getElementById('sbClear')?.classList.remove('visible');
+    }
 
-// ── 16. QUIZ ──────────────────────────────────────────
-reg('quiz', {
-  name: 'Quiz / Flashcard', icon: '🧠', desc: 'Treino com perguntas e respostas embaralhadas', def: false,
-  tb() {
-    if (!S._quizAtivo) return `<button class="tbbtn" onclick="iniciarQuiz()">🧠 Iniciar Quiz</button>`;
-    return `<button class="tbbtn" onclick="encerrarQuiz()">✕ Sair do Quiz</button>`;
-  },
-  // Hook: substitui toda a view quando ativo
-  onRenderCnt(lv, list) {
-    if (!S._quizAtivo) return false;
-    const h = document.createElement('div');
-    h.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">${esc(list.name)}</div>`;
-    lv.appendChild(h);
-    const v = document.createElement('div'); v.innerHTML = renderQuiz(); lv.appendChild(v);
-    return true; // tomou conta
-  }
-});
+    // ── 16. QUIZ ──────────────────────────────────────────
+    reg('quiz', {
+      name: 'Quiz / Flashcard', icon: '🧠', desc: 'Treino com perguntas e respostas embaralhadas', def: false,
+      tb() {
+        if (!S._quizAtivo) return `<button class="tbbtn" onclick="iniciarQuiz()">🧠 Iniciar Quiz</button>`;
+        return `<button class="tbbtn" onclick="encerrarQuiz()">✕ Sair do Quiz</button>`;
+      },
+      // Hook: substitui toda a view quando ativo
+      onRenderCnt(lv, list) {
+        if (!S._quizAtivo) return false;
+        const h = document.createElement('div');
+        h.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">${esc(list.name)}</div>`;
+        lv.appendChild(h);
+        const v = document.createElement('div'); v.innerHTML = renderQuiz(); lv.appendChild(v);
+        return true; // tomou conta
+      }
+    });
 
-// ── Estado do quiz ──
-// S._quizAtivo     : bool
-// S._quizPerguntas : [{pai, filhos[], correta}] — lista embaralhada
-// S._quizIdx       : índice atual
-// S._quizPontos    : acertos
-// S._quizTotal     : total respondido
-// S._quizRespondeu : bool — já escolheu nesta pergunta?
+    // ── Estado do quiz ──
+    // S._quizAtivo     : bool
+    // S._quizPerguntas : [{pai, filhos[], correta}] — lista embaralhada
+    // S._quizIdx       : índice atual
+    // S._quizPontos    : acertos
+    // S._quizTotal     : total respondido
+    // S._quizRespondeu : bool — já escolheu nesta pergunta?
 
-function iniciarQuiz() {
-  const list = getL(); if (!list) return;
+    function iniciarQuiz() {
+      const list = getL(); if (!list) return;
 
-  // Coleta só itens PAI que têm pelo menos 2 filhos
-  const candidatos = list.items.filter(i => i.children && i.children.length >= 2);
-  if (candidatos.length === 0) {
-    alert('Para o quiz, crie itens com pelo menos 2 filhos.\nOs pais serão as perguntas e os filhos as respostas.');
-    return;
-  }
+      // Coleta só itens PAI que têm pelo menos 2 filhos
+      const candidatos = list.items.filter(i => i.children && i.children.length >= 2);
+      if (candidatos.length === 0) {
+        alert('Para o quiz, crie itens com pelo menos 2 filhos.\nOs pais serão as perguntas e os filhos as respostas.');
+        return;
+      }
 
-  // Monta perguntas: cada filho do pai é uma opção, o primeiro filho é a "correta"
-  // (ou seja: o usuário define a correta sendo o PRIMEIRO filho)
-  const perguntas = candidatos.map(pai => {
-    const filhos = [...pai.children];
-    const correta = filhos[0].text; // primeiro filho = resposta certa
-    const opcoes = shuffle([...filhos.map(f => f.text)]);
-    return { pergunta: pai.text, opcoes, correta };
-  });
+      // Monta perguntas: cada filho do pai é uma opção, o primeiro filho é a "correta"
+      // (ou seja: o usuário define a correta sendo o PRIMEIRO filho)
+      const perguntas = candidatos.map(pai => {
+        const filhos = [...pai.children];
+        const correta = filhos[0].text; // primeiro filho = resposta certa
+        const opcoes = shuffle([...filhos.map(f => f.text)]);
+        return { pergunta: pai.text, opcoes, correta };
+      });
 
-  S._quizAtivo = true;
-  S._quizPerguntas = shuffle(perguntas);
-  S._quizIdx = 0;
-  S._quizPontos = 0;
-  S._quizTotal = 0;
-  S._quizRespondeu = false;
-  save(); renderAll();
-}
+      S._quizAtivo = true;
+      S._quizPerguntas = shuffle(perguntas);
+      S._quizIdx = 0;
+      S._quizPontos = 0;
+      S._quizTotal = 0;
+      S._quizRespondeu = false;
+      save(); renderAll();
+    }
 
-function encerrarQuiz() {
-  S._quizAtivo = false;
-  save(); renderAll();
-}
+    function encerrarQuiz() {
+      S._quizAtivo = false;
+      save(); renderAll();
+    }
 
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
 
-function responderQuiz(opcao) {
-  if (S._quizRespondeu) return; // já respondeu, aguarda próxima
-  S._quizRespondeu = true;
-  S._quizTotal++;
-  const q = S._quizPerguntas[S._quizIdx];
-  if (opcao === q.correta) S._quizPontos++;
-  save(); renderCnt();
-}
+    function responderQuiz(opcao) {
+      if (S._quizRespondeu) return; // já respondeu, aguarda próxima
+      S._quizRespondeu = true;
+      S._quizTotal++;
+      const q = S._quizPerguntas[S._quizIdx];
+      if (opcao === q.correta) S._quizPontos++;
+      save(); renderCnt();
+    }
 
-function proximaQuiz() {
-  S._quizIdx++;
-  S._quizRespondeu = false;
-  if (S._quizIdx >= S._quizPerguntas.length) {
-    // Terminou todas as perguntas
-    S._quizIdx = 0;
-    S._quizPerguntas = shuffle(S._quizPerguntas); // embaralha de novo pro próximo ciclo
-  }
-  save(); renderCnt();
-}
+    function proximaQuiz() {
+      S._quizIdx++;
+      S._quizRespondeu = false;
+      if (S._quizIdx >= S._quizPerguntas.length) {
+        // Terminou todas as perguntas
+        S._quizIdx = 0;
+        S._quizPerguntas = shuffle(S._quizPerguntas); // embaralha de novo pro próximo ciclo
+      }
+      save(); renderCnt();
+    }
 
-function renderQuiz() {
-  const perguntas = S._quizPerguntas;
-  const idx = S._quizIdx;
-  const q = perguntas[idx];
-  const pontos = S._quizPontos;
-  const total = S._quizTotal;
-  const respondeu = S._quizRespondeu;
-  const pct = total > 0 ? Math.round(pontos / total * 100) : 0;
-  const restantes = perguntas.length;
+    function renderQuiz() {
+      const perguntas = S._quizPerguntas;
+      const idx = S._quizIdx;
+      const q = perguntas[idx];
+      const pontos = S._quizPontos;
+      const total = S._quizTotal;
+      const respondeu = S._quizRespondeu;
+      const pct = total > 0 ? Math.round(pontos / total * 100) : 0;
+      const restantes = perguntas.length;
 
-  // Cores das opções após responder
-  const corOpcao = opcao => {
-    if (!respondeu) return `background:var(--surface2);border-color:var(--border);color:var(--text)`;
-    if (opcao === q.correta) return `background:rgba(62,207,142,.15);border-color:var(--green);color:var(--green)`;
-    return `background:rgba(232,86,94,.08);border-color:rgba(232,86,94,.3);color:var(--text3)`;
-  };
+      // Cores das opções após responder
+      const corOpcao = opcao => {
+        if (!respondeu) return `background:var(--surface2);border-color:var(--border);color:var(--text)`;
+        if (opcao === q.correta) return `background:rgba(62,207,142,.15);border-color:var(--green);color:var(--green)`;
+        return `background:rgba(232,86,94,.08);border-color:rgba(232,86,94,.3);color:var(--text3)`;
+      };
 
-  const iconeOpcao = opcao => {
-    if (!respondeu) return '';
-    if (opcao === q.correta) return '✅ ';
-    return '❌ ';
-  };
+      const iconeOpcao = opcao => {
+        if (!respondeu) return '';
+        if (opcao === q.correta) return '✅ ';
+        return '❌ ';
+      };
 
-  return `
+      return `
     <div style="display:flex;flex-direction:column;gap:14px">
 
       <!-- Placar -->
@@ -2601,31 +2692,31 @@ function renderQuiz() {
       <!-- Botão sair -->
       <button onclick="encerrarQuiz()" class="btn" style="width:100%">✕ Encerrar Quiz</button>
     </div>`;
-}
-// plugin estrelas
-reg('stars', {
-  name: 'Avaliação ⭐',
-  icon: '⭐',
-  desc: 'Dê estrelas aos itens',
-  def: false,
+    }
+    // plugin estrelas
+    reg('stars', {
+      name: 'Avaliação ⭐',
+      icon: '⭐',
+      desc: 'Dê estrelas aos itens',
+      def: false,
 
-  // Botão que aparece em cada item
-  abtn(item) {
-    return `<button class="iabtn"
+      // Botão que aparece em cada item
+      abtn(item) {
+        return `<button class="iabtn"
       onclick="setStars('${item.id}')">⭐</button>`;
-  },
+      },
 
-  // Badge exibido abaixo do texto
-  meta(item) {
-    if (!item.stars) return '';
-    return '⭐'.repeat(item.stars);
-  }
-});
+      // Badge exibido abaixo do texto
+      meta(item) {
+        if (!item.stars) return '';
+        return '⭐'.repeat(item.stars);
+      }
+    });
 
-function setStars(id) {
-  const l = getL();
-  const item = find(l.items, id);
-  openM('Avaliar item', `
+    function setStars(id) {
+      const l = getL();
+      const item = find(l.items, id);
+      openM('Avaliar item', `
     <div class="fg">
       <div class="fl">Estrelas (1-5)</div>
       <input type="number" id="mst"
@@ -2633,79 +2724,79 @@ function setStars(id) {
         value="${item?.stars || 3}">
     </div>
   `, () => {
-    const v = +document.getElementById('mst').value;
-    if (item) { item.stars = v; save(); renderCnt(); }
-  });
-}
-//plugin orçamentos
-reg('orcamento', {
-  name: 'Orçamento', icon: '💰', desc: 'Soma valores e horas dos itens marcados', def: false,
-  tb() { return `<button class="tbbtn" onclick="openOrcConfig()">💰 Mão de obra</button>`; },
-  onRenderBottom(lv, list) {
-    const h = calcOrcamento(list); if (!h) return;
-    const d = document.createElement('div'); d.innerHTML = h; lv.appendChild(d);
-  }
-});
+        const v = +document.getElementById('mst').value;
+        if (item) { item.stars = v; save(); renderCnt(); }
+      });
+    }
+    //plugin orçamentos
+    reg('orcamento', {
+      name: 'Orçamento', icon: '💰', desc: 'Soma valores e horas dos itens marcados', def: false,
+      tb() { return `<button class="tbbtn" onclick="openOrcConfig()">💰 Mão de obra</button>`; },
+      onRenderBottom(lv, list) {
+        const h = calcOrcamento(list); if (!h) return;
+        const d = document.createElement('div'); d.innerHTML = h; lv.appendChild(d);
+      }
+    });
 
-function parseValorItem(texto) {
-  // Captura número antes de palavras de dinheiro ou tempo
-  // Ex: "10 reais", "1 hora", "30 minutos", "5 conto", "3 pilas"
-  const money = /(\d+(?:[.,]\d+)?)\s*(?:reais?|real|contos?|pilas?|r\$)/gi;
-  const hours = /(\d+(?:[.,]\d+)?)\s*h(?:oras?|r)?(?:\b)/gi;
-  const mins = /(\d+(?:[.,]\d+)?)\s*min(?:utos?)?(?:\b)/gi;
+    function parseValorItem(texto) {
+      // Captura número antes de palavras de dinheiro ou tempo
+      // Ex: "10 reais", "1 hora", "30 minutos", "5 conto", "3 pilas"
+      const money = /(\d+(?:[.,]\d+)?)\s*(?:reais?|real|contos?|pilas?|r\$)/gi;
+      const hours = /(\d+(?:[.,]\d+)?)\s*h(?:oras?|r)?(?:\b)/gi;
+      const mins = /(\d+(?:[.,]\d+)?)\s*min(?:utos?)?(?:\b)/gi;
 
-  let totalMoney = 0;
-  let totalMinutes = 0;
+      let totalMoney = 0;
+      let totalMinutes = 0;
 
-  let m;
-  while ((m = money.exec(texto)) !== null)
-    totalMoney += parseFloat(m[1].replace(',', '.'));
-  while ((m = hours.exec(texto)) !== null)
-    totalMinutes += parseFloat(m[1].replace(',', '.')) * 60;
-  while ((m = mins.exec(texto)) !== null)
-    totalMinutes += parseFloat(m[1].replace(',', '.'));
+      let m;
+      while ((m = money.exec(texto)) !== null)
+        totalMoney += parseFloat(m[1].replace(',', '.'));
+      while ((m = hours.exec(texto)) !== null)
+        totalMinutes += parseFloat(m[1].replace(',', '.')) * 60;
+      while ((m = mins.exec(texto)) !== null)
+        totalMinutes += parseFloat(m[1].replace(',', '.'));
 
-  return { totalMoney, totalMinutes };
-}
+      return { totalMoney, totalMinutes };
+    }
 
-function calcOrcamento(list) {
-  // Pega todos os itens MARCADOS recursivamente
-  const checked = [];
-  const walk = arr => arr.forEach(i => {
-    if (i.checked) checked.push(i);
-    if (i.children) walk(i.children);
-  });
-  walk(list.items);
+    function calcOrcamento(list) {
+      // Pega todos os itens MARCADOS recursivamente
+      const checked = [];
+      const walk = arr => arr.forEach(i => {
+        if (i.checked) checked.push(i);
+        if (i.children) walk(i.children);
+      });
+      walk(list.items);
 
-  if (!checked.length) return `
+      if (!checked.length) return `
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px">
       <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
         💰 Marque itens com valores para calcular o orçamento.
       </div>
     </div>`;
 
-  const precoHora = parseFloat(S._orcPrecoHora || 100);
+      const precoHora = parseFloat(S._orcPrecoHora || 100);
 
-  let totalDinheiro = 0;
-  let totalMinutos = 0;
-  const linhas = [];
+      let totalDinheiro = 0;
+      let totalMinutos = 0;
+      const linhas = [];
 
-  for (const item of checked) {
-    const { totalMoney, totalMinutes } = parseValorItem(item.text);
-    if (totalMoney > 0 || totalMinutes > 0) {
-      const valorTempo = (totalMinutes / 60) * precoHora;
-      const subtotal = totalMoney + valorTempo;
-      totalDinheiro += totalMoney;
-      totalMinutos += totalMinutes;
+      for (const item of checked) {
+        const { totalMoney, totalMinutes } = parseValorItem(item.text);
+        if (totalMoney > 0 || totalMinutes > 0) {
+          const valorTempo = (totalMinutes / 60) * precoHora;
+          const subtotal = totalMoney + valorTempo;
+          totalDinheiro += totalMoney;
+          totalMinutos += totalMinutes;
 
-      let descTempo = '';
-      if (totalMinutes > 0) {
-        const h = Math.floor(totalMinutes / 60);
-        const min = Math.round(totalMinutes % 60);
-        descTempo = h > 0 && min > 0 ? `${h}h ${min}min` : h > 0 ? `${h}h` : `${min}min`;
-      }
+          let descTempo = '';
+          if (totalMinutes > 0) {
+            const h = Math.floor(totalMinutes / 60);
+            const min = Math.round(totalMinutes % 60);
+            descTempo = h > 0 && min > 0 ? `${h}h ${min}min` : h > 0 ? `${h}h` : `${min}min`;
+          }
 
-      linhas.push(`
+          linhas.push(`
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
           <div style="font-size:12px;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(item.text)}</div>
           <div style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text);flex-shrink:0;text-align:right">
@@ -2714,24 +2805,24 @@ function calcOrcamento(list) {
             ${valorTempo > 0 ? `<span style="color:var(--orange);margin-left:6px">+R$ ${valorTempo.toFixed(2).replace('.', ',')}</span>` : ''}
           </div>
         </div>`);
-    }
-  }
+        }
+      }
 
-  const valorTotalTempo = (totalMinutos / 60) * precoHora;
-  const grandTotal = totalDinheiro + valorTotalTempo;
+      const valorTotalTempo = (totalMinutos / 60) * precoHora;
+      const grandTotal = totalDinheiro + valorTotalTempo;
 
-  const hTotal = Math.floor(totalMinutos / 60);
-  const minTotal = Math.round(totalMinutos % 60);
-  const tempoStr = hTotal > 0 && minTotal > 0 ? `${hTotal}h ${minTotal}min` : hTotal > 0 ? `${hTotal}h` : minTotal > 0 ? `${minTotal}min` : '';
+      const hTotal = Math.floor(totalMinutos / 60);
+      const minTotal = Math.round(totalMinutos % 60);
+      const tempoStr = hTotal > 0 && minTotal > 0 ? `${hTotal}h ${minTotal}min` : hTotal > 0 ? `${hTotal}h` : minTotal > 0 ? `${minTotal}min` : '';
 
-  if (!linhas.length) return `
+      if (!linhas.length) return `
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px">
       <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
         💰 Nenhum item marcado contém valores ou horas reconhecíveis.
       </div>
     </div>`;
 
-  return `
+      return `
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:4px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">💰 Orçamento</div>
@@ -2748,10 +2839,10 @@ function calcOrcamento(list) {
         <div style="font-size:18px;font-weight:800;color:var(--accent)">R$ ${grandTotal.toFixed(2).replace('.', ',')}</div>
       </div>
     </div>`;
-}
+    }
 
-function openOrcConfig() {
-  openM('💰 Mão de obra', `
+    function openOrcConfig() {
+      openM('💰 Mão de obra', `
     <div class="fg">
       <div class="fl">Preço por hora (R$)</div>
       <input type="number" id="moh" min="0" step="0.01"
@@ -2764,97 +2855,97 @@ function openOrcConfig() {
       • <b>1 hora</b> / <b>1h</b> / <b>30 minutos</b> / <b>30min</b>
     </div>
   `, () => {
-    const v = parseFloat(document.getElementById('moh').value);
-    if (!isNaN(v) && v >= 0) { S._orcPrecoHora = v; save(); renderCnt(); }
-  });
-}
+        const v = parseFloat(document.getElementById('moh').value);
+        if (!isNaN(v) && v >= 0) { S._orcPrecoHora = v; save(); renderCnt(); }
+      });
+    }
 
-// ── 17. FOCO ──────────────────────────────────────────
-reg('focus', {
-  name: 'Modo Foco', icon: '🎯', desc: 'Mostra só o caminho que você está expandindo', def: false,
-  tb() {
-    if (!S._focusAtivo) return `<button class="tbbtn" onclick="iniciarFocus()">🎯 Modo Foco</button>`;
-    return `<button class="tbbtn" style="background:rgba(124,106,247,.2);border-color:var(--accent);color:var(--accent)" onclick="encerrarFocus()">🎯 Sair do Foco</button>`;
-  },
-  onRenderCnt(lv, list) {
-    if (!S._focusAtivo) return false;
-    const h = document.createElement('div');
-    h.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">${esc(list.name)}</div>`;
-    lv.appendChild(h);
-    const v = document.createElement('div'); v.innerHTML = renderFocus(list); lv.appendChild(v);
-    return true;
-  }
-});
+    // ── 17. FOCO ──────────────────────────────────────────
+    reg('focus', {
+      name: 'Modo Foco', icon: '🎯', desc: 'Mostra só o caminho que você está expandindo', def: false,
+      tb() {
+        if (!S._focusAtivo) return `<button class="tbbtn" onclick="iniciarFocus()">🎯 Modo Foco</button>`;
+        return `<button class="tbbtn" style="background:rgba(124,106,247,.2);border-color:var(--accent);color:var(--accent)" onclick="encerrarFocus()">🎯 Sair do Foco</button>`;
+      },
+      onRenderCnt(lv, list) {
+        if (!S._focusAtivo) return false;
+        const h = document.createElement('div');
+        h.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">${esc(list.name)}</div>`;
+        lv.appendChild(h);
+        const v = document.createElement('div'); v.innerHTML = renderFocus(list); lv.appendChild(v);
+        return true;
+      }
+    });
 
-function iniciarFocus() {
-  S._focusAtivo = true;
-  S._focusPath = []; // caminho de ids expandidos: [avô, pai, filho...]
-  save(); renderAll();
-}
+    function iniciarFocus() {
+      S._focusAtivo = true;
+      S._focusPath = []; // caminho de ids expandidos: [avô, pai, filho...]
+      save(); renderAll();
+    }
 
-function encerrarFocus() {
-  S._focusAtivo = false;
-  S._focusPath = [];
-  save(); renderAll();
-}
+    function encerrarFocus() {
+      S._focusAtivo = false;
+      S._focusPath = [];
+      save(); renderAll();
+    }
 
-function focusEntrar(id) {
-  // Entra num item: adiciona ao caminho
-  const list = getL(); if (!list) return;
-  const item = find(list.items, id); if (!item) return;
+    function focusEntrar(id) {
+      // Entra num item: adiciona ao caminho
+      const list = getL(); if (!list) return;
+      const item = find(list.items, id); if (!item) return;
 
-  // Verifica se o id já está no caminho (voltar para um nível anterior)
-  const idx = S._focusPath.indexOf(id);
-  if (idx !== -1) {
-    // Trunca o caminho até este ponto
-    S._focusPath = S._focusPath.slice(0, idx + 1);
-  } else {
-    S._focusPath.push(id);
-  }
-  save(); renderCnt();
-}
+      // Verifica se o id já está no caminho (voltar para um nível anterior)
+      const idx = S._focusPath.indexOf(id);
+      if (idx !== -1) {
+        // Trunca o caminho até este ponto
+        S._focusPath = S._focusPath.slice(0, idx + 1);
+      } else {
+        S._focusPath.push(id);
+      }
+      save(); renderCnt();
+    }
 
-function focusVoltar() {
-  S._focusPath.pop();
-  save(); renderCnt();
-}
+    function focusVoltar() {
+      S._focusPath.pop();
+      save(); renderCnt();
+    }
 
-// Marca/desmarca SOMENTE o item clicado, sem propagar para filhos
-function togChkFocus(id, v) {
-  const list = getL(); if (!list) return;
-  const item = find(list.items, id); if (!item) return;
-  item.checked = v; // só este item, sem tocar nos filhos
-  save(); renderCnt();
-}
+    // Marca/desmarca SOMENTE o item clicado, sem propagar para filhos
+    function togChkFocus(id, v) {
+      const list = getL(); if (!list) return;
+      const item = find(list.items, id); if (!item) return;
+      item.checked = v; // só este item, sem tocar nos filhos
+      save(); renderCnt();
+    }
 
-function renderFocus(list) {
-  const path = S._focusPath || [];
+    function renderFocus(list) {
+      const path = S._focusPath || [];
 
-  // Descobre os itens a mostrar em cada nível do caminho
-  // Nível 0: filhos diretos da lista (raiz)
-  // Nível N: filhos do item path[N-1]
+      // Descobre os itens a mostrar em cada nível do caminho
+      // Nível 0: filhos diretos da lista (raiz)
+      // Nível N: filhos do item path[N-1]
 
-  let nivelAtual;
-  let itemAtivo = null;
+      let nivelAtual;
+      let itemAtivo = null;
 
-  if (path.length === 0) {
-    nivelAtual = list.items;
-  } else {
-    itemAtivo = find(list.items, path[path.length - 1]);
-    nivelAtual = itemAtivo?.children || [];
-  }
+      if (path.length === 0) {
+        nivelAtual = list.items;
+      } else {
+        itemAtivo = find(list.items, path[path.length - 1]);
+        nivelAtual = itemAtivo?.children || [];
+      }
 
-  // Monta o breadcrumb (trilha de navegação)
-  const breadcrumb = path.map((id, i) => {
-    const item = find(list.items, id);
-    return `<span onclick="focusEntrar('${id}')"
+      // Monta o breadcrumb (trilha de navegação)
+      const breadcrumb = path.map((id, i) => {
+        const item = find(list.items, id);
+        return `<span onclick="focusEntrar('${id}')"
       style="cursor:pointer;color:${i === path.length - 1 ? 'var(--accent)' : 'var(--text3)'};
              font-size:12px;font-family:'JetBrains Mono',monospace;
              text-decoration:${i === path.length - 1 ? 'none' : 'underline'}"
       >${esc(item?.text || '?')}</span>`;
-  });
+      });
 
-  const trilha = `
+      const trilha = `
     <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 12px;
                 background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
                 font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
@@ -2863,14 +2954,14 @@ function renderFocus(list) {
       ${breadcrumb.map(b => `<span style="color:var(--border)">›</span>${b}`).join('')}
     </div>`;
 
-  // Botão voltar
-  const btnVoltar = path.length > 0 ? `
+      // Botão voltar
+      const btnVoltar = path.length > 0 ? `
     <button onclick="focusVoltar()" class="btn" style="width:100%;margin-bottom:4px">
       ← Voltar
     </button>` : '';
 
-  // Contexto: mostra o item pai atual em destaque
-  const ctxPai = itemAtivo ? `
+      // Contexto: mostra o item pai atual em destaque
+      const ctxPai = itemAtivo ? `
     <div style="background:var(--surface2);border:1px solid var(--accent);border-radius:var(--r);
                 padding:14px 16px;display:flex;align-items:center;gap:10px">
       <input type="checkbox" class="icb ${itemAtivo.checked ? 'checked' : ''}"
@@ -2879,40 +2970,40 @@ function renderFocus(list) {
         style="flex-shrink:0">
     <div style="flex:1;font-size:16px;font-weight:700;color:var(--text);line-height:2.2">
         ${(pon('audio') && itemAtivo.text && itemAtivo.text.includes('⟨🎙'))
-      ? renderRichText(itemAtivo)
-      : esc(itemAtivo.text)}
+          ? renderRichText(itemAtivo)
+          : esc(itemAtivo.text)}
       </div>
         ${itemAtivo.children?.length ? `<span style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">${itemAtivo.children.length} filho${itemAtivo.children.length > 1 ? 's' : ''}</span>` : ''}
     </div>` : '';
 
-  // Lista os itens do nível atual
-  const listaItens = nivelAtual.length === 0 ? `
+      // Lista os itens do nível atual
+      const listaItens = nivelAtual.length === 0 ? `
     <div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;font-family:'JetBrains Mono',monospace">
       Sem filhos neste item.
     </div>` :
-    nivelAtual.map(item => {
-      const temFilhos = item.children?.length > 0;
-      const { d, t } = temFilhos ? cp(item.children) : { d: 0, t: 0 };
+        nivelAtual.map(item => {
+          const temFilhos = item.children?.length > 0;
+          const { d, t } = temFilhos ? cp(item.children) : { d: 0, t: 0 };
 
-      // Badges de orçamento
-      let orcHtml = '';
-      if (pon('orcamento')) {
-        const { totalMoney, totalMinutes } = parseValorItem(item.text);
-        const precoHora = parseFloat(S._orcPrecoHora || 100);
-        const valorTempo = (totalMinutes / 60) * precoHora;
-        const subtotal = totalMoney + valorTempo;
-        if (subtotal > 0) {
-          const h = Math.floor(totalMinutes / 60), min = Math.round(totalMinutes % 60);
-          const tempoStr = h > 0 && min > 0 ? `${h}h ${min}min` : h > 0 ? `${h}h` : min > 0 ? `${min}min` : '';
-          orcHtml = `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">
+          // Badges de orçamento
+          let orcHtml = '';
+          if (pon('orcamento')) {
+            const { totalMoney, totalMinutes } = parseValorItem(item.text);
+            const precoHora = parseFloat(S._orcPrecoHora || 100);
+            const valorTempo = (totalMinutes / 60) * precoHora;
+            const subtotal = totalMoney + valorTempo;
+            if (subtotal > 0) {
+              const h = Math.floor(totalMinutes / 60), min = Math.round(totalMinutes % 60);
+              const tempoStr = h > 0 && min > 0 ? `${h}h ${min}min` : h > 0 ? `${h}h` : min > 0 ? `${min}min` : '';
+              orcHtml = `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">
             ${totalMoney > 0 ? `<span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--green);background:rgba(62,207,142,.1);border:1px solid rgba(62,207,142,.3);padding:1px 7px;border-radius:20px">R$ ${totalMoney.toFixed(2).replace('.', ',')}</span>` : ''}
             ${tempoStr ? `<span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--blue);background:rgba(79,167,232,.1);border:1px solid rgba(79,167,232,.3);padding:1px 7px;border-radius:20px">⏱ ${tempoStr} = R$ ${valorTempo.toFixed(2).replace('.', ',')}</span>` : ''}
             <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--accent);font-weight:700">= R$ ${subtotal.toFixed(2).replace('.', ',')}</span>
           </div>`;
-        }
-      }
+            }
+          }
 
-      return `
+          return `
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;transition:border-color .15s">
           <div style="display:flex;align-items:center;gap:8px">
             <input type="checkbox" class="icb"
@@ -2932,29 +3023,29 @@ function renderFocus(list) {
           </div>
           ${orcHtml}
         </div>`;
-    }).join('');
+        }).join('');
 
-  // Total orçamento dos itens marcados no nível atual
-  // Total orçamento — soma TODOS os itens marcados da lista inteira, não só do nível atual
-  let orcTotalHtml = '';
-  if (pon('orcamento')) {
-    const precoHora = parseFloat(S._orcPrecoHora || 100);
-    let total = 0;
-    let marcados = 0;
+      // Total orçamento dos itens marcados no nível atual
+      // Total orçamento — soma TODOS os itens marcados da lista inteira, não só do nível atual
+      let orcTotalHtml = '';
+      if (pon('orcamento')) {
+        const precoHora = parseFloat(S._orcPrecoHora || 100);
+        let total = 0;
+        let marcados = 0;
 
-    // Coleta todos os itens marcados recursivamente na lista toda
-    const walk = arr => arr.forEach(item => {
-      if (item.checked) {
-        const { totalMoney, totalMinutes } = parseValorItem(item.text);
-        const subtotal = totalMoney + (totalMinutes / 60) * precoHora;
-        if (subtotal > 0) { total += subtotal; marcados++; }
-      }
-      if (item.children) walk(item.children);
-    });
-    walk(list.items);
+        // Coleta todos os itens marcados recursivamente na lista toda
+        const walk = arr => arr.forEach(item => {
+          if (item.checked) {
+            const { totalMoney, totalMinutes } = parseValorItem(item.text);
+            const subtotal = totalMoney + (totalMinutes / 60) * precoHora;
+            if (subtotal > 0) { total += subtotal; marcados++; }
+          }
+          if (item.children) walk(item.children);
+        });
+        walk(list.items);
 
-    if (total > 0) {
-      orcTotalHtml = `<div style="display:flex;align-items:center;justify-content:space-between;
+        if (total > 0) {
+          orcTotalHtml = `<div style="display:flex;align-items:center;justify-content:space-between;
         background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px">
         <span style="font-size:12px;color:var(--text2);font-family:'JetBrains Mono',monospace">
           💰 Total geral marcados (${marcados})
@@ -2963,10 +3054,10 @@ function renderFocus(list) {
           R$ ${total.toFixed(2).replace('.', ',')}
         </span>
       </div>`;
-    }
-  }
+        }
+      }
 
-  return `
+      return `
     <div style="display:flex;flex-direction:column;gap:10px">
       ${trilha}
       ${btnVoltar}
@@ -2976,18 +3067,18 @@ function renderFocus(list) {
       ${orcTotalHtml}
       ${nivelAtual.length > 0 && nivelAtual.some(i => i.children?.length > 0) ? `<div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;text-align:center;padding:4px">Toque no texto para entrar nos filhos ›</div>` : ''}
     </div>`;
-}
-// ── 18. ÁUDIO INLINE ──────────────────────────────────
-reg('audio', {
-  name: 'Áudio Inline', icon: '🎙️', desc: 'Áudios embutidos dentro do texto', def: false,
-  abtn(item) {
-    return `<button class="iabtn" title="Inserir áudio no cursor" onclick="audioInsert('${item.id}')">🎙️</button>`;
-  }
-});
+    }
+    // ── 18. ÁUDIO INLINE ──────────────────────────────────
+    reg('audio', {
+      name: 'Áudio Inline', icon: '🎙️', desc: 'Áudios embutidos dentro do texto', def: false,
+      abtn(item) {
+        return `<button class="iabtn" title="Inserir áudio no cursor" onclick="audioInsert('${item.id}')">🎙️</button>`;
+      }
+    });
 
-(() => {
-  const s = document.createElement('style');
-  s.textContent = `
+    (() => {
+      const s = document.createElement('style');
+      s.textContent = `
     /* texto do item com áudio — não editável diretamente */
     .itext-rich{font-size:14px;line-height:2.2;color:var(--text);font-family:'Syne',sans-serif;
                 word-break:break-word;display:block;width:100%;min-height:20px;
@@ -3036,70 +3127,70 @@ reg('audio', {
 
     @keyframes audpulse{from{opacity:1}to{opacity:.35}}
   `;
-  document.head.appendChild(s);
-})();
+      document.head.appendChild(s);
+    })();
 
-// ── Estado global de gravação ──
-let _audRec = null, _audChunks = [], _audItemId = null, _audMarkId = null;
+    // ── Estado global de gravação ──
+    let _audRec = null, _audChunks = [], _audItemId = null, _audMarkId = null;
 
-// ── Players ativos (audio elements em memória) ──
-const _audPlayers = {}; // markId → HTMLAudioElement
+    // ── Players ativos (audio elements em memória) ──
+    const _audPlayers = {}; // markId → HTMLAudioElement
 
-// ── Insere marcador no cursor dentro do itext ──
-function audioInsert(itemId) {
-  const list = getL(); if (!list) return;
-  const item = find(list.items, itemId); if (!item) return;
+    // ── Insere marcador no cursor dentro do itext ──
+    function audioInsert(itemId) {
+      const list = getL(); if (!list) return;
+      const item = find(list.items, itemId); if (!item) return;
 
-  const markId = genId();
-  const marker = `⟨🎙${markId}⟩`;
+      const markId = genId();
+      const marker = `⟨🎙${markId}⟩`;
 
-  // Tenta inserir no cursor do contenteditable
-  const el = document.querySelector(`[data-id="${itemId}"] .itext`);
-  if (el && el.isContentEditable) {
-    el.focus();
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount) {
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      const node = document.createTextNode(marker);
-      range.insertNode(node);
-      range.setStartAfter(node);
-      range.collapse(true);
-      sel.removeAllRanges(); sel.addRange(range);
-      item.text = el.innerText;
-    } else {
-      item.text = (item.text || '') + marker;
+      // Tenta inserir no cursor do contenteditable
+      const el = document.querySelector(`[data-id="${itemId}"] .itext`);
+      if (el && el.isContentEditable) {
+        el.focus();
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount) {
+          const range = sel.getRangeAt(0);
+          range.deleteContents();
+          const node = document.createTextNode(marker);
+          range.insertNode(node);
+          range.setStartAfter(node);
+          range.collapse(true);
+          sel.removeAllRanges(); sel.addRange(range);
+          item.text = el.innerText;
+        } else {
+          item.text = (item.text || '') + marker;
+        }
+      } else {
+        item.text = (item.text || '') + marker;
+      }
+
+      if (!item.audios) item.audios = {};
+      item.audios[markId] = { src: null };
+      save(); renderCnt();
+
+      // Auto-inicia gravação
+      setTimeout(() => audioStartRec(itemId, markId), 100);
     }
-  } else {
-    item.text = (item.text || '') + marker;
-  }
 
-  if (!item.audios) item.audios = {};
-  item.audios[markId] = { src: null };
-  save(); renderCnt();
+    // ── Renderiza o texto com chips de áudio inline ──
+    function renderRichText(item) {
+      if (!item.text) return '';
+      const audios = item.audios || {};
 
-  // Auto-inicia gravação
-  setTimeout(() => audioStartRec(itemId, markId), 100);
-}
+      // Divide nos marcadores ⟨🎙id⟩
+      const parts = item.text.split(/(⟨🎙[a-z0-9]+⟩)/g);
 
-// ── Renderiza o texto com chips de áudio inline ──
-function renderRichText(item) {
-  if (!item.text) return '';
-  const audios = item.audios || {};
+      return parts.map(part => {
+        const m = part.match(/^⟨🎙([a-z0-9]+)⟩$/);
+        if (!m) return esc(part);
 
-  // Divide nos marcadores ⟨🎙id⟩
-  const parts = item.text.split(/(⟨🎙[a-z0-9]+⟩)/g);
+        const markId = m[1];
+        const aud = audios[markId];
 
-  return parts.map(part => {
-    const m = part.match(/^⟨🎙([a-z0-9]+)⟩$/);
-    if (!m) return esc(part);
-
-    const markId = m[1];
-    const aud = audios[markId];
-
-    if (aud && aud.src) {
-      // Player customizado
-      return `<span class="aud-chip" id="chip-${markId}">
+        if (aud && aud.src) {
+          // Player customizado
+          return `<span class="aud-chip" id="chip-${markId}">
         <button class="aud-play" id="play-${markId}"
           onclick="audioPlayPause('${markId}','${item.id}')">▶</button>
         <span class="aud-bar-wrap" onclick="audioSeek(event,'${markId}')">
@@ -3108,10 +3199,10 @@ function renderRichText(item) {
         <span class="aud-time" id="time-${markId}">0:00</span>
         <button class="aud-del-btn" onclick="audioDel('${item.id}','${markId}')">✕</button>
       </span>`;
-    } else {
-      // Ainda sem áudio — mostra botões gravar/importar
-      const isRec = _audItemId === item.id && _audMarkId === markId && _audRec;
-      return `<span class="aud-chip pending ${isRec ? 'recording' : ''}">
+        } else {
+          // Ainda sem áudio — mostra botões gravar/importar
+          const isRec = _audItemId === item.id && _audMarkId === markId && _audRec;
+          return `<span class="aud-chip pending ${isRec ? 'recording' : ''}">
         <button class="aud-rec-btn ${isRec ? 'on' : ''}" id="arec-${markId}"
           onclick="audioToggleRec('${item.id}','${markId}')">
           ${isRec ? '⏹ Parar' : '🎙 Gravar'}
@@ -3119,150 +3210,150 @@ function renderRichText(item) {
         <button class="aud-rec-btn" onclick="audioImport('${item.id}','${markId}')">📎</button>
         <button class="aud-del-btn" onclick="audioDel('${item.id}','${markId}')">✕</button>
       </span>`;
+        }
+      }).join('');
     }
-  }).join('');
-}
 
-// ── Player customizado ──
-function audioPlayPause(markId, itemId) {
-  // Para todos os outros players
-  Object.entries(_audPlayers).forEach(([id, a]) => {
-    if (id !== markId) {
-      a.pause();
-      const b = document.getElementById(`play-${id}`);
-      const c = document.getElementById(`chip-${id}`);
-      if (b) b.textContent = '▶';
-      if (c) c.classList.remove('aud-playing');
-    }
-  });
+    // ── Player customizado ──
+    function audioPlayPause(markId, itemId) {
+      // Para todos os outros players
+      Object.entries(_audPlayers).forEach(([id, a]) => {
+        if (id !== markId) {
+          a.pause();
+          const b = document.getElementById(`play-${id}`);
+          const c = document.getElementById(`chip-${id}`);
+          if (b) b.textContent = '▶';
+          if (c) c.classList.remove('aud-playing');
+        }
+      });
 
-  // Cria o player se não existir
-  if (!_audPlayers[markId]) {
-    const list = getL(); if (!list) return;
-    const item = find(list.items, itemId); if (!item) return;
-    const src = item.audios?.[markId]?.src; if (!src) return;
-
-    const a = new Audio(src);
-    _audPlayers[markId] = a;
-
-    // Atualiza barra e tempo
-    a.ontimeupdate = () => {
-      const pct = a.duration ? (a.currentTime / a.duration * 100) : 0;
-      const bar = document.getElementById(`bar-${markId}`);
-      const tim = document.getElementById(`time-${markId}`);
-      if (bar) bar.style.width = pct + '%';
-      if (tim) tim.textContent = fmtTime(a.currentTime);
-    };
-    a.onended = () => {
-      const b = document.getElementById(`play-${markId}`);
-      const c = document.getElementById(`chip-${markId}`);
-      const bar = document.getElementById(`bar-${markId}`);
-      if (b) b.textContent = '▶';
-      if (c) c.classList.remove('aud-playing');
-      if (bar) bar.style.width = '0%';
-    };
-  }
-
-  const a = _audPlayers[markId];
-  const btn = document.getElementById(`play-${markId}`);
-  const chip = document.getElementById(`chip-${markId}`);
-
-  if (a.paused) {
-    a.play();
-    if (btn) btn.textContent = '⏸';
-    if (chip) chip.classList.add('aud-playing');
-  } else {
-    a.pause();
-    if (btn) btn.textContent = '▶';
-    if (chip) chip.classList.remove('aud-playing');
-  }
-}
-
-function audioSeek(event, markId) {
-  const a = _audPlayers[markId]; if (!a || !a.duration) return;
-  const rect = event.currentTarget.getBoundingClientRect();
-  const pct = (event.clientX - rect.left) / rect.width;
-  a.currentTime = pct * a.duration;
-}
-
-function fmtTime(s) {
-  const m = Math.floor(s / 60);
-  const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, '0')}`;
-}
-
-// ── Gravação ──
-function audioToggleRec(itemId, markId) {
-  if (_audItemId === itemId && _audMarkId === markId && _audRec) {
-    _audRec.stop(); return;
-  }
-  if (_audRec) { _audRec.onstop = null; _audRec.stop(); }
-  audioStartRec(itemId, markId);
-}
-
-async function audioStartRec(itemId, markId) {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    _audChunks = []; _audItemId = itemId; _audMarkId = markId;
-    const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(t => MediaRecorder.isTypeSupported(t)) || '';
-    _audRec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
-    _audRec.ondataavailable = e => { if (e.data.size > 0) _audChunks.push(e.data); };
-    _audRec.onstop = () => {
-      stream.getTracks().forEach(t => t.stop());
-      const blob = new Blob(_audChunks, { type: _audRec.mimeType || 'audio/webm' });
-      const reader = new FileReader();
-      reader.onload = ev => {
+      // Cria o player se não existir
+      if (!_audPlayers[markId]) {
         const list = getL(); if (!list) return;
         const item = find(list.items, itemId); if (!item) return;
-        if (!item.audios) item.audios = {};
-        if (!item.audios[markId]) item.audios[markId] = {};
-        item.audios[markId].src = ev.target.result;
-        _audRec = null; _audItemId = null; _audMarkId = null;
-        save(); renderCnt();
-      };
-      reader.readAsDataURL(blob);
-    };
-    _audRec.start();
-    // Atualiza visual imediatamente
-    renderCnt();
-  } catch (e) { alert('Microfone inacessível:\n' + e.message); }
-}
+        const src = item.audios?.[markId]?.src; if (!src) return;
 
-function audioImport(itemId, markId) {
-  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'audio/*';
-  inp.onchange = e => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
+        const a = new Audio(src);
+        _audPlayers[markId] = a;
+
+        // Atualiza barra e tempo
+        a.ontimeupdate = () => {
+          const pct = a.duration ? (a.currentTime / a.duration * 100) : 0;
+          const bar = document.getElementById(`bar-${markId}`);
+          const tim = document.getElementById(`time-${markId}`);
+          if (bar) bar.style.width = pct + '%';
+          if (tim) tim.textContent = fmtTime(a.currentTime);
+        };
+        a.onended = () => {
+          const b = document.getElementById(`play-${markId}`);
+          const c = document.getElementById(`chip-${markId}`);
+          const bar = document.getElementById(`bar-${markId}`);
+          if (b) b.textContent = '▶';
+          if (c) c.classList.remove('aud-playing');
+          if (bar) bar.style.width = '0%';
+        };
+      }
+
+      const a = _audPlayers[markId];
+      const btn = document.getElementById(`play-${markId}`);
+      const chip = document.getElementById(`chip-${markId}`);
+
+      if (a.paused) {
+        a.play();
+        if (btn) btn.textContent = '⏸';
+        if (chip) chip.classList.add('aud-playing');
+      } else {
+        a.pause();
+        if (btn) btn.textContent = '▶';
+        if (chip) chip.classList.remove('aud-playing');
+      }
+    }
+
+    function audioSeek(event, markId) {
+      const a = _audPlayers[markId]; if (!a || !a.duration) return;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const pct = (event.clientX - rect.left) / rect.width;
+      a.currentTime = pct * a.duration;
+    }
+
+    function fmtTime(s) {
+      const m = Math.floor(s / 60);
+      const sec = Math.floor(s % 60);
+      return `${m}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    // ── Gravação ──
+    function audioToggleRec(itemId, markId) {
+      if (_audItemId === itemId && _audMarkId === markId && _audRec) {
+        _audRec.stop(); return;
+      }
+      if (_audRec) { _audRec.onstop = null; _audRec.stop(); }
+      audioStartRec(itemId, markId);
+    }
+
+    async function audioStartRec(itemId, markId) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        _audChunks = []; _audItemId = itemId; _audMarkId = markId;
+        const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+        _audRec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+        _audRec.ondataavailable = e => { if (e.data.size > 0) _audChunks.push(e.data); };
+        _audRec.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(_audChunks, { type: _audRec.mimeType || 'audio/webm' });
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const list = getL(); if (!list) return;
+            const item = find(list.items, itemId); if (!item) return;
+            if (!item.audios) item.audios = {};
+            if (!item.audios[markId]) item.audios[markId] = {};
+            item.audios[markId].src = ev.target.result;
+            _audRec = null; _audItemId = null; _audMarkId = null;
+            save(); renderCnt();
+          };
+          reader.readAsDataURL(blob);
+        };
+        _audRec.start();
+        // Atualiza visual imediatamente
+        renderCnt();
+      } catch (e) { alert('Microfone inacessível:\n' + e.message); }
+    }
+
+    function audioImport(itemId, markId) {
+      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'audio/*';
+      inp.onchange = e => {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const list = getL(); if (!list) return;
+          const item = find(list.items, itemId); if (!item) return;
+          if (!item.audios) item.audios = {};
+          if (!item.audios[markId]) item.audios[markId] = {};
+          item.audios[markId].src = ev.target.result;
+          save(); renderCnt();
+        };
+        reader.readAsDataURL(file);
+      };
+      inp.click();
+    }
+
+    function audioDel(itemId, markId) {
       const list = getL(); if (!list) return;
       const item = find(list.items, itemId); if (!item) return;
-      if (!item.audios) item.audios = {};
-      if (!item.audios[markId]) item.audios[markId] = {};
-      item.audios[markId].src = ev.target.result;
+      // Remove marcador do texto e o dado
+      item.text = (item.text || '').replace(`⟨🎙${markId}⟩`, '').trim();
+      if (item.audios) delete item.audios[markId];
+      if (_audPlayers[markId]) { _audPlayers[markId].pause(); delete _audPlayers[markId]; }
       save(); renderCnt();
-    };
-    reader.readAsDataURL(file);
-  };
-  inp.click();
-}
+    }
 
-function audioDel(itemId, markId) {
-  const list = getL(); if (!list) return;
-  const item = find(list.items, itemId); if (!item) return;
-  // Remove marcador do texto e o dado
-  item.text = (item.text || '').replace(`⟨🎙${markId}⟩`, '').trim();
-  if (item.audios) delete item.audios[markId];
-  if (_audPlayers[markId]) { _audPlayers[markId].pause(); delete _audPlayers[markId]; }
-  save(); renderCnt();
-}
+    // ************* plugin registrar horas ******************
+    reg('ponto', {
+      name: 'Controle de Ponto', icon: '🕐', desc: 'Registro de horas, extras e relatório', def: false,
 
-// ************* plugin registrar horas ******************
-reg('ponto', {
-  name: 'Controle de Ponto', icon: '🕐', desc: 'Registro de horas, extras e relatório', def: false,
-
-  onInit() {
-    const s = document.createElement('style');
-    s.textContent = `
+      onInit() {
+        const s = document.createElement('style');
+        s.textContent = `
       .ponto-wrap{display:flex;flex-direction:column;gap:12px}
       .ponto-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
       .ponto-title{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;justify-content:space-between}
@@ -3295,116 +3386,116 @@ reg('ponto', {
       .ponto-salvar:active{opacity:.8;transform:scale(.98)}
       .ponto-novo-badge{font-size:10px;background:rgba(232,200,74,.15);border:1px solid rgba(232,200,74,.4);color:var(--yellow);padding:1px 7px;border-radius:20px;font-family:'JetBrains Mono',monospace}
     `;
-    document.head.appendChild(s);
+        document.head.appendChild(s);
 
-    if (!S._ponto) S._ponto = {
-      config: { valorHora: 15, entradaPad: '08:00', saidaAlmPad: '12:30', retornoPad: '13:30', saidaPad: '17:00' },
-      saldoAnterior: 0,
-      dias: {}
-    };
+        if (!S._ponto) S._ponto = {
+          config: { valorHora: 15, entradaPad: '08:00', saidaAlmPad: '12:30', retornoPad: '13:30', saidaPad: '17:00' },
+          saldoAnterior: 0,
+          dias: {}
+        };
 
-    if (!S._pontoDiaAtivo) S._pontoDiaAtivo = pontoHoje();
-    // NÃO cria o dia automaticamente — só salva quando usuário clicar em Salvar
-  },
+        if (!S._pontoDiaAtivo) S._pontoDiaAtivo = pontoHoje();
+        // NÃO cria o dia automaticamente — só salva quando usuário clicar em Salvar
+      },
 
-  tb() { return `<button class="tbbtn" onclick="pontoAbrir()">🕐 Ponto</button>`; },
+      tb() { return `<button class="tbbtn" onclick="pontoAbrir()">🕐 Ponto</button>`; },
 
-  onRenderCnt(lv, list) {
-    if (!S._pontoAberto) return false;
-    const h = document.createElement('div');
-    h.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">🕐 Controle de Ponto</div>`;
-    lv.appendChild(h);
-    const v = document.createElement('div');
-    v.innerHTML = renderPonto();
-    lv.appendChild(v);
-    return true;
-  }
-});
+      onRenderCnt(lv, list) {
+        if (!S._pontoAberto) return false;
+        const h = document.createElement('div');
+        h.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">🕐 Controle de Ponto</div>`;
+        lv.appendChild(h);
+        const v = document.createElement('div');
+        v.innerHTML = renderPonto();
+        lv.appendChild(v);
+        return true;
+      }
+    });
 
-// ── Helpers ──
-function pontoHoje() { return new Date().toISOString().slice(0, 10); }
-function hhmm(str) { if (!str || !str.includes(':')) return 0; const [h, m] = str.split(':').map(Number); return h * 60 + (m || 0); }
-function minsToStr(mins) { const a = Math.abs(mins), h = Math.floor(a / 60), m = a % 60; return `${h}h${m.toString().padStart(2, '0')}`; }
-function fmtData(key) {
-  const [y, mo, d] = key.split('-');
-  const nomes = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  return `${nomes[new Date(+y, +mo - 1, +d).getDay()]} ${d}/${mo}`;
-}
+    // ── Helpers ──
+    function pontoHoje() { return new Date().toISOString().slice(0, 10); }
+    function hhmm(str) { if (!str || !str.includes(':')) return 0; const [h, m] = str.split(':').map(Number); return h * 60 + (m || 0); }
+    function minsToStr(mins) { const a = Math.abs(mins), h = Math.floor(a / 60), m = a % 60; return `${h}h${m.toString().padStart(2, '0')}`; }
+    function fmtData(key) {
+      const [y, mo, d] = key.split('-');
+      const nomes = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      return `${nomes[new Date(+y, +mo - 1, +d).getDay()]} ${d}/${mo}`;
+    }
 
-// ── Estado temporário dos campos em edição (não salvo) ──
-// Usamos S._pontoRascunho para guardar valores enquanto digita
-function pontoGetRascunho(key) {
-  if (!S._pontoRascunho) S._pontoRascunho = {};
-  const c = S._ponto.config;
-  // Se já existe dia salvo, parte dele; senão parte do padrão
-  if (!S._pontoRascunho[key]) {
-    const base = S._ponto.dias[key]
-      ? { ...S._ponto.dias[key] }
-      : { entrada: c.entradaPad, saidaAlm: c.saidaAlmPad, retorno: c.retornoPad, saida: c.saidaPad, extras: [], adiantamentos: [] };
-    S._pontoRascunho[key] = base;
-  }
-  return S._pontoRascunho[key];
-}
+    // ── Estado temporário dos campos em edição (não salvo) ──
+    // Usamos S._pontoRascunho para guardar valores enquanto digita
+    function pontoGetRascunho(key) {
+      if (!S._pontoRascunho) S._pontoRascunho = {};
+      const c = S._ponto.config;
+      // Se já existe dia salvo, parte dele; senão parte do padrão
+      if (!S._pontoRascunho[key]) {
+        const base = S._ponto.dias[key]
+          ? { ...S._ponto.dias[key] }
+          : { entrada: c.entradaPad, saidaAlm: c.saidaAlmPad, retorno: c.retornoPad, saida: c.saidaPad, extras: [], adiantamentos: [] };
+        S._pontoRascunho[key] = base;
+      }
+      return S._pontoRascunho[key];
+    }
 
-function calcDia(dia) {
-  const c = S._ponto.config;
-  if (!dia || !dia.entrada || !dia.saida) return { totalMin: 0, jornadaMin: 0, diffMin: 0, totalStr: '--', jornadaStr: '--', diffStr: '--', ok: false };
-  const ep = hhmm(c.entradaPad), sap = hhmm(c.saidaAlmPad), rp = hhmm(c.retornoPad), sp = hhmm(c.saidaPad);
-  const jornadaMin = (sap - ep) + (sp - rp);
-  const entrada = hhmm(dia.entrada);
-  const saida = hhmm(dia.saida);
-  let totalMin = 0;
-  // Dia parcial: saída antes do almoço OU sem horário de almoço preenchido
-  const temAlmoco = dia.saidaAlm && dia.retorno;
-  const saidaAntesAlmoco = saida <= sap;
-  if (!temAlmoco || saidaAntesAlmoco) {
-    totalMin = Math.max(0, saida - entrada);
-  } else {
-    const saidaAlm = hhmm(dia.saidaAlm), retorno = hhmm(dia.retorno);
-    totalMin = Math.max(0, saidaAlm - entrada) + Math.max(0, saida - retorno);
-  }
-  (dia.extras || []).filter(e => e.tipo === 'horas').forEach(e => { totalMin += Math.round(parseFloat(e.valor || 0) * 60); });
-  const diffMin = totalMin - jornadaMin;
-  return {
-    totalMin, jornadaMin, diffMin,
-    totalStr: minsToStr(totalMin),
-    jornadaStr: minsToStr(jornadaMin),
-    diffStr: (diffMin >= 0 ? '+' : '-') + minsToStr(Math.abs(diffMin)),
-    ok: diffMin >= 0
-  };
-}
+    function calcDia(dia) {
+      const c = S._ponto.config;
+      if (!dia || !dia.entrada || !dia.saida) return { totalMin: 0, jornadaMin: 0, diffMin: 0, totalStr: '--', jornadaStr: '--', diffStr: '--', ok: false };
+      const ep = hhmm(c.entradaPad), sap = hhmm(c.saidaAlmPad), rp = hhmm(c.retornoPad), sp = hhmm(c.saidaPad);
+      const jornadaMin = (sap - ep) + (sp - rp);
+      const entrada = hhmm(dia.entrada);
+      const saida = hhmm(dia.saida);
+      let totalMin = 0;
+      // Dia parcial: saída antes do almoço OU sem horário de almoço preenchido
+      const temAlmoco = dia.saidaAlm && dia.retorno;
+      const saidaAntesAlmoco = saida <= sap;
+      if (!temAlmoco || saidaAntesAlmoco) {
+        totalMin = Math.max(0, saida - entrada);
+      } else {
+        const saidaAlm = hhmm(dia.saidaAlm), retorno = hhmm(dia.retorno);
+        totalMin = Math.max(0, saidaAlm - entrada) + Math.max(0, saida - retorno);
+      }
+      (dia.extras || []).filter(e => e.tipo === 'horas').forEach(e => { totalMin += Math.round(parseFloat(e.valor || 0) * 60); });
+      const diffMin = totalMin - jornadaMin;
+      return {
+        totalMin, jornadaMin, diffMin,
+        totalStr: minsToStr(totalMin),
+        jornadaStr: minsToStr(jornadaMin),
+        diffStr: (diffMin >= 0 ? '+' : '-') + minsToStr(Math.abs(diffMin)),
+        ok: diffMin >= 0
+      };
+    }
 
-function calcResumo() {
-  const p = S._ponto, c = p.config;
-  const keys = Object.keys(p.dias).sort();
-  let totalMin = 0, totalAdiant = 0, totalServicos = 0;
-  for (const key of keys) {
-    const d = p.dias[key];
-    if (d._rascunho) continue; // ignora dias não confirmados
-    const r = calcDia(d);
-    totalMin += r.totalMin;
-    (d.adiantamentos || []).forEach(e => { totalAdiant += parseFloat(e.valor || 0); });
-    (d.extras || []).filter(e => e.tipo === 'servico').forEach(e => { totalServicos += parseFloat(e.valor || 0); });
-  }
-  const saldoAnteriorReais = parseFloat(p.saldoAnterior || 0);
-  const valorHoras = (totalMin / 60) * parseFloat(c.valorHora || 15);
-  const totalAPagar = Math.max(0, valorHoras + totalServicos + saldoAnteriorReais - totalAdiant);
-  return { totalMin, valorHoras, totalAdiant, totalServicos, saldoAnteriorReais, totalAPagar, keys: Object.keys(p.dias).filter(k => !p.dias[k]._rascunho).sort() };
-}
+    function calcResumo() {
+      const p = S._ponto, c = p.config;
+      const keys = Object.keys(p.dias).sort();
+      let totalMin = 0, totalAdiant = 0, totalServicos = 0;
+      for (const key of keys) {
+        const d = p.dias[key];
+        if (d._rascunho) continue; // ignora dias não confirmados
+        const r = calcDia(d);
+        totalMin += r.totalMin;
+        (d.adiantamentos || []).forEach(e => { totalAdiant += parseFloat(e.valor || 0); });
+        (d.extras || []).filter(e => e.tipo === 'servico').forEach(e => { totalServicos += parseFloat(e.valor || 0); });
+      }
+      const saldoAnteriorReais = parseFloat(p.saldoAnterior || 0);
+      const valorHoras = (totalMin / 60) * parseFloat(c.valorHora || 15);
+      const totalAPagar = Math.max(0, valorHoras + totalServicos + saldoAnteriorReais - totalAdiant);
+      return { totalMin, valorHoras, totalAdiant, totalServicos, saldoAnteriorReais, totalAPagar, keys: Object.keys(p.dias).filter(k => !p.dias[k]._rascunho).sort() };
+    }
 
-function renderPonto() {
-  const p = S._ponto, c = p.config;
-  const hoje = pontoHoje();
-  if (!S._pontoDiaAtivo) S._pontoDiaAtivo = hoje;
-  const diaAtivo = S._pontoDiaAtivo;
+    function renderPonto() {
+      const p = S._ponto, c = p.config;
+      const hoje = pontoHoje();
+      if (!S._pontoDiaAtivo) S._pontoDiaAtivo = hoje;
+      const diaAtivo = S._pontoDiaAtivo;
 
-  // Usa rascunho para exibir os campos (não o dia salvo diretamente)
-  const rascunho = pontoGetRascunho(diaAtivo);
-  const diaSalvo = !!p.dias[diaAtivo];
-  const rAtivo = calcDia(rascunho);
-  const res = calcResumo();
+      // Usa rascunho para exibir os campos (não o dia salvo diretamente)
+      const rascunho = pontoGetRascunho(diaAtivo);
+      const diaSalvo = !!p.dias[diaAtivo];
+      const rAtivo = calcDia(rascunho);
+      const res = calcResumo();
 
-  const cardDia = `
+      const cardDia = `
     <div class="ponto-card">
       <div class="ponto-title">
         📅 Registrar dia
@@ -3460,7 +3551,7 @@ function renderPonto() {
       </button>
     </div>`;
 
-  const cardResumo = `
+      const cardResumo = `
     <div class="ponto-card">
       <div class="ponto-title">
         📊 Resumo do período
@@ -3501,11 +3592,11 @@ function renderPonto() {
       </div>
     </div>`;
 
-  const diasHtml = Object.keys(p.dias).filter(k => !p.dias[k]._rascunho).sort().reverse().map(key => {
-    const d = p.dias[key], r = calcDia(d);
-    const adiantTotal = (d.adiantamentos || []).reduce((a, e) => a + parseFloat(e.valor || 0), 0);
-    const servicoTotal = (d.extras || []).filter(e => e.tipo === 'servico').reduce((a, e) => a + parseFloat(e.valor || 0), 0);
-    return `
+      const diasHtml = Object.keys(p.dias).filter(k => !p.dias[k]._rascunho).sort().reverse().map(key => {
+        const d = p.dias[key], r = calcDia(d);
+        const adiantTotal = (d.adiantamentos || []).reduce((a, e) => a + parseFloat(e.valor || 0), 0);
+        const servicoTotal = (d.extras || []).filter(e => e.tipo === 'servico').reduce((a, e) => a + parseFloat(e.valor || 0), 0);
+        return `
       <div class="ponto-dia-row ${key === diaAtivo ? 'aberto' : ''}" onclick="pontoMudarData('${key}')">
         <div class="ponto-dia-data">${fmtData(key)}${key === hoje ? ' 📍' : ''}</div>
         <div class="ponto-dia-res">
@@ -3517,9 +3608,9 @@ function renderPonto() {
           ${d.saida ? r.diffStr : '--'}
         </div>
       </div>`;
-  }).join('');
+      }).join('');
 
-  const cardHistorico = `
+      const cardHistorico = `
     <div class="ponto-card">
       <div class="ponto-title">📆 Histórico — toque para editar</div>
       <div class="ponto-dias">
@@ -3527,15 +3618,15 @@ function renderPonto() {
       </div>
     </div>`;
 
-  return `<div class="ponto-wrap">${cardDia}${cardResumo}${cardHistorico}</div>`;
-}
+      return `<div class="ponto-wrap">${cardDia}${cardResumo}${cardHistorico}</div>`;
+    }
 
-function renderLancamentos(key) {
-  // Lança do rascunho se existir, senão do salvo
-  const d = (S._pontoRascunho && S._pontoRascunho[key]) || S._ponto.dias[key];
-  if (!d) return '';
-  const itens = [
-    ...(d.extras || []).map((e, i) => `
+    function renderLancamentos(key) {
+      // Lança do rascunho se existir, senão do salvo
+      const d = (S._pontoRascunho && S._pontoRascunho[key]) || S._ponto.dias[key];
+      if (!d) return '';
+      const itens = [
+        ...(d.extras || []).map((e, i) => `
       <div class="ponto-lancamento">
         <span>${e.tipo === 'servico' ? '🔧' : '⏱'}</span>
         <span style="flex:1;color:var(--text2)">${e.desc || 'Extra'}</span>
@@ -3545,7 +3636,7 @@ function renderLancamentos(key) {
         <button onclick="pontoRemLanc('${key}','extra',${i})"
           style="border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:13px;padding:0 4px">✕</button>
       </div>`),
-    ...(d.adiantamentos || []).map((e, i) => `
+        ...(d.adiantamentos || []).map((e, i) => `
       <div class="ponto-lancamento">
         <span>💵</span>
         <span style="flex:1;color:var(--text2)">${e.desc || 'Adiantamento'}</span>
@@ -3553,93 +3644,93 @@ function renderLancamentos(key) {
         <button onclick="pontoRemLanc('${key}','adiant',${i})"
           style="border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:13px;padding:0 4px">✕</button>
       </div>`)
-  ];
-  if (!itens.length) return '';
-  return `<div style="display:flex;flex-direction:column;gap:2px;padding:6px 0;border-top:1px solid var(--border)">${itens.join('')}</div>`;
-}
+      ];
+      if (!itens.length) return '';
+      return `<div style="display:flex;flex-direction:column;gap:2px;padding:6px 0;border-top:1px solid var(--border)">${itens.join('')}</div>`;
+    }
 
-// ── Ações ──
-function pontoAbrir() {
-  S._pontoAberto = true;
-  if (!S._pontoDiaAtivo) S._pontoDiaAtivo = pontoHoje();
-  // Inicializa rascunho do dia ativo sem salvar
-  pontoGetRascunho(S._pontoDiaAtivo);
-  renderCnt();
-}
+    // ── Ações ──
+    function pontoAbrir() {
+      S._pontoAberto = true;
+      if (!S._pontoDiaAtivo) S._pontoDiaAtivo = pontoHoje();
+      // Inicializa rascunho do dia ativo sem salvar
+      pontoGetRascunho(S._pontoDiaAtivo);
+      renderCnt();
+    }
 
-function pontoFechar() { S._pontoAberto = false; save(); renderCnt(); }
+    function pontoFechar() { S._pontoAberto = false; save(); renderCnt(); }
 
-function pontoMudarData(data) {
-  S._pontoDiaAtivo = data;
-  // Inicializa rascunho sem salvar no estado
-  pontoGetRascunho(data);
-  renderCnt();
-}
+    function pontoMudarData(data) {
+      S._pontoDiaAtivo = data;
+      // Inicializa rascunho sem salvar no estado
+      pontoGetRascunho(data);
+      renderCnt();
+    }
 
-function pontoCampo(key, campo, valor) {
-  // Atualiza SOMENTE o rascunho, não salva
-  const rascunho = pontoGetRascunho(key);
-  rascunho[campo] = valor;
-  // Atualiza só o resumo visual sem chamar renderCnt completo
-  const resumo = document.querySelector('.ponto-resumo-dia');
-  if (resumo) {
-    const r = calcDia(rascunho);
-    resumo.innerHTML = `
+    function pontoCampo(key, campo, valor) {
+      // Atualiza SOMENTE o rascunho, não salva
+      const rascunho = pontoGetRascunho(key);
+      rascunho[campo] = valor;
+      // Atualiza só o resumo visual sem chamar renderCnt completo
+      const resumo = document.querySelector('.ponto-resumo-dia');
+      if (resumo) {
+        const r = calcDia(rascunho);
+        resumo.innerHTML = `
       <span>Jornada: <b>${r.jornadaStr}</b></span>
       <span>Trabalhado: <b style="color:var(--text)">${r.totalStr}</b></span>
       <span style="color:${r.ok ? 'var(--green)' : 'var(--red)'}">Saldo: <b>${r.diffStr}</b></span>`;
-  }
-}
-
-function pontoSalvarDia(key) {
-  // Copia rascunho para o estado salvo
-  const rascunho = pontoGetRascunho(key);
-  S._ponto.dias[key] = { ...rascunho };
-  delete S._ponto.dias[key]._rascunho;
-  save();
-  renderCnt();
-  setTimeout(() => {
-    const btn = document.querySelector('.ponto-salvar');
-    if (btn) {
-      btn.innerHTML = '✅ Salvo!';
-      btn.style.background = 'var(--green)';
-      setTimeout(() => renderCnt(), 1200);
+      }
     }
-  }, 50);
-}
 
-function pontoDiaDel(key) {
-  openM('🗑 Remover dia', `
+    function pontoSalvarDia(key) {
+      // Copia rascunho para o estado salvo
+      const rascunho = pontoGetRascunho(key);
+      S._ponto.dias[key] = { ...rascunho };
+      delete S._ponto.dias[key]._rascunho;
+      save();
+      renderCnt();
+      setTimeout(() => {
+        const btn = document.querySelector('.ponto-salvar');
+        if (btn) {
+          btn.innerHTML = '✅ Salvo!';
+          btn.style.background = 'var(--green)';
+          setTimeout(() => renderCnt(), 1200);
+        }
+      }, 50);
+    }
+
+    function pontoDiaDel(key) {
+      openM('🗑 Remover dia', `
     <div style="font-size:14px;color:var(--text2);text-align:center;padding:8px 0">
       Remover o dia <b style="color:var(--text)">${fmtData(key)}</b>?<br>
       <span style="font-size:12px;color:var(--text3)">Esta ação não pode ser desfeita.</span>
     </div>
   `, () => {
-    delete S._ponto.dias[key];
-    // Limpa também o rascunho deste dia
-    if (S._pontoRascunho) delete S._pontoRascunho[key];
-    // Volta para hoje sem criar nada
-    S._pontoDiaAtivo = pontoHoje();
-    pontoGetRascunho(S._pontoDiaAtivo);
-    save();
-    renderCnt();
-  });
-}
+        delete S._ponto.dias[key];
+        // Limpa também o rascunho deste dia
+        if (S._pontoRascunho) delete S._pontoRascunho[key];
+        // Volta para hoje sem criar nada
+        S._pontoDiaAtivo = pontoHoje();
+        pontoGetRascunho(S._pontoDiaAtivo);
+        save();
+        renderCnt();
+      });
+    }
 
-function pontoRemLanc(key, tipo, idx) {
-  const rascunho = pontoGetRascunho(key);
-  if (tipo === 'extra') rascunho.extras.splice(idx, 1);
-  else rascunho.adiantamentos.splice(idx, 1);
-  // Se dia já foi salvo, atualiza também o salvo
-  if (S._ponto.dias[key]) {
-    S._ponto.dias[key] = { ...rascunho };
-    save();
-  }
-  renderCnt();
-}
+    function pontoRemLanc(key, tipo, idx) {
+      const rascunho = pontoGetRascunho(key);
+      if (tipo === 'extra') rascunho.extras.splice(idx, 1);
+      else rascunho.adiantamentos.splice(idx, 1);
+      // Se dia já foi salvo, atualiza também o salvo
+      if (S._ponto.dias[key]) {
+        S._ponto.dias[key] = { ...rascunho };
+        save();
+      }
+      renderCnt();
+    }
 
-function pontoAddLancamento(key) {
-  openM('＋ Lançamento', `
+    function pontoAddLancamento(key) {
+      openM('＋ Lançamento', `
     <div class="fg">
       <div class="fl">Tipo</div>
       <select id="plt" onchange="pontoTipoChg(this.value)">
@@ -3657,31 +3748,31 @@ function pontoAddLancamento(key) {
       <input type="text" id="pld" placeholder="Ex: polimento, reunião, instalação...">
     </div>
   `, () => {
-    const t = document.getElementById('plt').value;
-    const v = parseFloat(document.getElementById('plv').value || 0);
-    const desc = document.getElementById('pld').value.trim();
-    if (!v || isNaN(v)) return;
-    const rascunho = pontoGetRascunho(key);
-    if (t === 'horas') rascunho.extras.push({ tipo: 'horas', valor: v, desc });
-    if (t === 'servico') rascunho.extras.push({ tipo: 'servico', valor: v, desc });
-    if (t === 'adiant') rascunho.adiantamentos.push({ valor: v, desc });
-    // Se dia já salvo, persiste imediatamente
-    if (S._ponto.dias[key]) { S._ponto.dias[key] = { ...rascunho }; save(); }
-    renderCnt();
-  });
-}
+        const t = document.getElementById('plt').value;
+        const v = parseFloat(document.getElementById('plv').value || 0);
+        const desc = document.getElementById('pld').value.trim();
+        if (!v || isNaN(v)) return;
+        const rascunho = pontoGetRascunho(key);
+        if (t === 'horas') rascunho.extras.push({ tipo: 'horas', valor: v, desc });
+        if (t === 'servico') rascunho.extras.push({ tipo: 'servico', valor: v, desc });
+        if (t === 'adiant') rascunho.adiantamentos.push({ valor: v, desc });
+        // Se dia já salvo, persiste imediatamente
+        if (S._ponto.dias[key]) { S._ponto.dias[key] = { ...rascunho }; save(); }
+        renderCnt();
+      });
+    }
 
-window.pontoTipoChg = tipo => {
-  const l = document.getElementById('plt-label'), i = document.getElementById('plv');
-  if (!l || !i) return;
-  if (tipo === 'horas') { l.textContent = 'Quantidade de horas'; i.step = '0.25'; i.placeholder = 'Ex: 1.5'; }
-  if (tipo === 'servico') { l.textContent = 'Valor em R$'; i.step = '0.01'; i.placeholder = 'Ex: 250.00'; }
-  if (tipo === 'adiant') { l.textContent = 'Valor em R$'; i.step = '0.01'; i.placeholder = 'Ex: 100.00'; }
-};
+    window.pontoTipoChg = tipo => {
+      const l = document.getElementById('plt-label'), i = document.getElementById('plv');
+      if (!l || !i) return;
+      if (tipo === 'horas') { l.textContent = 'Quantidade de horas'; i.step = '0.25'; i.placeholder = 'Ex: 1.5'; }
+      if (tipo === 'servico') { l.textContent = 'Valor em R$'; i.step = '0.01'; i.placeholder = 'Ex: 250.00'; }
+      if (tipo === 'adiant') { l.textContent = 'Valor em R$'; i.step = '0.01'; i.placeholder = 'Ex: 100.00'; }
+    };
 
-function pontoConfig() {
-  const c = S._ponto.config;
-  openM('⚙️ Configurações do Ponto', `
+    function pontoConfig() {
+      const c = S._ponto.config;
+      openM('⚙️ Configurações do Ponto', `
     <div class="fg"><div class="fl">Valor da hora (R$)</div>
       <input type="number" id="pcvh" value="${c.valorHora}" min="0" step="0.5"></div>
     <div class="fg"><div class="fl">Entrada padrão</div>
@@ -3695,49 +3786,49 @@ function pontoConfig() {
     <div class="fg"><div class="fl">Saldo anterior (R$)</div>
       <input type="number" id="pcsl" value="${S._ponto.saldoAnterior || 0}" step="0.01" placeholder="Ex: 150.00"></div>
   `, () => {
-    c.valorHora = parseFloat(document.getElementById('pcvh').value) || 15;
-    c.entradaPad = document.getElementById('pcep').value || '08:00';
-    c.saidaAlmPad = document.getElementById('pcsa').value || '12:30';
-    c.retornoPad = document.getElementById('pcrp').value || '13:30';
-    c.saidaPad = document.getElementById('pcsp').value || '17:00';
-    S._ponto.saldoAnterior = parseFloat(document.getElementById('pcsl').value) || 0;
-    // Limpa rascunhos para recarregar com novos padrões
-    S._pontoRascunho = {};
-    save(); renderCnt();
-  });
-}
+        c.valorHora = parseFloat(document.getElementById('pcvh').value) || 15;
+        c.entradaPad = document.getElementById('pcep').value || '08:00';
+        c.saidaAlmPad = document.getElementById('pcsa').value || '12:30';
+        c.retornoPad = document.getElementById('pcrp').value || '13:30';
+        c.saidaPad = document.getElementById('pcsp').value || '17:00';
+        S._ponto.saldoAnterior = parseFloat(document.getElementById('pcsl').value) || 0;
+        // Limpa rascunhos para recarregar com novos padrões
+        S._pontoRascunho = {};
+        save(); renderCnt();
+      });
+    }
 
-function pontoRelatorio() {
-  const p = S._ponto, c = p.config;
-  const res = calcResumo();
-  let txt = '📋 *RELATÓRIO DE PONTO*\n';
-  txt += '━━━━━━━━━━━━━━━━━━━━\n\n';
-  for (const key of res.keys) {
-    const d = p.dias[key], r = calcDia(d);
-    if (!d.entrada && !d.saida) continue;
-    txt += `📅 *${fmtData(key)}*\n`;
-    txt += `  ⏰ Entrada: ${d.entrada || '--'}\n`;
-    if (d.saidaAlm && d.retorno) txt += `  🍽 Almoço: ${d.saidaAlm} → ${d.retorno}\n`;
-    txt += `  🏁 Saída: ${d.saida || '--'}\n`;
-    if (d.saida) txt += `  ⏱ Total: ${r.totalStr}  Saldo: ${r.diffStr}\n`;
-    (d.extras || []).forEach(e => {
-      if (e.tipo === 'horas') txt += `  ➕ Extra: ${e.desc ? e.desc + ' ' : ''}${e.valor}h\n`;
-      if (e.tipo === 'servico') txt += `  🔧 Serviço: ${e.desc ? e.desc + ' ' : ''}R$ ${parseFloat(e.valor).toFixed(2).replace('.', ',')}\n`;
-    });
-    (d.adiantamentos || []).forEach(e => {
-      txt += `  💵 Adiantamento: ${e.desc ? e.desc + ' ' : ''}R$ ${parseFloat(e.valor).toFixed(2).replace('.', ',')}\n`;
-    });
-    txt += '\n';
-  }
-  txt += '━━━━━━━━━━━━━━━━━━━━\n';
-  if (res.saldoAnteriorReais !== 0)
-    txt += `📦 Saldo anterior: ${res.saldoAnteriorReais >= 0 ? '+' : ''}R$ ${res.saldoAnteriorReais.toFixed(2).replace('.', ',')}\n`;
-  txt += `⏱ Total: ${(res.totalMin / 60).toFixed(2)}h × R$ ${c.valorHora}/h = R$ ${res.valorHoras.toFixed(2).replace('.', ',')}\n`;
-  if (res.totalServicos > 0) txt += `🔧 Serviços: +R$ ${res.totalServicos.toFixed(2).replace('.', ',')}\n`;
-  if (res.totalAdiant > 0) txt += `➖ Adiantamentos: -R$ ${res.totalAdiant.toFixed(2).replace('.', ',')}\n`;
-  txt += `\n💵 *TOTAL A RECEBER: R$ ${res.totalAPagar.toFixed(2).replace('.', ',')}*`;
+    function pontoRelatorio() {
+      const p = S._ponto, c = p.config;
+      const res = calcResumo();
+      let txt = '📋 *RELATÓRIO DE PONTO*\n';
+      txt += '━━━━━━━━━━━━━━━━━━━━\n\n';
+      for (const key of res.keys) {
+        const d = p.dias[key], r = calcDia(d);
+        if (!d.entrada && !d.saida) continue;
+        txt += `📅 *${fmtData(key)}*\n`;
+        txt += `  ⏰ Entrada: ${d.entrada || '--'}\n`;
+        if (d.saidaAlm && d.retorno) txt += `  🍽 Almoço: ${d.saidaAlm} → ${d.retorno}\n`;
+        txt += `  🏁 Saída: ${d.saida || '--'}\n`;
+        if (d.saida) txt += `  ⏱ Total: ${r.totalStr}  Saldo: ${r.diffStr}\n`;
+        (d.extras || []).forEach(e => {
+          if (e.tipo === 'horas') txt += `  ➕ Extra: ${e.desc ? e.desc + ' ' : ''}${e.valor}h\n`;
+          if (e.tipo === 'servico') txt += `  🔧 Serviço: ${e.desc ? e.desc + ' ' : ''}R$ ${parseFloat(e.valor).toFixed(2).replace('.', ',')}\n`;
+        });
+        (d.adiantamentos || []).forEach(e => {
+          txt += `  💵 Adiantamento: ${e.desc ? e.desc + ' ' : ''}R$ ${parseFloat(e.valor).toFixed(2).replace('.', ',')}\n`;
+        });
+        txt += '\n';
+      }
+      txt += '━━━━━━━━━━━━━━━━━━━━\n';
+      if (res.saldoAnteriorReais !== 0)
+        txt += `📦 Saldo anterior: ${res.saldoAnteriorReais >= 0 ? '+' : ''}R$ ${res.saldoAnteriorReais.toFixed(2).replace('.', ',')}\n`;
+      txt += `⏱ Total: ${(res.totalMin / 60).toFixed(2)}h × R$ ${c.valorHora}/h = R$ ${res.valorHoras.toFixed(2).replace('.', ',')}\n`;
+      if (res.totalServicos > 0) txt += `🔧 Serviços: +R$ ${res.totalServicos.toFixed(2).replace('.', ',')}\n`;
+      if (res.totalAdiant > 0) txt += `➖ Adiantamentos: -R$ ${res.totalAdiant.toFixed(2).replace('.', ',')}\n`;
+      txt += `\n💵 *TOTAL A RECEBER: R$ ${res.totalAPagar.toFixed(2).replace('.', ',')}*`;
 
-  openM('📋 Relatório', `
+      openM('📋 Relatório', `
     <pre style="background:var(--bg);border:1px solid var(--border);border-radius:8px;
       padding:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);
       white-space:pre;overflow-x:auto;max-height:300px;overflow-y:auto;line-height:1.7">${esc(txt)}</pre>
@@ -3746,121 +3837,121 @@ function pontoRelatorio() {
     </button>
   `, null);
 
-  setTimeout(() => {
-    const btn = document.getElementById('btn-copiar-ponto');
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-      navigator.clipboard.writeText(txt).then(() => {
-        btn.textContent = '✅ Copiado! Cole no WhatsApp';
-        btn.style.background = 'var(--green)';
-      }).catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0';
-        document.body.appendChild(ta); ta.focus(); ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        btn.textContent = '✅ Copiado!';
-        btn.style.background = 'var(--green)';
-      });
+      setTimeout(() => {
+        const btn = document.getElementById('btn-copiar-ponto');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(txt).then(() => {
+            btn.textContent = '✅ Copiado! Cole no WhatsApp';
+            btn.style.background = 'var(--green)';
+          }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(ta); ta.focus(); ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            btn.textContent = '✅ Copiado!';
+            btn.style.background = 'var(--green)';
+          });
+        });
+      }, 150);
+    }
+    // ── MÍDIA (Filmes / Livros / Jogos) ───────────────────
+    reg('midia', {
+      name: 'Mídia (Filmes/Livros/Jogos)', icon: '🎬',
+      desc: 'Tela separada para filmes, livros e jogos', def: false,
+      onToggle(on) {
+        if (!on) {
+          const s = document.getElementById('midiaScreen');
+          const m = document.querySelector('.main');
+          if (s) { s.classList.remove('active'); s.remove(); }
+          if (m) m.style.display = 'flex';
+          const b = document.getElementById('midiaBtn');
+          if (b) b.remove();
+          document.getElementById('fab').style.display = getL() ? 'flex' : 'none';
+        } else {
+          _midiaInit();
+        }
+      }
     });
-  }, 150);
-}
-// ── MÍDIA (Filmes / Livros / Jogos) ───────────────────
-reg('midia', {
-  name: 'Mídia (Filmes/Livros/Jogos)', icon: '🎬',
-  desc: 'Tela separada para filmes, livros e jogos', def: false,
-  onToggle(on) {
-    if (!on) {
+
+    if (!S._midia) S._midia = [];
+
+    const MTIPOS = { filme: '🎬', livro: '📚', jogo: '🎮' };
+    const MSTATUS = {
+      quero: { label: 'Quero', color: 'var(--text3)', bg: 'var(--surface2)' },
+      andamento: { label: 'Em andamento', color: 'var(--yellow)', bg: 'rgba(232,200,74,.1)' },
+      concluido: { label: 'Concluído', color: 'var(--green)', bg: 'rgba(62,207,142,.1)' },
+    };
+
+    function _midiaInit() {
+      // Cria tela se não existe
+      if (!document.getElementById('midiaScreen')) {
+        const s = document.createElement('div');
+        s.id = 'midiaScreen';
+        s.style.cssText = 'display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(80px + var(--sab)) 16px;flex-direction:column;gap:14px;height:100%;box-sizing:border-box';
+        document.querySelector('.body').appendChild(s);
+      }
+      // Cria botão no header se não existe
+      if (!document.getElementById('midiaBtn')) {
+        const b = document.createElement('button');
+        b.id = 'midiaBtn'; b.title = 'Mídia'; b.textContent = '🎬';
+        b.className = 'ibtn';
+        b.onclick = openMidiaScreen;
+        document.querySelector('.hright').prepend(b);
+      }
+    }
+
+    function openMidiaScreen() {
       const s = document.getElementById('midiaScreen');
       const m = document.querySelector('.main');
-      if (s) { s.classList.remove('active'); s.remove(); }
-      if (m) m.style.display = 'flex';
       const b = document.getElementById('midiaBtn');
-      if (b) b.remove();
-      document.getElementById('fab').style.display = getL() ? 'flex' : 'none';
-    } else {
-      _midiaInit();
+      const fab = document.getElementById('fab');
+      if (!s || !m) return;
+
+      const isOpen = s.style.display === 'flex';
+      if (isOpen) {
+        s.style.display = 'none';
+        m.style.display = 'flex';
+        b.style.background = ''; b.style.color = '';
+        fab.style.display = getL() ? 'flex' : 'none';
+      } else {
+        m.style.display = 'none';
+        s.style.display = 'flex';
+        b.style.background = 'var(--accent)'; b.style.color = 'white';
+        fab.style.display = 'none';
+        _midiaRender();
+      }
     }
-  }
-});
 
-if (!S._midia) S._midia = [];
+    function _midiaRender() {
+      const s = document.getElementById('midiaScreen');
+      if (!s || s.style.display !== 'flex') return;
+      if (!S._midia) S._midia = [];
 
-const MTIPOS = { filme: '🎬', livro: '📚', jogo: '🎮' };
-const MSTATUS = {
-  quero: { label: 'Quero', color: 'var(--text3)', bg: 'var(--surface2)' },
-  andamento: { label: 'Em andamento', color: 'var(--yellow)', bg: 'rgba(232,200,74,.1)' },
-  concluido: { label: 'Concluído', color: 'var(--green)', bg: 'rgba(62,207,142,.1)' },
-};
+      const ft = S._midiaFT || 'todos';
+      const fs = S._midiaFS || 'todos';
+      const fb = (S._midiaFB || '').toLowerCase();
 
-function _midiaInit() {
-  // Cria tela se não existe
-  if (!document.getElementById('midiaScreen')) {
-    const s = document.createElement('div');
-    s.id = 'midiaScreen';
-    s.style.cssText = 'display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(80px + var(--sab)) 16px;flex-direction:column;gap:14px;height:100%;box-sizing:border-box';
-    document.querySelector('.body').appendChild(s);
-  }
-  // Cria botão no header se não existe
-  if (!document.getElementById('midiaBtn')) {
-    const b = document.createElement('button');
-    b.id = 'midiaBtn'; b.title = 'Mídia'; b.textContent = '🎬';
-    b.className = 'ibtn';
-    b.onclick = openMidiaScreen;
-    document.querySelector('.hright').prepend(b);
-  }
-}
+      let itens = S._midia;
+      if (ft !== 'todos') itens = itens.filter(i => i.tipo === ft);
+      if (fs !== 'todos') itens = itens.filter(i => i.status === fs);
+      if (fb) itens = itens.filter(i => i.titulo.toLowerCase().includes(fb));
 
-function openMidiaScreen() {
-  const s = document.getElementById('midiaScreen');
-  const m = document.querySelector('.main');
-  const b = document.getElementById('midiaBtn');
-  const fab = document.getElementById('fab');
-  if (!s || !m) return;
+      const tot = S._midia.length;
+      const conc = S._midia.filter(i => i.status === 'concluido').length;
+      const and = S._midia.filter(i => i.status === 'andamento').length;
+      const qro = S._midia.filter(i => i.status === 'quero').length;
 
-  const isOpen = s.style.display === 'flex';
-  if (isOpen) {
-    s.style.display = 'none';
-    m.style.display = 'flex';
-    b.style.background = ''; b.style.color = '';
-    fab.style.display = getL() ? 'flex' : 'none';
-  } else {
-    m.style.display = 'none';
-    s.style.display = 'flex';
-    b.style.background = 'var(--accent)'; b.style.color = 'white';
-    fab.style.display = 'none';
-    _midiaRender();
-  }
-}
-
-function _midiaRender() {
-  const s = document.getElementById('midiaScreen');
-  if (!s || s.style.display !== 'flex') return;
-  if (!S._midia) S._midia = [];
-
-  const ft = S._midiaFT || 'todos';
-  const fs = S._midiaFS || 'todos';
-  const fb = (S._midiaFB || '').toLowerCase();
-
-  let itens = S._midia;
-  if (ft !== 'todos') itens = itens.filter(i => i.tipo === ft);
-  if (fs !== 'todos') itens = itens.filter(i => i.status === fs);
-  if (fb) itens = itens.filter(i => i.titulo.toLowerCase().includes(fb));
-
-  const tot = S._midia.length;
-  const conc = S._midia.filter(i => i.status === 'concluido').length;
-  const and = S._midia.filter(i => i.status === 'andamento').length;
-  const qro = S._midia.filter(i => i.status === 'quero').length;
-
-  const cards = itens.map(item => {
-    const tp = MTIPOS[item.tipo] || '📄';
-    const st = MSTATUS[item.status] || MSTATUS.quero;
-    const nota = item.nota ? '⭐'.repeat(Math.min(item.nota, 5)) : '';
-    const datas = [
-      item.dataInicio ? `Início: ${item.dataInicio}` : '',
-      item.dataFim ? `Fim: ${item.dataFim}` : '',
-    ].filter(Boolean).join(' • ');
-    return `
+      const cards = itens.map(item => {
+        const tp = MTIPOS[item.tipo] || '📄';
+        const st = MSTATUS[item.status] || MSTATUS.quero;
+        const nota = item.nota ? '⭐'.repeat(Math.min(item.nota, 5)) : '';
+        const datas = [
+          item.dataInicio ? `Início: ${item.dataInicio}` : '',
+          item.dataFim ? `Fim: ${item.dataFim}` : '',
+        ].filter(Boolean).join(' • ');
+        return `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
       <div style="display:flex;align-items:flex-start;gap:10px">
         <span style="font-size:24px;flex-shrink:0">${tp}</span>
@@ -3878,9 +3969,9 @@ function _midiaRender() {
         <button class="tbbtn" style="flex:1;justify-content:center;color:var(--red)" onclick="delMidia('${item.id}')">✕ Remover</button>
       </div>
     </div>`;
-  }).join('');
+      }).join('');
 
-  s.innerHTML = `
+      s.innerHTML = `
     <!-- Cabeçalho -->
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <div style="font-size:18px;font-weight:800;color:var(--text)">🎬 Mídia</div>
@@ -3922,21 +4013,21 @@ function _midiaRender() {
 
     <!-- Cards -->
     ${itens.length
-      ? `<div style="display:flex;flex-direction:column;gap:10px">${cards}</div>`
-      : `<div style="font-size:13px;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:12px 0">Nenhum item encontrado.</div>`
-    }`;
-}
+          ? `<div style="display:flex;flex-direction:column;gap:10px">${cards}</div>`
+          : `<div style="font-size:13px;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:12px 0">Nenhum item encontrado.</div>`
+        }`;
+    }
 
-function setMFiltro(campo, valor) {
-  if (campo === 'ft') S._midiaFT = valor;
-  if (campo === 'fs') S._midiaFS = valor;
-  save(); _midiaRender();
-}
+    function setMFiltro(campo, valor) {
+      if (campo === 'ft') S._midiaFT = valor;
+      if (campo === 'fs') S._midiaFS = valor;
+      save(); _midiaRender();
+    }
 
-function editMidia(id) {
-  if (!S._midia) S._midia = [];
-  const item = id ? S._midia.find(i => i.id === id) : null;
-  openM(id ? '✏️ Editar' : '＋ Adicionar Mídia', `
+    function editMidia(id) {
+      if (!S._midia) S._midia = [];
+      const item = id ? S._midia.find(i => i.id === id) : null;
+      openM(id ? '✏️ Editar' : '＋ Adicionar Mídia', `
     <div class="fg"><div class="fl">Tipo</div>
       <select id="mdt">
         <option value="filme" ${item?.tipo === 'filme' ? 'selected' : ''}>🎬 Filme</option>
@@ -3972,70 +4063,70 @@ function editMidia(id) {
       <textarea class="fta" id="mdobs" placeholder="O que achou? Pontos fortes, fracos, momentos marcantes...">${esc(item?.observacoes || '')}</textarea>
     </div>
   `, () => {
-    const novo = {
-      id: item?.id || genId(),
-      tipo: document.getElementById('mdt').value,
-      titulo: document.getElementById('mdti').value.trim(),
-      ano: document.getElementById('mdano').value.trim(),
-      status: document.getElementById('mdst').value,
-      dataInicio: document.getElementById('mddi').value,
-      dataFim: document.getElementById('mddp').value,
-      nota: parseInt(document.getElementById('mdno').value) || 0,
-      observacoes: document.getElementById('mdobs').value.trim(),
-    };
-    if (!novo.titulo) return;
-    if (id) { const idx = S._midia.findIndex(i => i.id === id); if (idx >= 0) S._midia[idx] = novo; }
-    else S._midia.push(novo);
-    save(); _midiaRender();
-  });
-}
-
-function delMidia(id) {
-  S._midia = (S._midia || []).filter(i => i.id !== id);
-  save(); _midiaRender();
-}
-
-function exportMidia() {
-  if (!S._midia?.length) { alert('Nenhum item para exportar.'); return; }
-  const ft = S._midiaFT || 'todos';
-  const fs = S._midiaFS || 'todos';
-  let itens = S._midia;
-  if (ft !== 'todos') itens = itens.filter(i => i.tipo === ft);
-  if (fs !== 'todos') itens = itens.filter(i => i.status === fs);
-
-  const grupos = { filme: [], livro: [], jogo: [] };
-  itens.forEach(i => { if (grupos[i.tipo]) grupos[i.tipo].push(i); });
-
-  let md = `# 🎬 Relatório de Mídia\n_Gerado em ${new Date().toLocaleDateString('pt-BR')}_\n\n`;
-  md += `**Total:** ${itens.length}`;
-  const conc = itens.filter(i => i.status === 'concluido').length;
-  if (conc) md += ` • ✅ ${conc} concluídos`;
-  md += `\n\n---\n\n`;
-  for (const [t, lista] of Object.entries(grupos)) {
-    if (!lista.length) continue;
-    md += `## ${MTIPOS[t]} ${t.charAt(0).toUpperCase() + t.slice(1)}s\n\n`;
-    for (const item of lista) {
-      const st = MSTATUS[item.status]?.label || item.status;
-      const nota = item.nota ? ' — ' + '⭐'.repeat(item.nota) : '';
-      md += `### ${item.titulo}${item.ano ? ` (${item.ano})` : ''}\n`;
-      md += `**Status:** ${st}${nota}\n`;
-      if (item.dataInicio) md += `**Início:** ${item.dataInicio}\n`;
-      if (item.dataFim) md += `**Fim:** ${item.dataFim}\n`;
-      if (item.observacoes) md += `\n> ${item.observacoes.replace(/\n/g, '\n> ')}\n`;
-      md += `\n`;
+        const novo = {
+          id: item?.id || genId(),
+          tipo: document.getElementById('mdt').value,
+          titulo: document.getElementById('mdti').value.trim(),
+          ano: document.getElementById('mdano').value.trim(),
+          status: document.getElementById('mdst').value,
+          dataInicio: document.getElementById('mddi').value,
+          dataFim: document.getElementById('mddp').value,
+          nota: parseInt(document.getElementById('mdno').value) || 0,
+          observacoes: document.getElementById('mdobs').value.trim(),
+        };
+        if (!novo.titulo) return;
+        if (id) { const idx = S._midia.findIndex(i => i.id === id); if (idx >= 0) S._midia[idx] = novo; }
+        else S._midia.push(novo);
+        save(); _midiaRender();
+      });
     }
-  }
 
-  const csvRows = ['Tipo,Título,Ano,Status,Início,Fim,Nota,Observações'];
-  itens.forEach(i => csvRows.push([
-    i.tipo, `"${(i.titulo || '').replace(/"/g, '""')}"`, i.ano || '',
-    MSTATUS[i.status]?.label || i.status,
-    i.dataInicio || '', i.dataFim || '', i.nota || '',
-    `"${(i.observacoes || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`
-  ].join(',')));
-  const csv = csvRows.join('\n');
+    function delMidia(id) {
+      S._midia = (S._midia || []).filter(i => i.id !== id);
+      save(); _midiaRender();
+    }
 
-  openM('📤 Exportar Relatório', `
+    function exportMidia() {
+      if (!S._midia?.length) { alert('Nenhum item para exportar.'); return; }
+      const ft = S._midiaFT || 'todos';
+      const fs = S._midiaFS || 'todos';
+      let itens = S._midia;
+      if (ft !== 'todos') itens = itens.filter(i => i.tipo === ft);
+      if (fs !== 'todos') itens = itens.filter(i => i.status === fs);
+
+      const grupos = { filme: [], livro: [], jogo: [] };
+      itens.forEach(i => { if (grupos[i.tipo]) grupos[i.tipo].push(i); });
+
+      let md = `# 🎬 Relatório de Mídia\n_Gerado em ${new Date().toLocaleDateString('pt-BR')}_\n\n`;
+      md += `**Total:** ${itens.length}`;
+      const conc = itens.filter(i => i.status === 'concluido').length;
+      if (conc) md += ` • ✅ ${conc} concluídos`;
+      md += `\n\n---\n\n`;
+      for (const [t, lista] of Object.entries(grupos)) {
+        if (!lista.length) continue;
+        md += `## ${MTIPOS[t]} ${t.charAt(0).toUpperCase() + t.slice(1)}s\n\n`;
+        for (const item of lista) {
+          const st = MSTATUS[item.status]?.label || item.status;
+          const nota = item.nota ? ' — ' + '⭐'.repeat(item.nota) : '';
+          md += `### ${item.titulo}${item.ano ? ` (${item.ano})` : ''}\n`;
+          md += `**Status:** ${st}${nota}\n`;
+          if (item.dataInicio) md += `**Início:** ${item.dataInicio}\n`;
+          if (item.dataFim) md += `**Fim:** ${item.dataFim}\n`;
+          if (item.observacoes) md += `\n> ${item.observacoes.replace(/\n/g, '\n> ')}\n`;
+          md += `\n`;
+        }
+      }
+
+      const csvRows = ['Tipo,Título,Ano,Status,Início,Fim,Nota,Observações'];
+      itens.forEach(i => csvRows.push([
+        i.tipo, `"${(i.titulo || '').replace(/"/g, '""')}"`, i.ano || '',
+        MSTATUS[i.status]?.label || i.status,
+        i.dataInicio || '', i.dataFim || '', i.nota || '',
+        `"${(i.observacoes || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`
+      ].join(',')));
+      const csv = csvRows.join('\n');
+
+      openM('📤 Exportar Relatório', `
     <div class="view-tabs" style="margin-bottom:4px">
       <button class="vtab on" id="vt_mmd" onclick="swMExp('md')">Markdown</button>
       <button class="vtab"    id="vt_mcsv" onclick="swMExp('csv')">CSV</button>
@@ -4047,631 +4138,631 @@ function exportMidia() {
     </div>
   `, null);
 
-  window._mExp = { md, csv, mode: 'md' };
-}
-
-window.swMExp = mode => { window._mExp.mode = mode; document.getElementById('mExpPre').textContent = mode === 'md' ? window._mExp.md : window._mExp.csv; document.getElementById('vt_mmd').classList.toggle('on', mode === 'md'); document.getElementById('vt_mcsv').classList.toggle('on', mode === 'csv'); };
-window.cpMExp = () => navigator.clipboard.writeText(window._mExp.mode === 'md' ? window._mExp.md : window._mExp.csv).then(() => alert('Copiado!'));
-window.dlMExp = () => { const d = window._mExp; const b = new Blob([d.mode === 'md' ? d.md : d.csv], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `midia_relatorio.${d.mode === 'md' ? 'md' : 'csv'}`; a.click(); };
-// ── CALCULADORAS PERSONALIZADAS ───────────────────────
-reg('calcbox', {
-  name: 'Calculadoras', icon: '🧮',
-  desc: 'Calculadoras personalizadas sempre à mão', def: false,
-  onToggle(on) {
-    if (!on) {
-      const s = document.getElementById('calcScreen');
-      const m = document.querySelector('.main');
-      if (s) { s.style.display = 'none'; }
-      if (m) m.style.display = 'flex';
-      const b = document.getElementById('calcBtn');
-      if (b) b.remove();
-      document.getElementById('fab').style.display = getL() ? 'flex' : 'none';
-    } else {
-      _calcInit();
+      window._mExp = { md, csv, mode: 'md' };
     }
-  }
-});
 
-if (!S._calcs) S._calcs = [];
-if (!S._calcVals) S._calcVals = {};
+    window.swMExp = mode => { window._mExp.mode = mode; document.getElementById('mExpPre').textContent = mode === 'md' ? window._mExp.md : window._mExp.csv; document.getElementById('vt_mmd').classList.toggle('on', mode === 'md'); document.getElementById('vt_mcsv').classList.toggle('on', mode === 'csv'); };
+    window.cpMExp = () => navigator.clipboard.writeText(window._mExp.mode === 'md' ? window._mExp.md : window._mExp.csv).then(() => alert('Copiado!'));
+    window.dlMExp = () => { const d = window._mExp; const b = new Blob([d.mode === 'md' ? d.md : d.csv], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `midia_relatorio.${d.mode === 'md' ? 'md' : 'csv'}`; a.click(); };
+    // ── CALCULADORAS PERSONALIZADAS ───────────────────────
+    reg('calcbox', {
+      name: 'Calculadoras', icon: '🧮',
+      desc: 'Calculadoras personalizadas sempre à mão', def: false,
+      onToggle(on) {
+        if (!on) {
+          const s = document.getElementById('calcScreen');
+          const m = document.querySelector('.main');
+          if (s) { s.style.display = 'none'; }
+          if (m) m.style.display = 'flex';
+          const b = document.getElementById('calcBtn');
+          if (b) b.remove();
+          document.getElementById('fab').style.display = getL() ? 'flex' : 'none';
+        } else {
+          _calcInit();
+        }
+      }
+    });
 
-const CALC_BUILTIN = [
-  //diferença de horas
-  {
-    id: 'horas-diff', nome: 'Diferença de Horas', icon: '⏰',
-    campos: [
-      { id: 'h1', label: 'Hora início', tipo: 'time', placeholder: '07:00' },
-      { id: 'h2', label: 'Hora fim', tipo: 'time', placeholder: '18:30' },
-      { id: 'hpause', label: 'Pausas (minutos)', tipo: 'number', placeholder: '60' },
-    ],
-    calcular(v) {
-      const toMin = t => { const [h, m] = (t || '00:00').split(':').map(Number); return h * 60 + m; };
-      const ini = toMin(v.h1), fim = toMin(v.h2);
-      const pause = parseInt(v.hpause) || 0;
-      let diff = fim - ini; if (diff < 0) diff += 1440;
-      const liquido = Math.max(0, diff - pause);
-      const fmt = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-      return [
-        { label: 'Total bruto', valor: fmt(diff), destaque: false },
-        { label: 'Total líquido', valor: fmt(liquido), destaque: true },
-        { label: 'Em decimal', valor: (liquido / 60).toFixed(2) + 'h', destaque: false },
-      ];
-    }
-  },
+    if (!S._calcs) S._calcs = [];
+    if (!S._calcVals) S._calcVals = {};
 
-  //🧮 Calculadora Científica ULTRA (Expressões completas)
-  {
-    id: 'calc-cientifica', nome: 'Calculadora Científica', icon: '🧮',
-    campos: [
-      { id: 'exp', label: 'Expressão', tipo: 'text', placeholder: 'Ex: (1+2)*3-5/6' }
-    ],
+    const CALC_BUILTIN = [
+      //diferença de horas
+      {
+        id: 'horas-diff', nome: 'Diferença de Horas', icon: '⏰',
+        campos: [
+          { id: 'h1', label: 'Hora início', tipo: 'time', placeholder: '07:00' },
+          { id: 'h2', label: 'Hora fim', tipo: 'time', placeholder: '18:30' },
+          { id: 'hpause', label: 'Pausas (minutos)', tipo: 'number', placeholder: '60' },
+        ],
+        calcular(v) {
+          const toMin = t => { const [h, m] = (t || '00:00').split(':').map(Number); return h * 60 + m; };
+          const ini = toMin(v.h1), fim = toMin(v.h2);
+          const pause = parseInt(v.hpause) || 0;
+          let diff = fim - ini; if (diff < 0) diff += 1440;
+          const liquido = Math.max(0, diff - pause);
+          const fmt = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+          return [
+            { label: 'Total bruto', valor: fmt(diff), destaque: false },
+            { label: 'Total líquido', valor: fmt(liquido), destaque: true },
+            { label: 'Em decimal', valor: (liquido / 60).toFixed(2) + 'h', destaque: false },
+          ];
+        }
+      },
 
-    calcular(v) {
+      //🧮 Calculadora Científica ULTRA (Expressões completas)
+      {
+        id: 'calc-cientifica', nome: 'Calculadora Científica', icon: '🧮',
+        campos: [
+          { id: 'exp', label: 'Expressão', tipo: 'text', placeholder: 'Ex: (1+2)*3-5/6' }
+        ],
 
-      let exp = (v.exp || '')
-        .replace(/,/g, '.')
-        .replace(/π/g, 'Math.PI')
-        .replace(/sqrt/g, 'Math.sqrt')
-        .replace(/sin/g, 'Math.sin')
-        .replace(/cos/g, 'Math.cos')
-        .replace(/tan/g, 'Math.tan')
-        .replace(/log/g, 'Math.log10')
-        .replace(/ln/g, 'Math.log')
-        .replace(/abs/g, 'Math.abs')
-        .replace(/floor/g, 'Math.floor')
-        .replace(/ceil/g, 'Math.ceil')
-        .replace(/round/g, 'Math.round')
-        .replace(/\^/g, '**')
-        .replace(/(\d+)%/g, '($1/100)');
+        calcular(v) {
 
-      let resultado = 0;
+          let exp = (v.exp || '')
+            .replace(/,/g, '.')
+            .replace(/π/g, 'Math.PI')
+            .replace(/sqrt/g, 'Math.sqrt')
+            .replace(/sin/g, 'Math.sin')
+            .replace(/cos/g, 'Math.cos')
+            .replace(/tan/g, 'Math.tan')
+            .replace(/log/g, 'Math.log10')
+            .replace(/ln/g, 'Math.log')
+            .replace(/abs/g, 'Math.abs')
+            .replace(/floor/g, 'Math.floor')
+            .replace(/ceil/g, 'Math.ceil')
+            .replace(/round/g, 'Math.round')
+            .replace(/\^/g, '**')
+            .replace(/(\d+)%/g, '($1/100)');
 
-      try {
-        resultado = Function('"use strict";return (' + exp + ')')();
-      } catch (e) {
-        return [
-          { label: 'Erro', valor: 'Expressão inválida', destaque: true }
-        ];
+          let resultado = 0;
+
+          try {
+            resultado = Function('"use strict";return (' + exp + ')')();
+          } catch (e) {
+            return [
+              { label: 'Erro', valor: 'Expressão inválida', destaque: true }
+            ];
+          }
+
+          return [
+            { label: 'Resultado', valor: String(resultado).replace('.', ','), destaque: true }
+          ];
+
+        }
+      },
+      //soma horas
+      {
+        id: 'horas-soma', nome: 'Soma de Horas', icon: '➕',
+        campos: [
+          { id: 'hs1', label: 'Horas 1 (hh:mm)', tipo: 'text', placeholder: '02:30' },
+          { id: 'hs2', label: 'Horas 2 (hh:mm)', tipo: 'text', placeholder: '01:45' },
+          { id: 'hs3', label: 'Horas 3 (hh:mm)', tipo: 'text', placeholder: '00:00' },
+          { id: 'hs4', label: 'Horas 4 (hh:mm)', tipo: 'text', placeholder: '00:00' },
+        ],
+        calcular(v) {
+          const toMin = t => { const p = (t || '0:0').split(':'); return (parseInt(p[0]) || 0) * 60 + (parseInt(p[1]) || 0); };
+          const total = [v.hs1, v.hs2, v.hs3, v.hs4].reduce((a, x) => a + toMin(x), 0);
+          const fmt = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+          return [
+            { label: 'Total', valor: fmt(total), destaque: true },
+            { label: 'Em decimal', valor: (total / 60).toFixed(2) + 'h', destaque: false },
+            { label: 'Em minutos', valor: total + 'min', destaque: false },
+          ];
+        }
+      },
+      //calcular salario por hora
+      {
+        id: 'salario-hora', nome: 'Salário por Horas', icon: '💵',
+        campos: [
+          { id: 'sh', label: 'Valor por hora (R$)', tipo: 'number', placeholder: '50' },
+          { id: 'st', label: 'Horas trabalhadas (hh:mm)', tipo: 'text', placeholder: '40:00' },
+          { id: 'se', label: 'Horas extras (hh:mm)', tipo: 'text', placeholder: '00:00' },
+          { id: 'sm', label: 'Multiplicador hora extra', tipo: 'number', placeholder: '1.5' },
+        ],
+        calcular(v) {
+          const toH = t => { const p = (t || '0:0').split(':'); return (parseInt(p[0]) || 0) + (parseInt(p[1]) || 0) / 60; };
+          const ph = parseFloat(v.sh) || 0;
+          const ht = toH(v.st), he = toH(v.se);
+          const mult = parseFloat(v.sm) || 1.5;
+          const normal = ph * ht, extra = ph * mult * he;
+          const fmt = n => 'R$ ' + n.toFixed(2).replace('.', ',');
+          return [
+            { label: 'Horas normais', valor: fmt(normal), destaque: false },
+            { label: 'Horas extras', valor: fmt(extra), destaque: false },
+            { label: 'Total', valor: fmt(normal + extra), destaque: true },
+          ];
+        }
+      },
+      //porcentagem
+      {
+        id: 'porcento', nome: 'Porcentagem', icon: '%',
+        campos: [
+          { id: 'pv', label: 'Valor', tipo: 'number', placeholder: '200' },
+          { id: 'pp', label: 'Porcentagem', tipo: 'number', placeholder: '15' },
+        ],
+        calcular(v) {
+          const val = parseFloat(v.pv) || 0, pct = parseFloat(v.pp) || 0;
+          const res = val * pct / 100;
+          const fmt = n => n.toFixed(2).replace('.', ',');
+          return [
+            { label: `${pct}% de ${fmt(val)}`, valor: fmt(res), destaque: true },
+            { label: 'Valor + %', valor: fmt(val + res), destaque: false },
+            { label: 'Valor - %', valor: fmt(val - res), destaque: false },
+          ];
+        }
+      },
+      //rachar conta com amigos
+      {
+        id: 'rachar-conta', nome: 'Rachar a Conta', icon: '🍕',
+        campos: [
+          { id: 'rc', label: 'Total da conta (R$)', tipo: 'number', placeholder: '150' },
+          { id: 'rp', label: 'Número de pessoas', tipo: 'number', placeholder: '4' },
+          { id: 'rg', label: 'Gorjeta (%)', tipo: 'number', placeholder: '10' },
+        ],
+        calcular(v) {
+          const total = parseFloat(v.rc) || 0, pessoas = parseInt(v.rp) || 1, gort = parseFloat(v.rg) || 0;
+          const comGorj = total * (1 + gort / 100);
+          const fmt = n => 'R$ ' + n.toFixed(2).replace('.', ',');
+          return [
+            { label: 'Total com gorjeta', valor: fmt(comGorj), destaque: false },
+            { label: 'Por pessoa (sem)', valor: fmt(total / pessoas), destaque: false },
+            { label: 'Por pessoa (com)', valor: fmt(comGorj / pessoas), destaque: true },
+          ];
+        }
+      },
+      //calcular imc
+      {
+        id: 'imc', nome: 'IMC', icon: '⚖️',
+        campos: [
+          { id: 'ip', label: 'Peso (kg)', tipo: 'number', placeholder: '70' },
+          { id: 'ia', label: 'Altura (cm)', tipo: 'number', placeholder: '175' },
+        ],
+        calcular(v) {
+          const p = parseFloat((v.ip + '').replace(',', '.'));
+          let a = parseFloat((v.ia + '').replace(',', '.'));
+
+          if (a > 3) a = a / 100; // se for cm (175)
+
+          if (!a || isNaN(a)) return [{ label: 'Erro', valor: 'Altura inválida', destaque: true }];
+
+          const imc = p / (a * a);
+
+          const cls = imc < 18.5 ? 'Abaixo do peso'
+            : imc < 25 ? 'Peso normal'
+              : imc < 30 ? 'Sobrepeso'
+                : imc < 35 ? 'Obeso grau I'
+                  : imc < 40 ? 'Obeso grau II'
+                    : 'Obeso grau III';
+
+          return [
+            { label: 'IMC', valor: imc.toFixed(1), destaque: true },
+            { label: 'Classificação', valor: cls, destaque: false }
+          ];
+        }
+      },
+      //regra de 3
+      {
+        id: 'regra3', nome: 'Regra de 3', icon: '📊',
+        campos: [
+          { id: 'a', label: 'Valor A', tipo: 'number', placeholder: '10' },
+          { id: 'b', label: 'Valor B', tipo: 'number', placeholder: '20' },
+          { id: 'c', label: 'Valor C', tipo: 'number', placeholder: '5' },
+        ],
+        calcular(v) {
+          const a = parseFloat(v.a) || 0;
+          const b = parseFloat(v.b) || 0;
+          const c = parseFloat(v.c) || 0;
+
+          const r = (b * c) / a;
+
+          return [
+            { label: 'Resultado', valor: r.toFixed(2).replace('.', ','), destaque: true }
+          ];
+        }
+      },
+      //🛒 3. Desconto
+      {
+        id: 'desconto', nome: 'Desconto', icon: '🏷️',
+        campos: [
+          { id: 'vd', label: 'Preço', tipo: 'number', placeholder: '200' },
+          { id: 'pd', label: 'Desconto (%)', tipo: 'number', placeholder: '10' },
+        ],
+        calcular(v) {
+          const preco = parseFloat(v.vd) || 0;
+          const pct = parseFloat(v.pd) || 0;
+
+          const desc = preco * (pct / 100);
+          const final = preco - desc;
+
+          return [
+            { label: 'Desconto', valor: 'R$ ' + desc.toFixed(2).replace('.', ','), destaque: false },
+            { label: 'Preço final', valor: 'R$ ' + final.toFixed(2).replace('.', ','), destaque: true },
+          ];
+        }
+      },
+      //⛽ 4. Consumo de combustível
+      {
+        id: 'consumo', nome: 'Consumo de Combustível', icon: '⛽',
+        campos: [
+          { id: 'km', label: 'Distância (km)', tipo: 'number', placeholder: '500' },
+          { id: 'lit', label: 'Litros usados', tipo: 'number', placeholder: '40' },
+        ],
+        calcular(v) {
+          const km = parseFloat(v.km) || 0;
+          const l = parseFloat(v.lit) || 0;
+
+          const res = km / l;
+
+          return [
+            { label: 'Km por litro', valor: res.toFixed(2).replace('.', ','), destaque: true }
+          ];
+        }
+      },
+      //📅 6. Diferença de dias
+      {
+        id: 'dias', nome: 'Diferença de Dias', icon: '📅',
+        campos: [
+          { id: 'd1', label: 'Data inicial', tipo: 'date' },
+          { id: 'd2', label: 'Data final', tipo: 'date' },
+        ],
+        calcular(v) {
+          const d1 = new Date(v.d1);
+          const d2 = new Date(v.d2);
+
+          const diff = Math.abs(d2 - d1);
+          const dias = diff / (1000 * 60 * 60 * 24);
+
+          return [
+            { label: 'Dias', valor: Math.floor(dias), destaque: true }
+          ];
+        }
+      },
+      //⚡ 7. Consumo de energia
+      {
+        id: 'energia', nome: 'Consumo de Energia', icon: '⚡',
+        campos: [
+          { id: 'kw', label: 'Potência (W)', tipo: 'number', placeholder: '1000' },
+          { id: 'h', label: 'Horas por dia', tipo: 'number', placeholder: '5' },
+          { id: 'dias', label: 'Dias', tipo: 'number', placeholder: '30' },
+          { id: 'preco', label: 'Preço kWh', tipo: 'number', placeholder: '0.80' },
+        ],
+        calcular(v) {
+          const w = parseFloat(v.kw) || 0;
+          const h = parseFloat(v.h) || 0;
+          const d = parseFloat(v.dias) || 0;
+          const p = parseFloat(v.preco) || 0;
+
+          const kwh = (w / 1000) * h * d;
+          const total = kwh * p;
+
+          return [
+            { label: 'Consumo kWh', valor: kwh.toFixed(2).replace('.', ','), destaque: false },
+            { label: 'Custo', valor: 'R$ ' + total.toFixed(2).replace('.', ','), destaque: true },
+          ];
+        }
+      },
+      //📦 8. Frete por km
+      {
+        id: 'frete', nome: 'Cálculo de Frete', icon: '🚚',
+        campos: [
+          { id: 'dist', label: 'Distância (km)', tipo: 'number', placeholder: '200' },
+          { id: 'preco', label: 'Preço por km', tipo: 'number', placeholder: '2.50' },
+        ],
+        calcular(v) {
+          const km = parseFloat(v.dist) || 0;
+          const p = parseFloat(v.preco) || 0;
+
+          const total = km * p;
+
+          return [
+            { label: 'Frete total', valor: 'R$ ' + total.toFixed(2).replace('.', ','), destaque: true }
+          ];
+        }
+      },
+      //🏦 1. Juros simples
+      {
+        id: 'juros-simples', nome: 'Juros Simples', icon: '💰',
+        campos: [
+          { id: 'c', label: 'Capital (R$)', tipo: 'number', placeholder: '1000' },
+          { id: 'i', label: 'Taxa (%)', tipo: 'number', placeholder: '5' },
+          { id: 't', label: 'Tempo', tipo: 'number', placeholder: '12' },
+        ],
+        calcular(v) {
+          const c = parseFloat(v.c) || 0;
+          const i = (parseFloat(v.i) || 0) / 100;
+          const t = parseFloat(v.t) || 0;
+
+          const j = c * i * t;
+          const total = c + j;
+
+          return [
+            { label: 'Juros', valor: 'R$ ' + j.toFixed(2).replace('.', ','), destaque: false },
+            { label: 'Total', valor: 'R$ ' + total.toFixed(2).replace('.', ','), destaque: true },
+          ];
+        }
+      },
+      //📈 2. Juros compostos
+      {
+        id: 'juros-compostos', nome: 'Juros Compostos', icon: '📈',
+        campos: [
+          { id: 'c', label: 'Capital (R$)', tipo: 'number', placeholder: '1000' },
+          { id: 'i', label: 'Taxa (%)', tipo: 'number', placeholder: '5' },
+          { id: 't', label: 'Períodos', tipo: 'number', placeholder: '12' },
+        ],
+        calcular(v) {
+          const c = parseFloat(v.c) || 0;
+          const i = (parseFloat(v.i) || 0) / 100;
+          const t = parseFloat(v.t) || 0;
+
+          const total = c * Math.pow(1 + i, t);
+
+          return [
+            { label: 'Montante', valor: 'R$ ' + total.toFixed(2).replace('.', ','), destaque: true }
+          ];
+        }
+      },
+      //💳 3. Parcelamento
+      {
+        id: 'parcelamento', nome: 'Parcelamento', icon: '💳',
+        campos: [
+          { id: 'v', label: 'Valor total', tipo: 'number', placeholder: '1200' },
+          { id: 'p', label: 'Parcelas', tipo: 'number', placeholder: '12' },
+        ],
+        calcular(v) {
+          const val = parseFloat(v.v) || 0;
+          const par = parseFloat(v.p) || 1;
+
+          const res = val / par;
+
+          return [
+            { label: 'Valor da parcela', valor: 'R$ ' + res.toFixed(2).replace('.', ','), destaque: true }
+          ];
+        }
+      },
+      //📦 4. Preço por unidade
+      {
+        id: 'preco-unidade', nome: 'Preço por Unidade', icon: '🧾',
+        campos: [
+          { id: 'v', label: 'Preço total', tipo: 'number', placeholder: '20' },
+          { id: 'q', label: 'Quantidade', tipo: 'number', placeholder: '5' },
+        ],
+        calcular(v) {
+          const val = parseFloat(v.v) || 0;
+          const q = parseFloat(v.q) || 1;
+
+          const res = val / q;
+
+          return [
+            { label: 'Preço unitário', valor: 'R$ ' + res.toFixed(2).replace('.', ','), destaque: true }
+          ];
+        }
+      },
+      //🧱 5. Área do quarto
+      {
+        id: 'area', nome: 'Área do Cômodo', icon: '📐',
+        campos: [
+          { id: 'l', label: 'Largura (m)', tipo: 'number', placeholder: '4' },
+          { id: 'c', label: 'Comprimento (m)', tipo: 'number', placeholder: '5' },
+        ],
+        calcular(v) {
+          const l = parseFloat(v.l) || 0;
+          const c = parseFloat(v.c) || 0;
+
+          const area = l * c;
+
+          return [
+            { label: 'Área', valor: area.toFixed(2).replace('.', ',') + ' m²', destaque: true }
+          ];
+        }
+      },
+      //🎨 6. Litros de tinta
+      {
+        id: 'tinta', nome: 'Tinta para Parede', icon: '🎨',
+        campos: [
+          { id: 'a', label: 'Área (m²)', tipo: 'number', placeholder: '50' },
+        ],
+        calcular(v) {
+          const area = parseFloat(v.a) || 0;
+
+          const tinta = area / 10;
+
+          return [
+            { label: 'Litros necessários', valor: tinta.toFixed(1).replace('.', ','), destaque: true }
+          ];
+        }
+      },
+      //🚗 7. Custo de viagem
+      {
+        id: 'viagem', nome: 'Custo de Viagem', icon: '🚗',
+        campos: [
+          { id: 'km', label: 'Distância (km)', tipo: 'number', placeholder: '500' },
+          { id: 'cons', label: 'Km por litro', tipo: 'number', placeholder: '12' },
+          { id: 'preco', label: 'Preço combustível', tipo: 'number', placeholder: '6' },
+        ],
+        calcular(v) {
+          const km = parseFloat(v.km) || 0;
+          const cons = parseFloat(v.cons) || 1;
+          const preco = parseFloat(v.preco) || 0;
+
+          const litros = km / cons;
+          const total = litros * preco;
+
+          return [
+            { label: 'Litros usados', valor: litros.toFixed(2).replace('.', ','), destaque: false },
+            { label: 'Custo', valor: 'R$ ' + total.toFixed(2).replace('.', ','), destaque: true },
+          ];
+        }
+      },
+      //🕒 8. Somar horas
+      {
+        id: 'somar-horas', nome: 'Somar Horas', icon: '⏱️',
+        campos: [
+          { id: 'h1', label: 'Hora 1 (hh:mm)', tipo: 'text', placeholder: '02:30' },
+          { id: 'h2', label: 'Hora 2 (hh:mm)', tipo: 'text', placeholder: '01:45' },
+        ],
+        calcular(v) {
+          const toMin = t => {
+            const p = (t || '0:0').split(':');
+            return (parseInt(p[0]) || 0) * 60 + (parseInt(p[1]) || 0);
+          };
+
+          const m = toMin(v.h1) + toMin(v.h2);
+
+          const h = Math.floor(m / 60);
+          const min = m % 60;
+
+          return [
+            { label: 'Total', valor: h + ':' + String(min).padStart(2, '0'), destaque: true }
+          ];
+        }
+      },
+      //⚖️ 9. Converter kg para g
+      {
+        id: 'kg-g', nome: 'Kg para Gramas', icon: '⚖️',
+        campos: [
+          { id: 'kg', label: 'Quilos', tipo: 'number', placeholder: '2' },
+        ],
+        calcular(v) {
+          const kg = parseFloat(v.kg) || 0;
+
+          return [
+            { label: 'Gramas', valor: (kg * 1000), destaque: true }
+          ];
+        }
+      },
+      //📦 10. Peso volumétrico
+      {
+        id: 'peso-vol', nome: 'Peso Volumétrico', icon: '📦',
+        campos: [
+          { id: 'c', label: 'Comprimento (cm)', tipo: 'number' },
+          { id: 'l', label: 'Largura (cm)', tipo: 'number' },
+          { id: 'a', label: 'Altura (cm)', tipo: 'number' },
+        ],
+        calcular(v) {
+          const c = parseFloat(v.c) || 0;
+          const l = parseFloat(v.l) || 0;
+          const a = parseFloat(v.a) || 0;
+
+          const res = (c * l * a) / 6000;
+
+          return [
+            { label: 'Peso volumétrico', valor: res.toFixed(2) + ' kg', destaque: true }
+          ];
+        }
       }
 
-      return [
-        { label: 'Resultado', valor: String(resultado).replace('.', ','), destaque: true }
-      ];
 
+    ];
+
+    function _calcTodos() { return [...CALC_BUILTIN, ...(S._calcs || [])]; }
+
+    function _calcInit() {
+      if (!document.getElementById('calcScreen')) {
+        const s = document.createElement('div');
+        s.id = 'calcScreen';
+        s.style.cssText = 'display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(80px + var(--sab)) 16px;flex-direction:column;gap:14px;box-sizing:border-box';
+        document.querySelector('.body').appendChild(s);
+      }
+      if (!document.getElementById('calcBtn')) {
+        const b = document.createElement('button');
+        b.id = 'calcBtn'; b.title = 'Calculadoras'; b.textContent = '🧮';
+        b.className = 'ibtn'; b.onclick = openCalcScreen;
+        document.querySelector('.hright').prepend(b);
+      }
     }
-  },
-  //soma horas
-  {
-    id: 'horas-soma', nome: 'Soma de Horas', icon: '➕',
-    campos: [
-      { id: 'hs1', label: 'Horas 1 (hh:mm)', tipo: 'text', placeholder: '02:30' },
-      { id: 'hs2', label: 'Horas 2 (hh:mm)', tipo: 'text', placeholder: '01:45' },
-      { id: 'hs3', label: 'Horas 3 (hh:mm)', tipo: 'text', placeholder: '00:00' },
-      { id: 'hs4', label: 'Horas 4 (hh:mm)', tipo: 'text', placeholder: '00:00' },
-    ],
-    calcular(v) {
-      const toMin = t => { const p = (t || '0:0').split(':'); return (parseInt(p[0]) || 0) * 60 + (parseInt(p[1]) || 0); };
-      const total = [v.hs1, v.hs2, v.hs3, v.hs4].reduce((a, x) => a + toMin(x), 0);
-      const fmt = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-      return [
-        { label: 'Total', valor: fmt(total), destaque: true },
-        { label: 'Em decimal', valor: (total / 60).toFixed(2) + 'h', destaque: false },
-        { label: 'Em minutos', valor: total + 'min', destaque: false },
-      ];
+
+    function openCalcScreen() {
+      const s = document.getElementById('calcScreen');
+      const m = document.querySelector('.main');
+      const b = document.getElementById('calcBtn');
+      const fab = document.getElementById('fab');
+      if (!s || !m) return;
+      const isOpen = s.style.display === 'flex';
+      if (isOpen) {
+        s.style.display = 'none'; m.style.display = 'flex';
+        b.style.background = ''; b.style.color = '';
+        fab.style.display = getL() ? 'flex' : 'none';
+      } else {
+        m.style.display = 'none'; s.style.display = 'flex';
+        b.style.background = 'var(--accent)'; b.style.color = 'white';
+        fab.style.display = 'none';
+        // Limpa e reconstrói do zero ao abrir
+        s.innerHTML = '';
+        S._calcBusca = '';
+        _calcMontarEstrutura(s);
+        _calcAtualizarCards();
+      }
     }
-  },
-  //calcular salario por hora
-  {
-    id: 'salario-hora', nome: 'Salário por Horas', icon: '💵',
-    campos: [
-      { id: 'sh', label: 'Valor por hora (R$)', tipo: 'number', placeholder: '50' },
-      { id: 'st', label: 'Horas trabalhadas (hh:mm)', tipo: 'text', placeholder: '40:00' },
-      { id: 'se', label: 'Horas extras (hh:mm)', tipo: 'text', placeholder: '00:00' },
-      { id: 'sm', label: 'Multiplicador hora extra', tipo: 'number', placeholder: '1.5' },
-    ],
-    calcular(v) {
-      const toH = t => { const p = (t || '0:0').split(':'); return (parseInt(p[0]) || 0) + (parseInt(p[1]) || 0) / 60; };
-      const ph = parseFloat(v.sh) || 0;
-      const ht = toH(v.st), he = toH(v.se);
-      const mult = parseFloat(v.sm) || 1.5;
-      const normal = ph * ht, extra = ph * mult * he;
-      const fmt = n => 'R$ ' + n.toFixed(2).replace('.', ',');
-      return [
-        { label: 'Horas normais', valor: fmt(normal), destaque: false },
-        { label: 'Horas extras', valor: fmt(extra), destaque: false },
-        { label: 'Total', valor: fmt(normal + extra), destaque: true },
-      ];
-    }
-  },
-  //porcentagem
-  {
-    id: 'porcento', nome: 'Porcentagem', icon: '%',
-    campos: [
-      { id: 'pv', label: 'Valor', tipo: 'number', placeholder: '200' },
-      { id: 'pp', label: 'Porcentagem', tipo: 'number', placeholder: '15' },
-    ],
-    calcular(v) {
-      const val = parseFloat(v.pv) || 0, pct = parseFloat(v.pp) || 0;
-      const res = val * pct / 100;
-      const fmt = n => n.toFixed(2).replace('.', ',');
-      return [
-        { label: `${pct}% de ${fmt(val)}`, valor: fmt(res), destaque: true },
-        { label: 'Valor + %', valor: fmt(val + res), destaque: false },
-        { label: 'Valor - %', valor: fmt(val - res), destaque: false },
-      ];
-    }
-  },
-  //rachar conta com amigos
-  {
-    id: 'rachar-conta', nome: 'Rachar a Conta', icon: '🍕',
-    campos: [
-      { id: 'rc', label: 'Total da conta (R$)', tipo: 'number', placeholder: '150' },
-      { id: 'rp', label: 'Número de pessoas', tipo: 'number', placeholder: '4' },
-      { id: 'rg', label: 'Gorjeta (%)', tipo: 'number', placeholder: '10' },
-    ],
-    calcular(v) {
-      const total = parseFloat(v.rc) || 0, pessoas = parseInt(v.rp) || 1, gort = parseFloat(v.rg) || 0;
-      const comGorj = total * (1 + gort / 100);
-      const fmt = n => 'R$ ' + n.toFixed(2).replace('.', ',');
-      return [
-        { label: 'Total com gorjeta', valor: fmt(comGorj), destaque: false },
-        { label: 'Por pessoa (sem)', valor: fmt(total / pessoas), destaque: false },
-        { label: 'Por pessoa (com)', valor: fmt(comGorj / pessoas), destaque: true },
-      ];
-    }
-  },
-  //calcular imc
-  {
-    id: 'imc', nome: 'IMC', icon: '⚖️',
-    campos: [
-      { id: 'ip', label: 'Peso (kg)', tipo: 'number', placeholder: '70' },
-      { id: 'ia', label: 'Altura (cm)', tipo: 'number', placeholder: '175' },
-    ],
-    calcular(v) {
-      const p = parseFloat((v.ip + '').replace(',', '.'));
-      let a = parseFloat((v.ia + '').replace(',', '.'));
 
-      if (a > 3) a = a / 100; // se for cm (175)
-
-      if (!a || isNaN(a)) return [{ label: 'Erro', valor: 'Altura inválida', destaque: true }];
-
-      const imc = p / (a * a);
-
-      const cls = imc < 18.5 ? 'Abaixo do peso'
-        : imc < 25 ? 'Peso normal'
-          : imc < 30 ? 'Sobrepeso'
-            : imc < 35 ? 'Obeso grau I'
-              : imc < 40 ? 'Obeso grau II'
-                : 'Obeso grau III';
-
-      return [
-        { label: 'IMC', valor: imc.toFixed(1), destaque: true },
-        { label: 'Classificação', valor: cls, destaque: false }
-      ];
-    }
-  },
-  //regra de 3
-  {
-    id: 'regra3', nome: 'Regra de 3', icon: '📊',
-    campos: [
-      { id: 'a', label: 'Valor A', tipo: 'number', placeholder: '10' },
-      { id: 'b', label: 'Valor B', tipo: 'number', placeholder: '20' },
-      { id: 'c', label: 'Valor C', tipo: 'number', placeholder: '5' },
-    ],
-    calcular(v) {
-      const a = parseFloat(v.a) || 0;
-      const b = parseFloat(v.b) || 0;
-      const c = parseFloat(v.c) || 0;
-
-      const r = (b * c) / a;
-
-      return [
-        { label: 'Resultado', valor: r.toFixed(2).replace('.', ','), destaque: true }
-      ];
-    }
-  },
-  //🛒 3. Desconto
-  {
-    id: 'desconto', nome: 'Desconto', icon: '🏷️',
-    campos: [
-      { id: 'vd', label: 'Preço', tipo: 'number', placeholder: '200' },
-      { id: 'pd', label: 'Desconto (%)', tipo: 'number', placeholder: '10' },
-    ],
-    calcular(v) {
-      const preco = parseFloat(v.vd) || 0;
-      const pct = parseFloat(v.pd) || 0;
-
-      const desc = preco * (pct / 100);
-      const final = preco - desc;
-
-      return [
-        { label: 'Desconto', valor: 'R$ ' + desc.toFixed(2).replace('.', ','), destaque: false },
-        { label: 'Preço final', valor: 'R$ ' + final.toFixed(2).replace('.', ','), destaque: true },
-      ];
-    }
-  },
-  //⛽ 4. Consumo de combustível
-  {
-    id: 'consumo', nome: 'Consumo de Combustível', icon: '⛽',
-    campos: [
-      { id: 'km', label: 'Distância (km)', tipo: 'number', placeholder: '500' },
-      { id: 'lit', label: 'Litros usados', tipo: 'number', placeholder: '40' },
-    ],
-    calcular(v) {
-      const km = parseFloat(v.km) || 0;
-      const l = parseFloat(v.lit) || 0;
-
-      const res = km / l;
-
-      return [
-        { label: 'Km por litro', valor: res.toFixed(2).replace('.', ','), destaque: true }
-      ];
-    }
-  },
-  //📅 6. Diferença de dias
-  {
-    id: 'dias', nome: 'Diferença de Dias', icon: '📅',
-    campos: [
-      { id: 'd1', label: 'Data inicial', tipo: 'date' },
-      { id: 'd2', label: 'Data final', tipo: 'date' },
-    ],
-    calcular(v) {
-      const d1 = new Date(v.d1);
-      const d2 = new Date(v.d2);
-
-      const diff = Math.abs(d2 - d1);
-      const dias = diff / (1000 * 60 * 60 * 24);
-
-      return [
-        { label: 'Dias', valor: Math.floor(dias), destaque: true }
-      ];
-    }
-  },
-  //⚡ 7. Consumo de energia
-  {
-    id: 'energia', nome: 'Consumo de Energia', icon: '⚡',
-    campos: [
-      { id: 'kw', label: 'Potência (W)', tipo: 'number', placeholder: '1000' },
-      { id: 'h', label: 'Horas por dia', tipo: 'number', placeholder: '5' },
-      { id: 'dias', label: 'Dias', tipo: 'number', placeholder: '30' },
-      { id: 'preco', label: 'Preço kWh', tipo: 'number', placeholder: '0.80' },
-    ],
-    calcular(v) {
-      const w = parseFloat(v.kw) || 0;
-      const h = parseFloat(v.h) || 0;
-      const d = parseFloat(v.dias) || 0;
-      const p = parseFloat(v.preco) || 0;
-
-      const kwh = (w / 1000) * h * d;
-      const total = kwh * p;
-
-      return [
-        { label: 'Consumo kWh', valor: kwh.toFixed(2).replace('.', ','), destaque: false },
-        { label: 'Custo', valor: 'R$ ' + total.toFixed(2).replace('.', ','), destaque: true },
-      ];
-    }
-  },
-  //📦 8. Frete por km
-  {
-    id: 'frete', nome: 'Cálculo de Frete', icon: '🚚',
-    campos: [
-      { id: 'dist', label: 'Distância (km)', tipo: 'number', placeholder: '200' },
-      { id: 'preco', label: 'Preço por km', tipo: 'number', placeholder: '2.50' },
-    ],
-    calcular(v) {
-      const km = parseFloat(v.dist) || 0;
-      const p = parseFloat(v.preco) || 0;
-
-      const total = km * p;
-
-      return [
-        { label: 'Frete total', valor: 'R$ ' + total.toFixed(2).replace('.', ','), destaque: true }
-      ];
-    }
-  },
-  //🏦 1. Juros simples
-  {
-    id: 'juros-simples', nome: 'Juros Simples', icon: '💰',
-    campos: [
-      { id: 'c', label: 'Capital (R$)', tipo: 'number', placeholder: '1000' },
-      { id: 'i', label: 'Taxa (%)', tipo: 'number', placeholder: '5' },
-      { id: 't', label: 'Tempo', tipo: 'number', placeholder: '12' },
-    ],
-    calcular(v) {
-      const c = parseFloat(v.c) || 0;
-      const i = (parseFloat(v.i) || 0) / 100;
-      const t = parseFloat(v.t) || 0;
-
-      const j = c * i * t;
-      const total = c + j;
-
-      return [
-        { label: 'Juros', valor: 'R$ ' + j.toFixed(2).replace('.', ','), destaque: false },
-        { label: 'Total', valor: 'R$ ' + total.toFixed(2).replace('.', ','), destaque: true },
-      ];
-    }
-  },
-  //📈 2. Juros compostos
-  {
-    id: 'juros-compostos', nome: 'Juros Compostos', icon: '📈',
-    campos: [
-      { id: 'c', label: 'Capital (R$)', tipo: 'number', placeholder: '1000' },
-      { id: 'i', label: 'Taxa (%)', tipo: 'number', placeholder: '5' },
-      { id: 't', label: 'Períodos', tipo: 'number', placeholder: '12' },
-    ],
-    calcular(v) {
-      const c = parseFloat(v.c) || 0;
-      const i = (parseFloat(v.i) || 0) / 100;
-      const t = parseFloat(v.t) || 0;
-
-      const total = c * Math.pow(1 + i, t);
-
-      return [
-        { label: 'Montante', valor: 'R$ ' + total.toFixed(2).replace('.', ','), destaque: true }
-      ];
-    }
-  },
-  //💳 3. Parcelamento
-  {
-    id: 'parcelamento', nome: 'Parcelamento', icon: '💳',
-    campos: [
-      { id: 'v', label: 'Valor total', tipo: 'number', placeholder: '1200' },
-      { id: 'p', label: 'Parcelas', tipo: 'number', placeholder: '12' },
-    ],
-    calcular(v) {
-      const val = parseFloat(v.v) || 0;
-      const par = parseFloat(v.p) || 1;
-
-      const res = val / par;
-
-      return [
-        { label: 'Valor da parcela', valor: 'R$ ' + res.toFixed(2).replace('.', ','), destaque: true }
-      ];
-    }
-  },
-  //📦 4. Preço por unidade
-  {
-    id: 'preco-unidade', nome: 'Preço por Unidade', icon: '🧾',
-    campos: [
-      { id: 'v', label: 'Preço total', tipo: 'number', placeholder: '20' },
-      { id: 'q', label: 'Quantidade', tipo: 'number', placeholder: '5' },
-    ],
-    calcular(v) {
-      const val = parseFloat(v.v) || 0;
-      const q = parseFloat(v.q) || 1;
-
-      const res = val / q;
-
-      return [
-        { label: 'Preço unitário', valor: 'R$ ' + res.toFixed(2).replace('.', ','), destaque: true }
-      ];
-    }
-  },
-  //🧱 5. Área do quarto
-  {
-    id: 'area', nome: 'Área do Cômodo', icon: '📐',
-    campos: [
-      { id: 'l', label: 'Largura (m)', tipo: 'number', placeholder: '4' },
-      { id: 'c', label: 'Comprimento (m)', tipo: 'number', placeholder: '5' },
-    ],
-    calcular(v) {
-      const l = parseFloat(v.l) || 0;
-      const c = parseFloat(v.c) || 0;
-
-      const area = l * c;
-
-      return [
-        { label: 'Área', valor: area.toFixed(2).replace('.', ',') + ' m²', destaque: true }
-      ];
-    }
-  },
-  //🎨 6. Litros de tinta
-  {
-    id: 'tinta', nome: 'Tinta para Parede', icon: '🎨',
-    campos: [
-      { id: 'a', label: 'Área (m²)', tipo: 'number', placeholder: '50' },
-    ],
-    calcular(v) {
-      const area = parseFloat(v.a) || 0;
-
-      const tinta = area / 10;
-
-      return [
-        { label: 'Litros necessários', valor: tinta.toFixed(1).replace('.', ','), destaque: true }
-      ];
-    }
-  },
-  //🚗 7. Custo de viagem
-  {
-    id: 'viagem', nome: 'Custo de Viagem', icon: '🚗',
-    campos: [
-      { id: 'km', label: 'Distância (km)', tipo: 'number', placeholder: '500' },
-      { id: 'cons', label: 'Km por litro', tipo: 'number', placeholder: '12' },
-      { id: 'preco', label: 'Preço combustível', tipo: 'number', placeholder: '6' },
-    ],
-    calcular(v) {
-      const km = parseFloat(v.km) || 0;
-      const cons = parseFloat(v.cons) || 1;
-      const preco = parseFloat(v.preco) || 0;
-
-      const litros = km / cons;
-      const total = litros * preco;
-
-      return [
-        { label: 'Litros usados', valor: litros.toFixed(2).replace('.', ','), destaque: false },
-        { label: 'Custo', valor: 'R$ ' + total.toFixed(2).replace('.', ','), destaque: true },
-      ];
-    }
-  },
-  //🕒 8. Somar horas
-  {
-    id: 'somar-horas', nome: 'Somar Horas', icon: '⏱️',
-    campos: [
-      { id: 'h1', label: 'Hora 1 (hh:mm)', tipo: 'text', placeholder: '02:30' },
-      { id: 'h2', label: 'Hora 2 (hh:mm)', tipo: 'text', placeholder: '01:45' },
-    ],
-    calcular(v) {
-      const toMin = t => {
-        const p = (t || '0:0').split(':');
-        return (parseInt(p[0]) || 0) * 60 + (parseInt(p[1]) || 0);
-      };
-
-      const m = toMin(v.h1) + toMin(v.h2);
-
-      const h = Math.floor(m / 60);
-      const min = m % 60;
-
-      return [
-        { label: 'Total', valor: h + ':' + String(min).padStart(2, '0'), destaque: true }
-      ];
-    }
-  },
-  //⚖️ 9. Converter kg para g
-  {
-    id: 'kg-g', nome: 'Kg para Gramas', icon: '⚖️',
-    campos: [
-      { id: 'kg', label: 'Quilos', tipo: 'number', placeholder: '2' },
-    ],
-    calcular(v) {
-      const kg = parseFloat(v.kg) || 0;
-
-      return [
-        { label: 'Gramas', valor: (kg * 1000), destaque: true }
-      ];
-    }
-  },
-  //📦 10. Peso volumétrico
-  {
-    id: 'peso-vol', nome: 'Peso Volumétrico', icon: '📦',
-    campos: [
-      { id: 'c', label: 'Comprimento (cm)', tipo: 'number' },
-      { id: 'l', label: 'Largura (cm)', tipo: 'number' },
-      { id: 'a', label: 'Altura (cm)', tipo: 'number' },
-    ],
-    calcular(v) {
-      const c = parseFloat(v.c) || 0;
-      const l = parseFloat(v.l) || 0;
-      const a = parseFloat(v.a) || 0;
-
-      const res = (c * l * a) / 6000;
-
-      return [
-        { label: 'Peso volumétrico', valor: res.toFixed(2) + ' kg', destaque: true }
-      ];
-    }
-  }
-
-
-];
-
-function _calcTodos() { return [...CALC_BUILTIN, ...(S._calcs || [])]; }
-
-function _calcInit() {
-  if (!document.getElementById('calcScreen')) {
-    const s = document.createElement('div');
-    s.id = 'calcScreen';
-    s.style.cssText = 'display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(80px + var(--sab)) 16px;flex-direction:column;gap:14px;box-sizing:border-box';
-    document.querySelector('.body').appendChild(s);
-  }
-  if (!document.getElementById('calcBtn')) {
-    const b = document.createElement('button');
-    b.id = 'calcBtn'; b.title = 'Calculadoras'; b.textContent = '🧮';
-    b.className = 'ibtn'; b.onclick = openCalcScreen;
-    document.querySelector('.hright').prepend(b);
-  }
-}
-
-function openCalcScreen() {
-  const s = document.getElementById('calcScreen');
-  const m = document.querySelector('.main');
-  const b = document.getElementById('calcBtn');
-  const fab = document.getElementById('fab');
-  if (!s || !m) return;
-  const isOpen = s.style.display === 'flex';
-  if (isOpen) {
-    s.style.display = 'none'; m.style.display = 'flex';
-    b.style.background = ''; b.style.color = '';
-    fab.style.display = getL() ? 'flex' : 'none';
-  } else {
-    m.style.display = 'none'; s.style.display = 'flex';
-    b.style.background = 'var(--accent)'; b.style.color = 'white';
-    fab.style.display = 'none';
-    // Limpa e reconstrói do zero ao abrir
-    s.innerHTML = '';
-    S._calcBusca = '';
-    _calcMontarEstrutura(s);
-    _calcAtualizarCards();
-  }
-}
-
-// Monta o cabeçalho e input de busca UMA única vez
-function _calcMontarEstrutura(s) {
-  const header = document.createElement('div');
-  header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;flex-shrink:0';
-  header.innerHTML = `
+    // Monta o cabeçalho e input de busca UMA única vez
+    function _calcMontarEstrutura(s) {
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;flex-shrink:0';
+      header.innerHTML = `
     <div style="font-size:18px;font-weight:800;color:var(--text)">🧮 Calculadoras</div>
     <button class="btn pri" style="flex:0;padding:9px 16px" onclick="novaCalc()">＋ Nova</button>`;
-  s.appendChild(header);
+      s.appendChild(header);
 
-  const buscaInput = document.createElement('input');
-  buscaInput.id = 'calcBuscaInput';
-  buscaInput.type = 'text';
-  buscaInput.placeholder = '🔍 Buscar calculadora...';
-  buscaInput.style.cssText = 'flex-shrink:0;font-size:13px;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);outline:none;width:100%;box-sizing:border-box';
-  // Usa addEventListener — nunca perde o foco
-  buscaInput.addEventListener('input', e => {
-    S._calcBusca = e.target.value;
-    _calcAtualizarCards();
-  });
-  s.appendChild(buscaInput);
+      const buscaInput = document.createElement('input');
+      buscaInput.id = 'calcBuscaInput';
+      buscaInput.type = 'text';
+      buscaInput.placeholder = '🔍 Buscar calculadora...';
+      buscaInput.style.cssText = 'flex-shrink:0;font-size:13px;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);outline:none;width:100%;box-sizing:border-box';
+      // Usa addEventListener — nunca perde o foco
+      buscaInput.addEventListener('input', e => {
+        S._calcBusca = e.target.value;
+        _calcAtualizarCards();
+      });
+      s.appendChild(buscaInput);
 
-  const area = document.createElement('div');
-  area.id = 'calcCardsArea';
-  area.style.cssText = 'display:flex;flex-direction:column;gap:10px';
-  s.appendChild(area);
-}
-function _calcLimpar(calcId) {
-  const calc = _calcTodos().find(c => c.id === calcId);
-  if (!calc) return;
+      const area = document.createElement('div');
+      area.id = 'calcCardsArea';
+      area.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+      s.appendChild(area);
+    }
+    function _calcLimpar(calcId) {
+      const calc = _calcTodos().find(c => c.id === calcId);
+      if (!calc) return;
 
-  // Limpa valores no estado
-  if (!S._calcVals) S._calcVals = {};
-  if (!S._calcVals[calcId]) S._calcVals[calcId] = {};
-  calc.campos.forEach(c => {
-    S._calcVals[calcId][c.id] = '';
-    const el = document.getElementById(`cf_${calcId}_${c.id}`);
-    if (el) el.value = '';
-  });
+      // Limpa valores no estado
+      if (!S._calcVals) S._calcVals = {};
+      if (!S._calcVals[calcId]) S._calcVals[calcId] = {};
+      calc.campos.forEach(c => {
+        S._calcVals[calcId][c.id] = '';
+        const el = document.getElementById(`cf_${calcId}_${c.id}`);
+        if (el) el.value = '';
+      });
 
-  // Atualiza resultados para mostrar valores limpos
-  _calcCalc(calcId);
-}
-// Só atualiza a área dos cards — nunca toca no input de busca
-function _calcAtualizarCards() {
-  const area = document.getElementById('calcCardsArea');
-  if (!area) return;
+      // Atualiza resultados para mostrar valores limpos
+      _calcCalc(calcId);
+    }
+    // Só atualiza a área dos cards — nunca toca no input de busca
+    function _calcAtualizarCards() {
+      const area = document.getElementById('calcCardsArea');
+      if (!area) return;
 
-  if (!S._calcVals || typeof S._calcVals !== 'object') S._calcVals = {};
-  const todos = _calcTodos();
-  todos.forEach(c => { if (!S._calcVals[c.id]) S._calcVals[c.id] = {}; });
+      if (!S._calcVals || typeof S._calcVals !== 'object') S._calcVals = {};
+      const todos = _calcTodos();
+      todos.forEach(c => { if (!S._calcVals[c.id]) S._calcVals[c.id] = {}; });
 
-  const busca = (S._calcBusca || '').toLowerCase().trim();
-  const filtrados = busca
-    ? todos.filter(c => c.nome.toLowerCase().includes(busca) || c.icon.includes(busca))
-    : todos;
+      const busca = (S._calcBusca || '').toLowerCase().trim();
+      const filtrados = busca
+        ? todos.filter(c => c.nome.toLowerCase().includes(busca) || c.icon.includes(busca))
+        : todos;
 
-  if (!filtrados.length) {
-    area.innerHTML = `<div style="font-size:13px;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:8px 0">Nenhuma calculadora encontrada.</div>`;
-    return;
-  }
+      if (!filtrados.length) {
+        area.innerHTML = `<div style="font-size:13px;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:8px 0">Nenhuma calculadora encontrada.</div>`;
+        return;
+      }
 
-  area.innerHTML = filtrados.map(calc => {
-    if (!S._calcVals[calc.id]) S._calcVals[calc.id] = {};
-    const vals = S._calcVals[calc.id];
-    const resultados = _calcResultados(calc, vals);
-    const isCustom = !CALC_BUILTIN.find(b => b.id === calc.id);
+      area.innerHTML = filtrados.map(calc => {
+        if (!S._calcVals[calc.id]) S._calcVals[calc.id] = {};
+        const vals = S._calcVals[calc.id];
+        const resultados = _calcResultados(calc, vals);
+        const isCustom = !CALC_BUILTIN.find(b => b.id === calc.id);
 
-    const campos = calc.campos.map(c => `
+        const campos = calc.campos.map(c => `
       <div class="fg">
         <div class="fl">${c.label}</div>
         <input type="${c.tipo === 'time' ? 'time' : c.tipo === 'number' ? 'number' : 'text'}"
@@ -4682,7 +4773,7 @@ function _calcAtualizarCards() {
           style="font-size:15px;padding:10px 12px">
       </div>`).join('');
 
-    const resHtml = resultados.map(r => `
+        const resHtml = resultados.map(r => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;
         background:${r.destaque ? 'rgba(124,106,247,.12)' : 'var(--bg)'};
         border:1px solid ${r.destaque ? 'rgba(124,106,247,.3)' : 'var(--border)'}">
@@ -4692,7 +4783,7 @@ function _calcAtualizarCards() {
           color:${r.destaque ? 'var(--accent)' : 'var(--text)'}">${r.valor}</span>
       </div>`).join('');
 
-    return `
+        return `
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r)">
       <details>
         <summary style="padding:14px 16px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;user-select:none">
@@ -4715,45 +4806,45 @@ function _calcAtualizarCards() {
         </div>
       </details>
     </div>`;
-  }).join('');
-}
+      }).join('');
+    }
 
-// Alias para compatibilidade com chamadas antigas
-function _calcRender() {
-  const s = document.getElementById('calcScreen');
-  if (!s || s.style.display !== 'flex') return;
-  // Se a estrutura ainda não existe, cria
-  if (!document.getElementById('calcCardsArea')) {
-    s.innerHTML = '';
-    _calcMontarEstrutura(s);
-  }
-  _calcAtualizarCards();
-}
+    // Alias para compatibilidade com chamadas antigas
+    function _calcRender() {
+      const s = document.getElementById('calcScreen');
+      if (!s || s.style.display !== 'flex') return;
+      // Se a estrutura ainda não existe, cria
+      if (!document.getElementById('calcCardsArea')) {
+        s.innerHTML = '';
+        _calcMontarEstrutura(s);
+      }
+      _calcAtualizarCards();
+    }
 
-function _calcInput(calcId, campoId, valor) {
-  if (!S._calcVals) S._calcVals = {};
-  if (!S._calcVals[calcId]) S._calcVals[calcId] = {};
-  S._calcVals[calcId][campoId] = valor;
-  _calcCalc(calcId);
-}
+    function _calcInput(calcId, campoId, valor) {
+      if (!S._calcVals) S._calcVals = {};
+      if (!S._calcVals[calcId]) S._calcVals[calcId] = {};
+      S._calcVals[calcId][campoId] = valor;
+      _calcCalc(calcId);
+    }
 
-function _calcCalc(calcId) {
-  const calc = _calcTodos().find(c => c.id === calcId);
-  if (!calc) return;
-  if (!S._calcVals) S._calcVals = {};
-  if (!S._calcVals[calcId]) S._calcVals[calcId] = {};
+    function _calcCalc(calcId) {
+      const calc = _calcTodos().find(c => c.id === calcId);
+      if (!calc) return;
+      if (!S._calcVals) S._calcVals = {};
+      if (!S._calcVals[calcId]) S._calcVals[calcId] = {};
 
-  calc.campos.forEach(c => {
-    const el = document.getElementById(`cf_${calcId}_${c.id}`);
-    if (el) S._calcVals[calcId][c.id] = el.value;
-  });
+      calc.campos.forEach(c => {
+        const el = document.getElementById(`cf_${calcId}_${c.id}`);
+        if (el) S._calcVals[calcId][c.id] = el.value;
+      });
 
-  const resultados = _calcResultados(calc, S._calcVals[calcId]);
-  save();
+      const resultados = _calcResultados(calc, S._calcVals[calcId]);
+      save();
 
-  const resEl = document.getElementById(`res_${calcId}`);
-  if (!resEl) return;
-  resEl.innerHTML = resultados.map(r => `
+      const resEl = document.getElementById(`res_${calcId}`);
+      if (!resEl) return;
+      resEl.innerHTML = resultados.map(r => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;
       background:${r.destaque ? 'rgba(124,106,247,.12)' : 'var(--bg)'};
       border:1px solid ${r.destaque ? 'rgba(124,106,247,.3)' : 'var(--border)'}">
@@ -4762,21 +4853,21 @@ function _calcCalc(calcId) {
         font-family:'JetBrains Mono',monospace;
         color:${r.destaque ? 'var(--accent)' : 'var(--text)'}">${r.valor}</span>
     </div>`).join('');
-}
+    }
 
-function _calcResultados(calc, vals) {
-  try { return calc.calcular(vals) || []; }
-  catch (e) { return [{ label: 'Erro', valor: String(e.message), destaque: true }]; }
-}
+    function _calcResultados(calc, vals) {
+      try { return calc.calcular(vals) || []; }
+      catch (e) { return [{ label: 'Erro', valor: String(e.message), destaque: true }]; }
+    }
 
-function novaCalc() { editCalc(null); }
+    function novaCalc() { editCalc(null); }
 
-function editCalc(id) {
-  const item = id ? (S._calcs || []).find(c => c.id === id) : null;
-  const camposJson = item
-    ? JSON.stringify(item.campos, null, 2)
-    : '[\n  {"id":"c1","label":"Valor 1","tipo":"number","placeholder":"0"},\n  {"id":"c2","label":"Valor 2","tipo":"number","placeholder":"0"}\n]';
-  const calcFn = item ? item._fn : `function calcular(v){
+    function editCalc(id) {
+      const item = id ? (S._calcs || []).find(c => c.id === id) : null;
+      const camposJson = item
+        ? JSON.stringify(item.campos, null, 2)
+        : '[\n  {"id":"c1","label":"Valor 1","tipo":"number","placeholder":"0"},\n  {"id":"c2","label":"Valor 2","tipo":"number","placeholder":"0"}\n]';
+      const calcFn = item ? item._fn : `function calcular(v){
   const a = parseFloat(v.c1)||0;
   const b = parseFloat(v.c2)||0;
   return [
@@ -4786,7 +4877,7 @@ function editCalc(id) {
   ];
 }`;
 
-  openM(id ? '✏️ Editar Calculadora' : '＋ Nova Calculadora', `
+      openM(id ? '✏️ Editar Calculadora' : '＋ Nova Calculadora', `
     <div class="fg"><div class="fl">Nome</div>
       <input type="text" id="cnome" placeholder="Ex: Calculadora de desconto" value="${esc(item?.nome || '')}">
     </div>
@@ -4809,173 +4900,173 @@ function editCalc(id) {
     <button class="btn" onclick="_calcTestar()">🧪 Testar</button>
     <div id="cteste" style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text3)"></div>
   `, () => {
-    const nome = document.getElementById('cnome').value.trim();
-    const icon = document.getElementById('cicon').value.trim() || '🧮';
-    const fnTxt = document.getElementById('cfn').value.trim();
-    let campos;
-    try { campos = JSON.parse(document.getElementById('ccampos').value); }
-    catch (e) { alert('JSON dos campos inválido: ' + e.message); return; }
-    let fn;
-    try { fn = new Function('v', fnTxt.replace(/^function calcular\(v\)\s*\{/, '').replace(/\}$/, '')); }
-    catch (e) { alert('Erro na função: ' + e.message); return; }
-    if (!nome) return;
-    const nova = { id: item?.id || genId(), nome, icon, campos, calcular: fn, _fn: fnTxt };
-    if (!S._calcs) S._calcs = [];
-    if (id) { const idx = S._calcs.findIndex(c => c.id === id); if (idx >= 0) S._calcs[idx] = nova; else S._calcs.push(nova); }
-    else S._calcs.push(nova);
-    save(); _calcAtualizarCards();
-  });
-}
-
-window._calcTestar = () => {
-  try {
-    const fnTxt = document.getElementById('cfn').value.trim();
-    const campos = JSON.parse(document.getElementById('ccampos').value);
-    const fn = new Function('v', fnTxt.replace(/^function calcular\(v\)\s*\{/, '').replace(/\}$/, ''));
-    const fakeVals = {};
-    campos.forEach(c => fakeVals[c.id] = c.placeholder || '0');
-    const res = fn(fakeVals);
-    document.getElementById('cteste').innerHTML = '✅ OK — ' + res.map(r => `${r.label}: ${r.valor}`).join(' | ');
-  } catch (e) {
-    document.getElementById('cteste').innerHTML = '❌ Erro: ' + e.message;
-  }
-};
-
-function delCalc(id) {
-  S._calcs = (S._calcs || []).filter(c => c.id !== id);
-  save(); _calcAtualizarCards();
-}
-
-// ── FRASES INSPIRADORAS ───────────────────────────────
-reg('frases', {
-  name: 'Frases Inspiradoras', icon: '💬',
-  desc: 'Frases aleatórias sem repetir até esgotar o ciclo', def: false,
-  tb(){ return ''; },
-  onToggle(on) {
-    if(!on){
-      const s=document.getElementById('frasesScreen');
-      const m=document.querySelector('.main');
-      if(s) s.style.display='none';
-      if(m) m.style.display='flex';
-      const b=document.getElementById('frasesBtn');
-      if(b) b.remove();
-      document.getElementById('fab').style.display=getL()?'flex':'none';
-    } else {
-      _frasesInit();
+        const nome = document.getElementById('cnome').value.trim();
+        const icon = document.getElementById('cicon').value.trim() || '🧮';
+        const fnTxt = document.getElementById('cfn').value.trim();
+        let campos;
+        try { campos = JSON.parse(document.getElementById('ccampos').value); }
+        catch (e) { alert('JSON dos campos inválido: ' + e.message); return; }
+        let fn;
+        try { fn = new Function('v', fnTxt.replace(/^function calcular\(v\)\s*\{/, '').replace(/\}$/, '')); }
+        catch (e) { alert('Erro na função: ' + e.message); return; }
+        if (!nome) return;
+        const nova = { id: item?.id || genId(), nome, icon, campos, calcular: fn, _fn: fnTxt };
+        if (!S._calcs) S._calcs = [];
+        if (id) { const idx = S._calcs.findIndex(c => c.id === id); if (idx >= 0) S._calcs[idx] = nova; else S._calcs.push(nova); }
+        else S._calcs.push(nova);
+        save(); _calcAtualizarCards();
+      });
     }
-  }
-});
 
-if (!S._frases) S._frases = [];       // lista de frases
-if (!S._frasesVis) S._frasesVis = [];    // ids já vistos no ciclo atual
-if (!S._frasesAtual) S._frasesAtual = null; // frase atual exibida
+    window._calcTestar = () => {
+      try {
+        const fnTxt = document.getElementById('cfn').value.trim();
+        const campos = JSON.parse(document.getElementById('ccampos').value);
+        const fn = new Function('v', fnTxt.replace(/^function calcular\(v\)\s*\{/, '').replace(/\}$/, ''));
+        const fakeVals = {};
+        campos.forEach(c => fakeVals[c.id] = c.placeholder || '0');
+        const res = fn(fakeVals);
+        document.getElementById('cteste').innerHTML = '✅ OK — ' + res.map(r => `${r.label}: ${r.valor}`).join(' | ');
+      } catch (e) {
+        document.getElementById('cteste').innerHTML = '❌ Erro: ' + e.message;
+      }
+    };
 
-// Frases padrão para começar
-const FRASES_DEFAULT = [
-  { id: 'f1', texto: 'A vida é aquilo que acontece enquanto você está ocupado fazendo outros planos.', autor: 'John Lennon' },
-  { id: 'f2', texto: 'Seja a mudança que você quer ver no mundo.', autor: 'Mahatma Gandhi' },
-  { id: 'f3', texto: 'No meio de toda dificuldade reside uma oportunidade.', autor: 'Albert Einstein' },
-  { id: 'f4', texto: 'A imaginação é mais importante que o conhecimento.', autor: 'Albert Einstein' },
-  { id: 'f5', texto: 'Aqueles que não podem mudar suas mentes não podem mudar nada.', autor: 'George Bernard Shaw' },
-  { id: 'f6', texto: 'O sucesso é ir de fracasso em fracasso sem perder o entusiasmo.', autor: 'Winston Churchill' },
-  { id: 'f7', texto: 'Você nunca atravessará o oceano a menos que tenha coragem de perder de vista a costa.', autor: 'Cristóvão Colombo' },
-  { id: 'f8', texto: 'A criatividade é a inteligência se divertindo.', autor: 'Albert Einstein' },
-  { id: 'f9', texto: 'Não é o mais forte que sobrevive, mas o mais adaptável.', autor: 'Charles Darwin' },
-  { id: 'f10', texto: 'A única maneira de fazer um ótimo trabalho é amar o que você faz.', autor: 'Steve Jobs' },
-  { id: 'f11', texto: 'Errar é humano, mas persistir no erro é diabólico.', autor: 'Sêneca' },
-  { id: 'f12', texto: 'O tempo que você gosta de desperdiçar não é desperdiçado.', autor: 'Bertrand Russell' },
-];
+    function delCalc(id) {
+      S._calcs = (S._calcs || []).filter(c => c.id !== id);
+      save(); _calcAtualizarCards();
+    }
 
-function _frasesInit(){
-  if(!S._frases || S._frases.length===0){
-    S._frases = FRASES_DEFAULT.map(f=>({...f}));
-  }
-  if(!Array.isArray(S._frasesVis)) S._frasesVis=[];
-  if(!S._frasesAtual) S._frasesAtual=null;
-  save();
+    // ── FRASES INSPIRADORAS ───────────────────────────────
+    reg('frases', {
+      name: 'Frases Inspiradoras', icon: '💬',
+      desc: 'Frases aleatórias sem repetir até esgotar o ciclo', def: false,
+      tb() { return ''; },
+      onToggle(on) {
+        if (!on) {
+          const s = document.getElementById('frasesScreen');
+          const m = document.querySelector('.main');
+          if (s) s.style.display = 'none';
+          if (m) m.style.display = 'flex';
+          const b = document.getElementById('frasesBtn');
+          if (b) b.remove();
+          document.getElementById('fab').style.display = getL() ? 'flex' : 'none';
+        } else {
+          _frasesInit();
+        }
+      }
+    });
 
-  if(!document.getElementById('frasesScreen')){
-    const s=document.createElement('div');
-    s.id='frasesScreen';
-    s.style.cssText='display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(80px + var(--sab)) 16px;flex-direction:column;gap:16px;box-sizing:border-box';
-    document.querySelector('.body').appendChild(s);
-  }
-  if(!document.getElementById('frasesBtn')){
-    const b=document.createElement('button');
-    b.id='frasesBtn'; b.title='Frases'; b.textContent='💬';
-    b.className='ibtn'; b.onclick=openFrasesScreen;
-    document.querySelector('.hright').prepend(b);
-  }
-}
+    if (!S._frases) S._frases = [];       // lista de frases
+    if (!S._frasesVis) S._frasesVis = [];    // ids já vistos no ciclo atual
+    if (!S._frasesAtual) S._frasesAtual = null; // frase atual exibida
 
-function openFrasesScreen() {
-  const s = document.getElementById('frasesScreen');
-  const m = document.querySelector('.main');
-  const fab = document.getElementById('fab');
-  const b = document.getElementById('frasesBtn');
-  if (!s || !m) return;
-  const isOpen = s.style.display === 'flex';
-  if (isOpen) {
-    s.style.display = 'none'; m.style.display = 'flex';
-    b.style.background = ''; b.style.color = '';
-    fab.style.display = getL() ? 'flex' : 'none';
-  } else {
-    m.style.display = 'none'; s.style.display = 'flex';
-    b.style.background = 'var(--accent)'; b.style.color = 'white';
-    fab.style.display = 'none';
-    _frasesRender();
-  }
-}
+    // Frases padrão para começar
+    const FRASES_DEFAULT = [
+      { id: 'f1', texto: 'A vida é aquilo que acontece enquanto você está ocupado fazendo outros planos.', autor: 'John Lennon' },
+      { id: 'f2', texto: 'Seja a mudança que você quer ver no mundo.', autor: 'Mahatma Gandhi' },
+      { id: 'f3', texto: 'No meio de toda dificuldade reside uma oportunidade.', autor: 'Albert Einstein' },
+      { id: 'f4', texto: 'A imaginação é mais importante que o conhecimento.', autor: 'Albert Einstein' },
+      { id: 'f5', texto: 'Aqueles que não podem mudar suas mentes não podem mudar nada.', autor: 'George Bernard Shaw' },
+      { id: 'f6', texto: 'O sucesso é ir de fracasso em fracasso sem perder o entusiasmo.', autor: 'Winston Churchill' },
+      { id: 'f7', texto: 'Você nunca atravessará o oceano a menos que tenha coragem de perder de vista a costa.', autor: 'Cristóvão Colombo' },
+      { id: 'f8', texto: 'A criatividade é a inteligência se divertindo.', autor: 'Albert Einstein' },
+      { id: 'f9', texto: 'Não é o mais forte que sobrevive, mas o mais adaptável.', autor: 'Charles Darwin' },
+      { id: 'f10', texto: 'A única maneira de fazer um ótimo trabalho é amar o que você faz.', autor: 'Steve Jobs' },
+      { id: 'f11', texto: 'Errar é humano, mas persistir no erro é diabólico.', autor: 'Sêneca' },
+      { id: 'f12', texto: 'O tempo que você gosta de desperdiçar não é desperdiçado.', autor: 'Bertrand Russell' },
+    ];
 
-function _frasesProxima(){
-  if(!Array.isArray(S._frasesVis)) S._frasesVis=[];
-  if(!S._frases || !S._frases.length) return null;
-  // Filtra frases que ainda não foram vistas no ciclo
-  const naoVistas = S._frases.filter(f => !S._frasesVis.includes(f.id));
-  if (naoVistas.length === 0) {
-    // Todas vistas — reinicia ciclo
-    S._frasesVis = [];
-    const todas = [...S._frases];
-    // Remove a última vista para não repetir na virada
-    const semUltima = S._frasesAtual
-      ? todas.filter(f => f.id !== S._frasesAtual)
-      : todas;
-    const pool = semUltima.length ? semUltima : todas;
-    const escolhida = pool[Math.floor(Math.random() * pool.length)];
-    S._frasesAtual = escolhida.id;
-    S._frasesVis = [escolhida.id];
-    save();
-    return escolhida;
-  }
-  const escolhida = naoVistas[Math.floor(Math.random() * naoVistas.length)];
-  S._frasesAtual = escolhida.id;
-  S._frasesVis.push(escolhida.id);
-  save();
-  return escolhida;
-}
+    function _frasesInit() {
+      if (!S._frases || S._frases.length === 0) {
+        S._frases = FRASES_DEFAULT.map(f => ({ ...f }));
+      }
+      if (!Array.isArray(S._frasesVis)) S._frasesVis = [];
+      if (!S._frasesAtual) S._frasesAtual = null;
+      save();
 
-function _frasesAtualObj() {
-  if (!S._frasesAtual) return null;
-  return (S._frases || []).find(f => f.id === S._frasesAtual) || null;
-}
+      if (!document.getElementById('frasesScreen')) {
+        const s = document.createElement('div');
+        s.id = 'frasesScreen';
+        s.style.cssText = 'display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(80px + var(--sab)) 16px;flex-direction:column;gap:16px;box-sizing:border-box';
+        document.querySelector('.body').appendChild(s);
+      }
+      if (!document.getElementById('frasesBtn')) {
+        const b = document.createElement('button');
+        b.id = 'frasesBtn'; b.title = 'Frases'; b.textContent = '💬';
+        b.className = 'ibtn'; b.onclick = openFrasesScreen;
+        document.querySelector('.hright').prepend(b);
+      }
+    }
 
-function _frasesRender() {
-  const s = document.getElementById('frasesScreen');
-  if (!s || s.style.display !== 'flex') return;
-  if (!S._frases) S._frases = [];
+    function openFrasesScreen() {
+      const s = document.getElementById('frasesScreen');
+      const m = document.querySelector('.main');
+      const fab = document.getElementById('fab');
+      const b = document.getElementById('frasesBtn');
+      if (!s || !m) return;
+      const isOpen = s.style.display === 'flex';
+      if (isOpen) {
+        s.style.display = 'none'; m.style.display = 'flex';
+        b.style.background = ''; b.style.color = '';
+        fab.style.display = getL() ? 'flex' : 'none';
+      } else {
+        m.style.display = 'none'; s.style.display = 'flex';
+        b.style.background = 'var(--accent)'; b.style.color = 'white';
+        fab.style.display = 'none';
+        _frasesRender();
+      }
+    }
 
-  const frase = _frasesAtualObj() || _frasesProxima();
-  const total = S._frases.length;
-  const vistas = S._frasesVis.length;
-  const pct = total ? Math.round(vistas / total * 100) : 0;
+    function _frasesProxima() {
+      if (!Array.isArray(S._frasesVis)) S._frasesVis = [];
+      if (!S._frases || !S._frases.length) return null;
+      // Filtra frases que ainda não foram vistas no ciclo
+      const naoVistas = S._frases.filter(f => !S._frasesVis.includes(f.id));
+      if (naoVistas.length === 0) {
+        // Todas vistas — reinicia ciclo
+        S._frasesVis = [];
+        const todas = [...S._frases];
+        // Remove a última vista para não repetir na virada
+        const semUltima = S._frasesAtual
+          ? todas.filter(f => f.id !== S._frasesAtual)
+          : todas;
+        const pool = semUltima.length ? semUltima : todas;
+        const escolhida = pool[Math.floor(Math.random() * pool.length)];
+        S._frasesAtual = escolhida.id;
+        S._frasesVis = [escolhida.id];
+        save();
+        return escolhida;
+      }
+      const escolhida = naoVistas[Math.floor(Math.random() * naoVistas.length)];
+      S._frasesAtual = escolhida.id;
+      S._frasesVis.push(escolhida.id);
+      save();
+      return escolhida;
+    }
 
-  // Busca
-  const busca = (S._frasesBusca || '').toLowerCase().trim();
-  const lista = busca
-    ? S._frases.filter(f => f.texto.toLowerCase().includes(busca) || f.autor.toLowerCase().includes(busca))
-    : S._frases;
+    function _frasesAtualObj() {
+      if (!S._frasesAtual) return null;
+      return (S._frases || []).find(f => f.id === S._frasesAtual) || null;
+    }
 
-  s.innerHTML = `
+    function _frasesRender() {
+      const s = document.getElementById('frasesScreen');
+      if (!s || s.style.display !== 'flex') return;
+      if (!S._frases) S._frases = [];
+
+      const frase = _frasesAtualObj() || _frasesProxima();
+      const total = S._frases.length;
+      const vistas = S._frasesVis.length;
+      const pct = total ? Math.round(vistas / total * 100) : 0;
+
+      // Busca
+      const busca = (S._frasesBusca || '').toLowerCase().trim();
+      const lista = busca
+        ? S._frases.filter(f => f.texto.toLowerCase().includes(busca) || f.autor.toLowerCase().includes(busca))
+        : S._frases;
+
+      s.innerHTML = `
 
 
     <!-- Frase em destaque -->
@@ -5030,26 +5121,26 @@ function _frasesRender() {
     </div>
       </div>`;
 
-  _frasesRenderLista();
-}
+      _frasesRenderLista();
+    }
 
-function _frasesRenderLista() {
-  const el = document.getElementById('frasesLista');
-  if (!el) return;
-  const busca = (S._frasesBusca || '').toLowerCase().trim();
-  const lista = busca
-    ? (S._frases || []).filter(f => f.texto.toLowerCase().includes(busca) || f.autor.toLowerCase().includes(busca))
-    : (S._frases || []);
+    function _frasesRenderLista() {
+      const el = document.getElementById('frasesLista');
+      if (!el) return;
+      const busca = (S._frasesBusca || '').toLowerCase().trim();
+      const lista = busca
+        ? (S._frases || []).filter(f => f.texto.toLowerCase().includes(busca) || f.autor.toLowerCase().includes(busca))
+        : (S._frases || []);
 
-  if (!lista.length) {
-    el.innerHTML = `<div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:8px 0">Nenhuma frase encontrada.</div>`;
-    return;
-  }
+      if (!lista.length) {
+        el.innerHTML = `<div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:8px 0">Nenhuma frase encontrada.</div>`;
+        return;
+      }
 
-  el.innerHTML = lista.map(f => {
-    const atual = f.id === S._frasesAtual;
-    const vista = S._frasesVis.includes(f.id);
-    return `<div style="background:var(--surface${atual ? '' : '2'});border:1px solid ${atual ? 'var(--accent)' : 'var(--border)'};border-radius:var(--r);padding:12px;display:flex;gap:10px;align-items:flex-start">
+      el.innerHTML = lista.map(f => {
+        const atual = f.id === S._frasesAtual;
+        const vista = S._frasesVis.includes(f.id);
+        return `<div style="background:var(--surface${atual ? '' : '2'});border:1px solid ${atual ? 'var(--accent)' : 'var(--border)'};border-radius:var(--r);padding:12px;display:flex;gap:10px;align-items:flex-start">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;line-height:1.5;color:var(--text);font-style:italic">"${esc(f.texto)}"</div>
         <div style="font-size:11px;color:var(--accent);margin-top:4px;font-weight:700">— ${esc(f.autor || 'Autor desconhecido')}</div>
@@ -5061,20 +5152,20 @@ function _frasesRenderLista() {
         <button class="iabtn" onclick="delFrase('${f.id}')" style="color:var(--red);opacity:.7" title="Excluir">✕</button>
       </div>
     </div>`;
-  }).join('');
-}
+      }).join('');
+    }
 
-function frasesProximaUI() {
-  _frasesProxima();
-  _frasesRender();
-  // Animação suave
-  const card = document.querySelector('#frasesScreen [style*="font-style:italic"]');
-  if (card) { card.style.opacity = '0'; card.style.transition = 'opacity .3s'; setTimeout(() => { card.style.opacity = '1'; }, 50); }
-}
+    function frasesProximaUI() {
+      _frasesProxima();
+      _frasesRender();
+      // Animação suave
+      const card = document.querySelector('#frasesScreen [style*="font-style:italic"]');
+      if (card) { card.style.opacity = '0'; card.style.transition = 'opacity .3s'; setTimeout(() => { card.style.opacity = '1'; }, 50); }
+    }
 
-function editFrase(id) {
-  const item = id ? (S._frases || []).find(f => f.id === id) : null;
-  openM(id ? '✏️ Editar Frase' : '＋ Nova Frase', `
+    function editFrase(id) {
+      const item = id ? (S._frases || []).find(f => f.id === id) : null;
+      openM(id ? '✏️ Editar Frase' : '＋ Nova Frase', `
     <div class="fg"><div class="fl">Frase</div>
       <textarea class="fta" id="ftxt" style="min-height:100px">${esc(item?.texto || '')}</textarea>
     </div>
@@ -5082,29 +5173,29 @@ function editFrase(id) {
       <input type="text" id="faut" placeholder="Ex: Albert Einstein" value="${esc(item?.autor || '')}">
     </div>
   `, () => {
-    const texto = document.getElementById('ftxt').value.trim();
-    const autor = document.getElementById('faut').value.trim();
-    if (!texto) return;
-    if (!S._frases) S._frases = [];
-    if (id) {
-      const idx = S._frases.findIndex(f => f.id === id);
-      if (idx >= 0) S._frases[idx] = { ...S._frases[idx], texto, autor };
-    } else {
-      S._frases.push({ id: 'f' + genId(), texto, autor });
+        const texto = document.getElementById('ftxt').value.trim();
+        const autor = document.getElementById('faut').value.trim();
+        if (!texto) return;
+        if (!S._frases) S._frases = [];
+        if (id) {
+          const idx = S._frases.findIndex(f => f.id === id);
+          if (idx >= 0) S._frases[idx] = { ...S._frases[idx], texto, autor };
+        } else {
+          S._frases.push({ id: 'f' + genId(), texto, autor });
+        }
+        save(); _frasesRender();
+      });
     }
-    save(); _frasesRender();
-  });
-}
 
-function delFrase(id) {
-  S._frases = (S._frases || []).filter(f => f.id !== id);
-  S._frasesVis = S._frasesVis.filter(v => v !== id);
-  if (S._frasesAtual === id) S._frasesAtual = null;
-  save(); _frasesRender();
-}
+    function delFrase(id) {
+      S._frases = (S._frases || []).filter(f => f.id !== id);
+      S._frasesVis = S._frasesVis.filter(v => v !== id);
+      if (S._frasesAtual === id) S._frasesAtual = null;
+      save(); _frasesRender();
+    }
 
-function openFrasesImport() {
-  openM('📥 Importar Frases', `
+    function openFrasesImport() {
+      openM('📥 Importar Frases', `
     <div class="fg"><div class="fl">Uma frase por linha — formato: <code>frase | autor</code></div>
       <textarea class="fta" id="fimp" style="min-height:140px" placeholder='A vida é bela | Charles Chaplin
 Cogito ergo sum | René Descartes'></textarea>
@@ -5113,27 +5204,27 @@ Cogito ergo sum | René Descartes'></textarea>
       O separador | é opcional. Sem ele, toda a linha vira a frase.
     </div>
   `, () => {
-    const raw = document.getElementById('fimp').value.trim();
-    if (!raw) return;
-    if (!S._frases) S._frases = [];
-    const linhas = raw.split('\n').filter(l => l.trim());
-    let adicionadas = 0;
-    for (const linha of linhas) {
-      const partes = linha.split('|');
-      const texto = partes[0].trim();
-      const autor = (partes[1] || '').trim();
-      if (texto) { S._frases.push({ id: 'f' + genId(), texto, autor }); adicionadas++; }
+        const raw = document.getElementById('fimp').value.trim();
+        if (!raw) return;
+        if (!S._frases) S._frases = [];
+        const linhas = raw.split('\n').filter(l => l.trim());
+        let adicionadas = 0;
+        for (const linha of linhas) {
+          const partes = linha.split('|');
+          const texto = partes[0].trim();
+          const autor = (partes[1] || '').trim();
+          if (texto) { S._frases.push({ id: 'f' + genId(), texto, autor }); adicionadas++; }
+        }
+        save(); _frasesRender();
+        setTimeout(() => alert(`✅ ${adicionadas} frase(s) importada(s)!`), 300);
+      });
     }
-    save(); _frasesRender();
-    setTimeout(() => alert(`✅ ${adicionadas} frase(s) importada(s)!`), 300);
-  });
-}
 
-function exportFrases() {
-  if (!S._frases?.length) { alert('Nenhuma frase para exportar.'); return; }
-  const txt = S._frases.map(f => f.autor ? `${f.texto} | ${f.autor}` : f.texto).join('\n');
-  const json = JSON.stringify(S._frases, null, 2);
-  openM('📤 Exportar Frases', `
+    function exportFrases() {
+      if (!S._frases?.length) { alert('Nenhuma frase para exportar.'); return; }
+      const txt = S._frases.map(f => f.autor ? `${f.texto} | ${f.autor}` : f.texto).join('\n');
+      const json = JSON.stringify(S._frases, null, 2);
+      openM('📤 Exportar Frases', `
     <div class="view-tabs" style="margin-bottom:4px">
       <button class="vtab on" id="vt_ftxt" onclick="swFrasesExp('txt')">Texto</button>
       <button class="vtab" id="vt_fjson" onclick="swFrasesExp('json')">JSON</button>
@@ -5144,21 +5235,21 @@ function exportFrases() {
       <button class="btn pri" onclick="dlFrasesExp()">⬇ Download</button>
     </div>
   `, null);
-  window._frasesExp = { txt, json, mode: 'txt' };
-}
-window.swFrasesExp = mode => {
-  window._frasesExp.mode = mode;
-  document.getElementById('frasesExpPre').textContent = mode === 'txt' ? window._frasesExp.txt : window._frasesExp.json;
-  document.getElementById('vt_ftxt').classList.toggle('on', mode === 'txt');
-  document.getElementById('vt_fjson').classList.toggle('on', mode === 'json');
-};
-window.cpFrasesExp = () => navigator.clipboard.writeText(window._frasesExp.mode === 'txt' ? window._frasesExp.txt : window._frasesExp.json).then(() => alert('Copiado!'));
-window.dlFrasesExp = () => {
-  const d = window._frasesExp;
-  const b = new Blob([d.mode === 'txt' ? d.txt : d.json], { type: 'text/plain' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(b);
-  a.download = `frases.${d.mode === 'txt' ? 'txt' : 'json'}`; a.click();
-};
+      window._frasesExp = { txt, json, mode: 'txt' };
+    }
+    window.swFrasesExp = mode => {
+      window._frasesExp.mode = mode;
+      document.getElementById('frasesExpPre').textContent = mode === 'txt' ? window._frasesExp.txt : window._frasesExp.json;
+      document.getElementById('vt_ftxt').classList.toggle('on', mode === 'txt');
+      document.getElementById('vt_fjson').classList.toggle('on', mode === 'json');
+    };
+    window.cpFrasesExp = () => navigator.clipboard.writeText(window._frasesExp.mode === 'txt' ? window._frasesExp.txt : window._frasesExp.json).then(() => alert('Copiado!'));
+    window.dlFrasesExp = () => {
+      const d = window._frasesExp;
+      const b = new Blob([d.mode === 'txt' ? d.txt : d.json], { type: 'text/plain' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+      a.download = `frases.${d.mode === 'txt' ? 'txt' : 'json'}`; a.click();
+    };
     // ══════════════════════════════════════════════════════
     //  BOOT
     // ══════════════════════════════════════════════════════
