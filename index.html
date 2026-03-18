@@ -461,31 +461,31 @@
       display: none
     }
 
-.tbsep {
-    width: 1px;
-    height: 33px;
-    background: var(--border);
-    flex-shrink: 0;
-    margin: 0 2px;
-}
+    .tbsep {
+      width: 1px;
+      height: 33px;
+      background: var(--border);
+      flex-shrink: 0;
+      margin: 0 2px;
+    }
 
-.tbbtn {
-    padding: 8px 7px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    color: var(--text2);
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all .15s;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    flex-shrink: 0;
-}
+    .tbbtn {
+      padding: 8px 7px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text2);
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
 
     .tbbtn:active {
       opacity: .75;
@@ -503,19 +503,19 @@
       flex-shrink: 0
     }
 
-.srch input {
-    height: 33px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    padding: 0px 10px 0px 30px;
-    outline: none;
-    width: 150px;
-    transition: all .2s;
-}
+    .srch input {
+      height: 33px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 0px 10px 0px 30px;
+      outline: none;
+      width: 150px;
+      transition: all .2s;
+    }
 
     .srch input:focus {
       border-color: var(--accent);
@@ -1551,8 +1551,6 @@ background:var(--accent); */
 
 <body>
 
-
-
   <div class="body">
     <div class="overlay" id="ov" onclick="closeSB()"></div>
     <aside class="sidebar" id="sb">
@@ -1564,14 +1562,12 @@ background:var(--accent); */
         <div class="lents" id="lents"></div>
       </div>
       <div class="sb-scroll">
-        
         <div class="sb-label" style="margin-top:4px">
           Plugins
           <span id="sbPluginCount"
             style="float:right;opacity:.5;font-weight:400;text-transform:none;letter-spacing:0"></span>
         </div>
         <div class="pg" id="pg"></div>
-
       </div>
       <div class="sb-search">
         <input type="text" id="sbSearch" placeholder="🔍 Buscar plugin ou lista..."
