@@ -2322,10 +2322,12 @@ function setStars(id) {
       const item = find(l.items, id); if (!item) return;
       item.checked = v;
 
-      // Hook treino — só dispara em filhos (profundidade > 0)
+      // Hook treino
       if (pon('treino') && v) {
         const pai = getpar(l.items, id);
-        if (pai !== null) treinoIniciarDescanso(item);
+        const ehFolha = !item.children || item.children.length === 0;
+        // Só dispara descanso se tem pai E não tem filhos
+        if (pai !== null && ehFolha) treinoIniciarDescanso(item);
       }
 
       save();
@@ -2333,6 +2335,7 @@ function setStars(id) {
       renderCnt();
       renderSB();
     }
+
     function togCol(id) { const l = getL(); if (!l) return; const item = find(l.items, id); if (!item) return; item.collapsed = !item.collapsed; save(); renderCnt(); }
     function renItem(id, text) { const l = getL(); if (!l) return; const item = find(l.items, id); if (item) { item.text = text.trim() || item.text; save(); } }
 
@@ -5642,136 +5645,251 @@ Cogito ergo sum | René Descartes'></textarea>
       desc: 'Cronômetro de descanso ao marcar séries', def: false,
       tb() {
         return pon('treino') ? `
-    <button class="tbbtn" onclick="treinoConfig()" title="Configurar descanso">
-      💪 <span id="treinoTempoLabel">${S._treinoDescanso || 60}s</span>
+    <button class="tbbtn" onclick="treinoConfig()">
+      💪 <span id="treinoTempoLabel">${S._treinoDescanso || 60}s descanso</span>
     </button>` : '';
       },
-      // Hook chamado ao marcar checkbox — intercepta antes de salvar
-      onItemCheck(item, checked, profundidade) {
-        if (!checked) return; // só ao marcar, não ao desmarcar
-        if (profundidade === 0) return; // raiz não dispara
-        treinoIniciarDescanso(item);
-      }
+
+      // Badge em QUALQUER item que tenha dados de treino
+      meta(item) {
+        if (!pon('treino')) return '';
+        const l = getL(); if (!l) return '';
+        const hk = item.children?.length > 0;
+        const ehRaiz = l.items.some(i => i.id === item.id);
+        let out = '';
+
+        // Cronômetro rodando neste pai raiz
+        if (ehRaiz && item._treinoCronAtivo) {
+          const elapsed = _treinoElapsed(item);
+          out += `<span class="treino-rest-badge">⏱ ${_treinoFmtTempo(elapsed)} em andamento
+        <button style="background:none;border:none;color:var(--yellow);cursor:pointer;font-size:11px;padding:0 2px"
+          onclick="treinoPausarCron('${item.id}')">⏸</button>
+        <button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;padding:0 2px"
+          onclick="treinoStopCron('${item.id}')">⏹</button>
+      </span>`;
+        }
+
+        // Pai raiz pausado
+        if (ehRaiz && item._treinoCronPausado && !item._treinoCronAtivo) {
+          const elapsed = _treinoElapsed(item);
+          out += `<span class="treino-done-badge" style="color:var(--yellow);border-color:rgba(232,200,74,.3);background:rgba(232,200,74,.08)">
+        ⏸ Pausado em ${_treinoFmtTempo(elapsed)}
+        <button style="background:none;border:none;color:var(--green);cursor:pointer;font-size:11px;padding:0 2px"
+          onclick="treinoRetomarCron('${item.id}')">▶</button>
+        <button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;padding:0 2px"
+          onclick="treinoStopCron('${item.id}')">⏹</button>
+      </span>`;
+        }
+
+        // Pai raiz sem cronômetro — botão Iniciar
+        if (ehRaiz && !item._treinoCronAtivo && !item._treinoCronPausado && !item._treinoTempoFinal) {
+          out += `<button class="treino-act-btn" style="font-size:11px;padding:3px 10px;border-radius:99px;background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);color:var(--accent);cursor:pointer;margin-top:2px"
+        onclick="treinoIniciarCron('${item.id}')">▶ Iniciar treino</button>`;
+        }
+
+        // Resultado final do cronômetro
+        if (item._treinoTempoFinal) {
+          const hora = item._treinoMarcadoEm
+            ? new Date(item._treinoMarcadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+            : '';
+          const series = item._treinoSeries || '';
+          out += `<span class="treino-done-badge">
+        💪 ${_treinoFmtTempo(item._treinoTempoFinal)}${series ? ' · ' + series : ''}${hora ? ' · ' + hora : ''}
+        <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px"
+          title="Reiniciar" onclick="treinoReiniciarCron('${item.id}')">🔄</button>
+      </span>`;
+        }
+
+        // Total acumulado da lista inteira (só no primeiro item raiz)
+        if (ehRaiz && item.id === l.items[0]?.id) {
+          const total = _treinoTotalSessao(l);
+          if (total > 0 && !item._treinoCronAtivo) {
+            out += `<span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-left:4px">
+          🏋️ Sessão total: ${_treinoFmtTempo(total)}
+        </span>`;
+          }
+        }
+
+        return out;
+      },
+      onItemCheck(item, checked, profundidade) { /* não usado mais */ }
     });
 
-    if (!S._treinoDescanso) S._treinoDescanso = 60; // segundos padrão
+    if (!S._treinoDescanso) S._treinoDescanso = 60;
     if (!S._treinoSom) S._treinoSom = true;
 
     // ── CSS ──────────────────────────────────────────────
     (() => {
       const s = document.createElement('style');
       s.textContent = `
-    /* Overlay do timer */
     .treino-overlay{
-      position:fixed;inset:0;
-      background:rgba(0,0,0,.85);
-      z-index:8888;
-      display:none;flex-direction:column;
-      align-items:center;justify-content:center;gap:20px;
+      position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:8888;
+      display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;
       backdrop-filter:blur(6px);
     }
     .treino-overlay.open{display:flex}
-
-    /* Anel circular */
     .treino-ring{position:relative;width:220px;height:220px;flex-shrink:0}
     .treino-ring svg{transform:rotate(-90deg)}
     .treino-ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:12}
-    .treino-ring-fill{
-      fill:none;stroke:var(--accent);stroke-width:12;
-      stroke-linecap:round;
-      transition:stroke-dashoffset .9s linear, stroke .3s;
-    }
+    .treino-ring-fill{fill:none;stroke:var(--accent);stroke-width:12;stroke-linecap:round;
+      transition:stroke-dashoffset .9s linear,stroke .3s}
     .treino-ring-fill.urgente{stroke:var(--red)}
     .treino-ring-fill.quase{stroke:var(--yellow)}
-
-    /* Número no centro */
-    .treino-num{
-      position:absolute;inset:0;
-      display:flex;flex-direction:column;
-      align-items:center;justify-content:center;gap:4px;
-    }
-    .treino-secs{
-      font-size:64px;font-weight:800;color:white;
-      font-family:'Syne',sans-serif;line-height:1;
-    }
-    .treino-label{
-      font-size:12px;color:rgba(255,255,255,.5);
-      font-family:'JetBrains Mono',monospace;
-      text-transform:uppercase;letter-spacing:1px;
-    }
-
-    /* Nome do exercício */
-    .treino-exer{
-      font-size:16px;font-weight:700;color:white;
-      font-family:'Syne',sans-serif;text-align:center;
-      max-width:80vw;opacity:.8;
-    }
-
-    /* Botões */
+    .treino-num{position:absolute;inset:0;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:4px}
+    .treino-secs{font-size:64px;font-weight:800;color:white;font-family:'Syne',sans-serif;line-height:1}
+    .treino-label{font-size:12px;color:rgba(255,255,255,.5);font-family:'JetBrains Mono',monospace;
+      text-transform:uppercase;letter-spacing:1px}
+    .treino-exer{font-size:16px;font-weight:700;color:white;font-family:'Syne',sans-serif;
+      text-align:center;max-width:80vw;opacity:.8}
     .treino-actions{display:flex;gap:10px;margin-top:4px}
-    .treino-act-btn{
-      padding:10px 22px;border-radius:99px;border:none;
-      font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
-      cursor:pointer;transition:all .15s;
-    }
+    .treino-act-btn{padding:10px 22px;border-radius:99px;border:none;
+      font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s}
     .treino-act-btn:active{transform:scale(.95);opacity:.8}
     .treino-skip{background:rgba(255,255,255,.12);color:white}
     .treino-stop{background:var(--red);color:white}
     .treino-add30{background:rgba(124,106,247,.3);color:white}
-
-    /* Mini badge no item após completar */
-    .treino-done-badge{
-      font-size:10px;font-family:'JetBrains Mono',monospace;
+    .treino-done-badge{font-size:10px;font-family:'JetBrains Mono',monospace;
       color:var(--green);background:rgba(62,207,142,.1);
-      border:1px solid rgba(62,207,142,.3);
-      padding:1px 6px;border-radius:20px;white-space:nowrap;
-    }
-
-    /* Badge de descanso ativo */
-    .treino-rest-badge{
-      font-size:10px;font-family:'JetBrains Mono',monospace;
+      border:1px solid rgba(62,207,142,.3);padding:2px 8px;border-radius:20px;
+      white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+    .treino-rest-badge{font-size:10px;font-family:'JetBrains Mono',monospace;
       color:var(--accent);background:rgba(124,106,247,.12);
-      border:1px solid rgba(124,106,247,.35);
-      padding:1px 6px;border-radius:20px;white-space:nowrap;
-      animation:treinopulse .8s infinite alternate;
-    }
+      border:1px solid rgba(124,106,247,.35);padding:2px 8px;border-radius:20px;
+      white-space:nowrap;display:inline-flex;align-items:center;gap:4px;
+      animation:treinopulse .8s infinite alternate}
     @keyframes treinopulse{from{opacity:1}to{opacity:.4}}
-
-    /* Histórico rápido */
-    .treino-hist{
-      position:fixed;bottom:calc(70px + var(--sab));right:14px;
-      background:var(--surface);border:1px solid var(--accent);
-      border-radius:12px;padding:10px 14px;z-index:8887;
-      font-family:'JetBrains Mono',monospace;font-size:11px;
-      color:var(--text2);display:none;flex-direction:column;gap:4px;
-      max-width:200px;
-    }
-    .treino-hist.open{display:flex}
   `;
       document.head.appendChild(s);
     })();
 
-    // ── Estado do timer ──
-    let _treinoTimer = null;  // setInterval
-    let _treinoRestante = 0;
-    let _treinoTotal = 0;
-    let _treinoItem = null;
-    let _treinoHist = [];    // histórico de séries desta sessão
+    // ── Estado do timer de descanso ──
+    let _treinoTimer = null, _treinoRestante = 0, _treinoTotal = 0, _treinoItem = null;
+    // ── Cronômetros ativos (itemId → intervalId) ──
+    const _treinoCrons = {};
 
-    // ── Iniciar descanso ──
+    // ── CRONÔMETRO DO PAI ─────────────────────────────────
+
+    function treinoIniciarCron(itemId) {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, itemId); if (!item) return;
+      item._treinoCronAtivo = true;
+      item._treinoCronPausado = false;
+      item._treinoTempoFinal = null;
+      item._treinoInicio = Date.now();
+      item._treinoAcumulado = item._treinoAcumulado || 0;
+      save();
+      // Tick a cada segundo para atualizar o badge
+      if (_treinoCrons[itemId]) clearInterval(_treinoCrons[itemId]);
+      _treinoCrons[itemId] = setInterval(() => {
+        // Verifica se ainda existe e está ativo
+        const l2 = getL(); if (!l2) return;
+        const it = find(l2.items, itemId); if (!it || !it._treinoCronAtivo) { clearInterval(_treinoCrons[itemId]); return; }
+        renderCnt();
+      }, 1000);
+      renderCnt();
+      _treinoToast('▶ Treino iniciado!');
+    }
+
+    function treinoPausarCron(itemId) {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, itemId); if (!item) return;
+      // Acumula tempo decorrido até agora
+      if (item._treinoInicio) {
+        item._treinoAcumulado = (item._treinoAcumulado || 0) + Math.round((Date.now() - item._treinoInicio) / 1000);
+        item._treinoInicio = null;
+      }
+      item._treinoCronAtivo = false;
+      item._treinoCronPausado = true;
+      clearInterval(_treinoCrons[itemId]);
+      save(); renderCnt();
+      _treinoToast('⏸ Treino pausado');
+    }
+
+    function treinoRetomarCron(itemId) {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, itemId); if (!item) return;
+      item._treinoCronAtivo = true;
+      item._treinoCronPausado = false;
+      item._treinoInicio = Date.now();
+      save();
+      if (_treinoCrons[itemId]) clearInterval(_treinoCrons[itemId]);
+      _treinoCrons[itemId] = setInterval(() => {
+        const l2 = getL(); if (!l2) return;
+        const it = find(l2.items, itemId); if (!it || !it._treinoCronAtivo) { clearInterval(_treinoCrons[itemId]); return; }
+        renderCnt();
+      }, 1000);
+      renderCnt();
+      _treinoToast('▶ Treino retomado!');
+    }
+
+    function treinoStopCron(itemId) {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, itemId); if (!item) return;
+      if (item._treinoCronAtivo && item._treinoInicio) {
+        item._treinoAcumulado = (item._treinoAcumulado || 0) + Math.round((Date.now() - item._treinoInicio) / 1000);
+      }
+      let feitas = 0, total = 0;
+      function contarSeries(arr) {
+        for (const f of arr) {
+          if (!f.children?.length) { total++; if (f.checked) feitas++; }
+          if (f.children?.length) contarSeries(f.children);
+        }
+      }
+      contarSeries(item.children || []);
+
+      item._treinoTempoFinal = item._treinoAcumulado || 0;
+      item._treinoSeries = `${feitas}/${total} séries`;
+      item._treinoCronAtivo = false;
+      item._treinoCronPausado = false;
+      item._treinoInicio = null;
+      item._treinoAcumulado = 0;
+      item._treinoMarcadoEm = Date.now();
+      clearInterval(_treinoCrons[itemId]);
+      save(); renderCnt();
+      _treinoToast(`✅ ${_treinoFmtTempo(item._treinoTempoFinal)} · ${feitas}/${total} séries`);
+    }
+    function treinoReiniciarCron(itemId) {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, itemId); if (!item) return;
+      // Limpa todos os dados do cronômetro
+      item._treinoTempoFinal = null;
+      item._treinoCronAtivo = false;
+      item._treinoCronPausado = false;
+      item._treinoInicio = null;
+      item._treinoAcumulado = 0;
+      item._treinoMarcadoEm = null;
+      item._treinoSeries = null;
+      clearInterval(_treinoCrons[itemId]);
+      save(); renderCnt();
+      _treinoToast('🔄 Treino reiniciado!');
+    }
+
+    // Tempo decorrido em segundos (ativo ou pausado)
+    function _treinoElapsed(item) {
+      let acc = item._treinoAcumulado || 0;
+      if (item._treinoCronAtivo && item._treinoInicio) {
+        acc += Math.round((Date.now() - item._treinoInicio) / 1000);
+      }
+      return acc;
+    }
+
+    // Soma tempo final de todos os pais da lista
+    function _treinoTotalSessao(list) {
+      let total = 0;
+      for (const item of list.items) {
+        if (item._treinoTempoFinal) total += item._treinoTempoFinal;
+      }
+      return total;
+    }
+
+    // ── TIMER DE DESCANSO ─────────────────────────────────
+
     function treinoIniciarDescanso(item) {
-      // Cancela timer anterior se houver
       if (_treinoTimer) clearInterval(_treinoTimer);
-
       _treinoItem = item;
       _treinoRestante = parseInt(S._treinoDescanso) || 60;
       _treinoTotal = _treinoRestante;
-
-      // Registra no histórico
-      const agora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      _treinoHist.push({ texto: item.text, hora: agora });
-      if (_treinoHist.length > 8) _treinoHist.shift();
-
       _treinoMostrarOverlay();
       _treinoTick();
       _treinoTimer = setInterval(_treinoTick, 1000);
@@ -5781,14 +5899,12 @@ Cogito ergo sum | René Descartes'></textarea>
       _treinoRestante--;
       _treinoAtualizarOverlay();
       if (_treinoRestante <= 0) {
-        clearInterval(_treinoTimer);
-        _treinoTimer = null;
+        clearInterval(_treinoTimer); _treinoTimer = null;
         _treinoFinalizar();
       }
     }
 
     function _treinoMostrarOverlay() {
-      // Cria overlay se não existe
       if (!document.getElementById('treinoOverlay')) {
         const ov = document.createElement('div');
         ov.id = 'treinoOverlay'; ov.className = 'treino-overlay';
@@ -5798,9 +5914,7 @@ Cogito ergo sum | René Descartes'></textarea>
         <svg width="220" height="220" viewBox="0 0 220 220">
           <circle class="treino-ring-bg" cx="110" cy="110" r="98"/>
           <circle class="treino-ring-fill" id="treinoRingFill"
-            cx="110" cy="110" r="98"
-            stroke-dasharray="615.75"
-            stroke-dashoffset="0"/>
+            cx="110" cy="110" r="98" stroke-dasharray="615.75" stroke-dashoffset="0"/>
         </svg>
         <div class="treino-num">
           <div class="treino-secs" id="treinoSecs">60</div>
@@ -5809,8 +5923,8 @@ Cogito ergo sum | René Descartes'></textarea>
       </div>
       <div class="treino-actions">
         <button class="treino-act-btn treino-add30" onclick="treinoAdd30()">＋30s</button>
-        <button class="treino-act-btn treino-skip" onclick="treinoPularDescanso()">Pular ⏭</button>
-        <button class="treino-act-btn treino-stop" onclick="treinoFecharOverlay()">✕</button>
+        <button class="treino-act-btn treino-skip"  onclick="treinoPularDescanso()">Pular ⏭</button>
+        <button class="treino-act-btn treino-stop"  onclick="treinoFecharOverlay()">✕</button>
       </div>
       <div style="font-size:11px;color:rgba(255,255,255,.25);font-family:'JetBrains Mono',monospace">
         toque em Pular para ir direto ao próximo
@@ -5826,16 +5940,10 @@ Cogito ergo sum | René Descartes'></textarea>
       const secsEl = document.getElementById('treinoSecs');
       const ringEl = document.getElementById('treinoRingFill');
       if (!secsEl || !ringEl) return;
-
-      const r = 98;
-      const circum = 2 * Math.PI * r; // 615.75
+      const circum = 2 * Math.PI * 98;
       const pct = _treinoRestante / _treinoTotal;
-      const offset = circum * (1 - pct);
-
       secsEl.textContent = _treinoRestante;
-      ringEl.style.strokeDashoffset = offset;
-
-      // Cor do anel por urgência
+      ringEl.style.strokeDashoffset = circum * (1 - pct);
       ringEl.classList.remove('urgente', 'quase');
       if (_treinoRestante <= 5) ringEl.classList.add('urgente');
       else if (_treinoRestante <= 15) ringEl.classList.add('quase');
@@ -5844,90 +5952,63 @@ Cogito ergo sum | René Descartes'></textarea>
     function _treinoFinalizar() {
       _treinoFecharOverlaySemCancelar();
       _treinoTocarSom();
-      // Vibração no mobile
       if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
-      // Toast
       _treinoToast('💪 Descansou! Próxima série!');
-      _treinoAtualizarHist();
     }
 
     function treinoFecharOverlay() {
       if (_treinoTimer) { clearInterval(_treinoTimer); _treinoTimer = null; }
       _treinoFecharOverlaySemCancelar();
     }
-
     function _treinoFecharOverlaySemCancelar() {
       document.getElementById('treinoOverlay')?.classList.remove('open');
     }
-
     function treinoPularDescanso() {
       if (_treinoTimer) { clearInterval(_treinoTimer); _treinoTimer = null; }
       _treinoFecharOverlaySemCancelar();
       _treinoTocarSom();
       _treinoToast('⏭ Descanso pulado!');
     }
+    function treinoAdd30() { _treinoRestante += 30; _treinoTotal += 30; _treinoAtualizarOverlay(); }
 
-    function treinoAdd30() {
-      _treinoRestante += 30;
-      _treinoTotal += 30;
-      _treinoAtualizarOverlay();
+    // ── Helpers ──────────────────────────────────────────
+
+    function _treinoFmtTempo(secs) {
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = secs % 60;
+      if (h > 0) return `${h}h ${String(m).padStart(2, '0')}min`;
+      if (m > 0) return `${m}min ${String(s).padStart(2, '0')}s`;
+      return `${s}s`;
     }
 
-    // ── Som de fim ──
     function _treinoTocarSom() {
       if (!S._treinoSom) return;
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        // Três bips ascendentes
-        [[0, 523], [0.25, 659], [0.5, 784]].forEach(([delay, freq]) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain); gain.connect(ctx.destination);
-          osc.frequency.value = freq;
-          osc.type = 'sine';
-          gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
-          osc.start(ctx.currentTime + delay);
-          osc.stop(ctx.currentTime + delay + 0.35);
+        [[0, 523], [0.25, 659], [0.5, 784]].forEach(([d, f]) => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          o.frequency.value = f; o.type = 'sine';
+          g.gain.setValueAtTime(0.4, ctx.currentTime + d);
+          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + d + 0.3);
+          o.start(ctx.currentTime + d); o.stop(ctx.currentTime + d + 0.35);
         });
       } catch (e) { }
     }
 
-    // ── Toast ──
     function _treinoToast(msg) {
       const t = document.createElement('div');
       t.textContent = msg;
       t.style.cssText = `position:fixed;top:70px;left:50%;transform:translateX(-50%);
-    background:var(--surface);border:1px solid var(--accent);
-    color:var(--text);padding:10px 20px;border-radius:99px;
-    font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
-    z-index:9000;white-space:nowrap;
-    box-shadow:0 4px 20px rgba(124,106,247,.3);
-    animation:treinopulse .5s ease-out;`;
+    background:var(--surface);border:1px solid var(--accent);color:var(--text);
+    padding:10px 20px;border-radius:99px;font-family:'Syne',sans-serif;
+    font-size:14px;font-weight:700;z-index:9000;white-space:nowrap;
+    box-shadow:0 4px 20px rgba(124,106,247,.3);`;
       document.body.appendChild(t);
       setTimeout(() => t.remove(), 2500);
     }
 
-    // ── Histórico ──
-    function _treinoAtualizarHist() {
-      if (!_treinoHist.length) return;
-      let el = document.getElementById('treinoHistEl');
-      if (!el) {
-        el = document.createElement('div');
-        el.id = 'treinoHistEl'; el.className = 'treino-hist open';
-        document.body.appendChild(el);
-        setTimeout(() => el.classList.remove('open'), 8000);
-      }
-      el.classList.add('open');
-      el.innerHTML = `<div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px">📋 Séries desta sessão</div>` +
-        _treinoHist.slice(-5).reverse().map(h =>
-          `<div>${h.hora} — ${h.texto.slice(0, 28)}${h.texto.length > 28 ? '…' : ''}</div>`
-        ).join('');
-      clearTimeout(el._hideTimer);
-      el._hideTimer = setTimeout(() => el?.classList.remove('open'), 8000);
-    }
-
-    // ── Configuração ──
     function treinoConfig() {
       openM('💪 Configurar Treino', `
     <div class="fg">
@@ -5938,19 +6019,20 @@ Cogito ergo sum | René Descartes'></textarea>
       ${[30, 45, 60, 90, 120, 180].map(v =>
         `<button class="vtab ${S._treinoDescanso == v ? 'on' : ''}" onclick="
           document.getElementById('trDesc').value=${v};
-          document.querySelectorAll('.vtab').forEach(b=>b.classList.remove('on'));
+          document.querySelectorAll('#mc .vtab').forEach(b=>b.classList.remove('on'));
           this.classList.add('on')">${v}s</button>`
       ).join('')}
     </div>
     <div class="fg" style="margin-top:8px">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:var(--text2)">
-        <input type="checkbox" id="trSom" ${S._treinoSom ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--accent)">
+        <input type="checkbox" id="trSom" ${S._treinoSom ? 'checked' : ''}
+          style="width:18px;height:18px;accent-color:var(--accent)">
         Som ao finalizar descanso
       </label>
     </div>
     <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6;margin-top:4px">
-      💡 O timer dispara quando você marca um <b>filho</b> da lista.<br>
-      Marcar um item raiz não dispara o timer.
+      💡 Timer de descanso dispara ao marcar séries (itens sem filhos).<br>
+      Cronômetro de treino: clique em ▶ Iniciar no item pai.
     </div>
   `, () => {
         S._treinoDescanso = parseInt(document.getElementById('trDesc').value) || 60;
