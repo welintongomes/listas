@@ -2321,6 +2321,13 @@ function setStars(id) {
       const l = getL(); if (!l) return;
       const item = find(l.items, id); if (!item) return;
       item.checked = v;
+
+      // Hook treino — só dispara em filhos (profundidade > 0)
+      if (pon('treino') && v) {
+        const pai = getpar(l.items, id);
+        if (pai !== null) treinoIniciarDescanso(item);
+      }
+
       save();
       if (pon('celebrate') && v) { const { d, t } = cp(l.items); if (d === t && t > 0) confetti(); }
       renderCnt();
@@ -5629,311 +5636,327 @@ Cogito ergo sum | René Descartes'></textarea>
       const a = document.createElement('a'); a.href = URL.createObjectURL(b);
       a.download = `frases.${d.mode === 'txt' ? 'txt' : 'json'}`; a.click();
     };
-    // ── VOZ PARA TEXTO ────────────────────────────────────
-    reg('voztext', {
-      name: 'Voz para Texto', icon: '🎤',
-      desc: 'Microfone flutuante em qualquer campo de texto', def: false,
-      onToggle(on) {
-        if (on) _vozInit();
-        else _vozDestroy();
+    // ── TREINO ────────────────────────────────────────────
+    reg('treino', {
+      name: 'Treino', icon: '💪',
+      desc: 'Cronômetro de descanso ao marcar séries', def: false,
+      tb() {
+        return pon('treino') ? `
+    <button class="tbbtn" onclick="treinoConfig()" title="Configurar descanso">
+      💪 <span id="treinoTempoLabel">${S._treinoDescanso || 60}s</span>
+    </button>` : '';
+      },
+      // Hook chamado ao marcar checkbox — intercepta antes de salvar
+      onItemCheck(item, checked, profundidade) {
+        if (!checked) return; // só ao marcar, não ao desmarcar
+        if (profundidade === 0) return; // raiz não dispara
+        treinoIniciarDescanso(item);
       }
     });
+
+    if (!S._treinoDescanso) S._treinoDescanso = 60; // segundos padrão
+    if (!S._treinoSom) S._treinoSom = true;
 
     // ── CSS ──────────────────────────────────────────────
     (() => {
       const s = document.createElement('style');
       s.textContent = `
-    .voz-btn{
-      position:fixed;
-      width:36px;height:36px;border-radius:50%;
-      background:var(--surface2);border:2px solid var(--border);
-      color:var(--text2);font-size:16px;cursor:pointer;
-      display:none;align-items:center;justify-content:center;
-      z-index:9998;transition:all .2s;
-      box-shadow:0 2px 12px rgba(0,0,0,.3);
-    }
-    .voz-btn.visible{display:flex}
-    .voz-btn.listening{
-      background:var(--red);border-color:var(--red);color:white;
-      animation:vozpulse .6s infinite alternate;
-    }
-    .voz-btn:active{transform:scale(.9)}
-
-    .voz-overlay{
+    /* Overlay do timer */
+    .treino-overlay{
       position:fixed;inset:0;
-      background:rgba(0,0,0,.0);
-      z-index:9997;display:none;
+      background:rgba(0,0,0,.85);
+      z-index:8888;
+      display:none;flex-direction:column;
+      align-items:center;justify-content:center;gap:20px;
+      backdrop-filter:blur(6px);
     }
-    .voz-overlay.visible{display:block}
+    .treino-overlay.open{display:flex}
 
-    .voz-banner{
-      position:fixed;bottom:calc(80px + var(--sab));
-      left:50%;transform:translateX(-50%);
-      background:var(--red);color:white;
-      padding:8px 18px;border-radius:99px;
-      font-size:13px;font-weight:700;
-      font-family:'Syne',sans-serif;
-      white-space:nowrap;z-index:9999;
-      display:none;align-items:center;gap:8px;
-      box-shadow:0 4px 20px rgba(232,86,94,.5);
-      animation:vozpulse .6s infinite alternate;
+    /* Anel circular */
+    .treino-ring{position:relative;width:220px;height:220px;flex-shrink:0}
+    .treino-ring svg{transform:rotate(-90deg)}
+    .treino-ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:12}
+    .treino-ring-fill{
+      fill:none;stroke:var(--accent);stroke-width:12;
+      stroke-linecap:round;
+      transition:stroke-dashoffset .9s linear, stroke .3s;
     }
-    .voz-banner.visible{display:flex}
-    .voz-banner-dot{
-      width:8px;height:8px;border-radius:50%;
-      background:white;flex-shrink:0;
+    .treino-ring-fill.urgente{stroke:var(--red)}
+    .treino-ring-fill.quase{stroke:var(--yellow)}
+
+    /* Número no centro */
+    .treino-num{
+      position:absolute;inset:0;
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:4px;
+    }
+    .treino-secs{
+      font-size:64px;font-weight:800;color:white;
+      font-family:'Syne',sans-serif;line-height:1;
+    }
+    .treino-label{
+      font-size:12px;color:rgba(255,255,255,.5);
+      font-family:'JetBrains Mono',monospace;
+      text-transform:uppercase;letter-spacing:1px;
     }
 
-    .voz-interim{
-      position:fixed;bottom:calc(120px + var(--sab));
-      left:50%;transform:translateX(-50%);
-      background:var(--surface);border:1px solid var(--border);
-      color:var(--text2);padding:8px 16px;border-radius:10px;
-      font-size:13px;font-family:'JetBrains Mono',monospace;
-      max-width:80vw;text-align:center;z-index:9999;
-      display:none;white-space:nowrap;overflow:hidden;
-      text-overflow:ellipsis;
-      box-shadow:0 4px 16px rgba(0,0,0,.3);
+    /* Nome do exercício */
+    .treino-exer{
+      font-size:16px;font-weight:700;color:white;
+      font-family:'Syne',sans-serif;text-align:center;
+      max-width:80vw;opacity:.8;
     }
-    .voz-interim.visible{display:block}
 
-    @keyframes vozpulse{
-      from{opacity:1;box-shadow:0 0 0 0 rgba(232,86,94,.4)}
-      to{opacity:.8;box-shadow:0 0 0 8px rgba(232,86,94,0)}
+    /* Botões */
+    .treino-actions{display:flex;gap:10px;margin-top:4px}
+    .treino-act-btn{
+      padding:10px 22px;border-radius:99px;border:none;
+      font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+      cursor:pointer;transition:all .15s;
     }
+    .treino-act-btn:active{transform:scale(.95);opacity:.8}
+    .treino-skip{background:rgba(255,255,255,.12);color:white}
+    .treino-stop{background:var(--red);color:white}
+    .treino-add30{background:rgba(124,106,247,.3);color:white}
+
+    /* Mini badge no item após completar */
+    .treino-done-badge{
+      font-size:10px;font-family:'JetBrains Mono',monospace;
+      color:var(--green);background:rgba(62,207,142,.1);
+      border:1px solid rgba(62,207,142,.3);
+      padding:1px 6px;border-radius:20px;white-space:nowrap;
+    }
+
+    /* Badge de descanso ativo */
+    .treino-rest-badge{
+      font-size:10px;font-family:'JetBrains Mono',monospace;
+      color:var(--accent);background:rgba(124,106,247,.12);
+      border:1px solid rgba(124,106,247,.35);
+      padding:1px 6px;border-radius:20px;white-space:nowrap;
+      animation:treinopulse .8s infinite alternate;
+    }
+    @keyframes treinopulse{from{opacity:1}to{opacity:.4}}
+
+    /* Histórico rápido */
+    .treino-hist{
+      position:fixed;bottom:calc(70px + var(--sab));right:14px;
+      background:var(--surface);border:1px solid var(--accent);
+      border-radius:12px;padding:10px 14px;z-index:8887;
+      font-family:'JetBrains Mono',monospace;font-size:11px;
+      color:var(--text2);display:none;flex-direction:column;gap:4px;
+      max-width:200px;
+    }
+    .treino-hist.open{display:flex}
   `;
       document.head.appendChild(s);
     })();
 
-    // ── Estado ──
-    let _vozRec = null, _vozTarget = null, _vozBtn = null, _vozBanner = null, _vozInterim = null, _vozOverlay = null;
-    let _vozListening = false;
+    // ── Estado do timer ──
+    let _treinoTimer = null;  // setInterval
+    let _treinoRestante = 0;
+    let _treinoTotal = 0;
+    let _treinoItem = null;
+    let _treinoHist = [];    // histórico de séries desta sessão
 
-    function _vozInit() {
-      // Cria botão flutuante
-      if (!document.getElementById('vozBtn')) {
-        const btn = document.createElement('button');
-        btn.id = 'vozBtn'; btn.className = 'voz-btn'; btn.textContent = '🎤';
-        btn.title = 'Falar'; btn.onclick = _vozToggle;
-        document.body.appendChild(btn);
-      }
-      // Banner de gravando
-      if (!document.getElementById('vozBanner')) {
-        const b = document.createElement('div');
-        b.id = 'vozBanner'; b.className = 'voz-banner';
-        b.innerHTML = `<div class="voz-banner-dot"></div><span>Ouvindo... toque em 🎤 para parar</span>`;
-        document.body.appendChild(b);
-      }
-      // Texto interim
-      if (!document.getElementById('vozInterim')) {
-        const v = document.createElement('div');
-        v.id = 'vozInterim'; v.className = 'voz-interim';
-        document.body.appendChild(v);
-      }
-      // Overlay invisível para detectar clique fora
-      if (!document.getElementById('vozOverlay')) {
-        const o = document.createElement('div');
-        o.id = 'vozOverlay'; o.className = 'voz-overlay';
-        o.onclick = _vozHideBtn;
-        document.body.appendChild(o);
-      }
+    // ── Iniciar descanso ──
+    function treinoIniciarDescanso(item) {
+      // Cancela timer anterior se houver
+      if (_treinoTimer) clearInterval(_treinoTimer);
 
-      _vozBtn = document.getElementById('vozBtn');
-      _vozBanner = document.getElementById('vozBanner');
-      _vozInterim = document.getElementById('vozInterim');
-      _vozOverlay = document.getElementById('vozOverlay');
+      _treinoItem = item;
+      _treinoRestante = parseInt(S._treinoDescanso) || 60;
+      _treinoTotal = _treinoRestante;
 
-      // Monitora foco em qualquer campo de texto
-      document.addEventListener('focusin', _vozOnFocus, true);
-      document.addEventListener('focusout', _vozOnBlur, true);
+      // Registra no histórico
+      const agora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      _treinoHist.push({ texto: item.text, hora: agora });
+      if (_treinoHist.length > 8) _treinoHist.shift();
+
+      _treinoMostrarOverlay();
+      _treinoTick();
+      _treinoTimer = setInterval(_treinoTick, 1000);
     }
 
-    function _vozDestroy() {
-      ['vozBtn', 'vozBanner', 'vozInterim', 'vozOverlay'].forEach(id => {
-        document.getElementById(id)?.remove();
+    function _treinoTick() {
+      _treinoRestante--;
+      _treinoAtualizarOverlay();
+      if (_treinoRestante <= 0) {
+        clearInterval(_treinoTimer);
+        _treinoTimer = null;
+        _treinoFinalizar();
+      }
+    }
+
+    function _treinoMostrarOverlay() {
+      // Cria overlay se não existe
+      if (!document.getElementById('treinoOverlay')) {
+        const ov = document.createElement('div');
+        ov.id = 'treinoOverlay'; ov.className = 'treino-overlay';
+        ov.innerHTML = `
+      <div class="treino-exer" id="treinoExer"></div>
+      <div class="treino-ring">
+        <svg width="220" height="220" viewBox="0 0 220 220">
+          <circle class="treino-ring-bg" cx="110" cy="110" r="98"/>
+          <circle class="treino-ring-fill" id="treinoRingFill"
+            cx="110" cy="110" r="98"
+            stroke-dasharray="615.75"
+            stroke-dashoffset="0"/>
+        </svg>
+        <div class="treino-num">
+          <div class="treino-secs" id="treinoSecs">60</div>
+          <div class="treino-label">descanse</div>
+        </div>
+      </div>
+      <div class="treino-actions">
+        <button class="treino-act-btn treino-add30" onclick="treinoAdd30()">＋30s</button>
+        <button class="treino-act-btn treino-skip" onclick="treinoPularDescanso()">Pular ⏭</button>
+        <button class="treino-act-btn treino-stop" onclick="treinoFecharOverlay()">✕</button>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,.25);font-family:'JetBrains Mono',monospace">
+        toque em Pular para ir direto ao próximo
+      </div>`;
+        document.body.appendChild(ov);
+      }
+      document.getElementById('treinoOverlay').classList.add('open');
+      document.getElementById('treinoExer').textContent = _treinoItem?.text || '';
+      _treinoAtualizarOverlay();
+    }
+
+    function _treinoAtualizarOverlay() {
+      const secsEl = document.getElementById('treinoSecs');
+      const ringEl = document.getElementById('treinoRingFill');
+      if (!secsEl || !ringEl) return;
+
+      const r = 98;
+      const circum = 2 * Math.PI * r; // 615.75
+      const pct = _treinoRestante / _treinoTotal;
+      const offset = circum * (1 - pct);
+
+      secsEl.textContent = _treinoRestante;
+      ringEl.style.strokeDashoffset = offset;
+
+      // Cor do anel por urgência
+      ringEl.classList.remove('urgente', 'quase');
+      if (_treinoRestante <= 5) ringEl.classList.add('urgente');
+      else if (_treinoRestante <= 15) ringEl.classList.add('quase');
+    }
+
+    function _treinoFinalizar() {
+      _treinoFecharOverlaySemCancelar();
+      _treinoTocarSom();
+      // Vibração no mobile
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+      // Toast
+      _treinoToast('💪 Descansou! Próxima série!');
+      _treinoAtualizarHist();
+    }
+
+    function treinoFecharOverlay() {
+      if (_treinoTimer) { clearInterval(_treinoTimer); _treinoTimer = null; }
+      _treinoFecharOverlaySemCancelar();
+    }
+
+    function _treinoFecharOverlaySemCancelar() {
+      document.getElementById('treinoOverlay')?.classList.remove('open');
+    }
+
+    function treinoPularDescanso() {
+      if (_treinoTimer) { clearInterval(_treinoTimer); _treinoTimer = null; }
+      _treinoFecharOverlaySemCancelar();
+      _treinoTocarSom();
+      _treinoToast('⏭ Descanso pulado!');
+    }
+
+    function treinoAdd30() {
+      _treinoRestante += 30;
+      _treinoTotal += 30;
+      _treinoAtualizarOverlay();
+    }
+
+    // ── Som de fim ──
+    function _treinoTocarSom() {
+      if (!S._treinoSom) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        // Três bips ascendentes
+        [[0, 523], [0.25, 659], [0.5, 784]].forEach(([delay, freq]) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
+          osc.start(ctx.currentTime + delay);
+          osc.stop(ctx.currentTime + delay + 0.35);
+        });
+      } catch (e) { }
+    }
+
+    // ── Toast ──
+    function _treinoToast(msg) {
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.style.cssText = `position:fixed;top:70px;left:50%;transform:translateX(-50%);
+    background:var(--surface);border:1px solid var(--accent);
+    color:var(--text);padding:10px 20px;border-radius:99px;
+    font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+    z-index:9000;white-space:nowrap;
+    box-shadow:0 4px 20px rgba(124,106,247,.3);
+    animation:treinopulse .5s ease-out;`;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    }
+
+    // ── Histórico ──
+    function _treinoAtualizarHist() {
+      if (!_treinoHist.length) return;
+      let el = document.getElementById('treinoHistEl');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'treinoHistEl'; el.className = 'treino-hist open';
+        document.body.appendChild(el);
+        setTimeout(() => el.classList.remove('open'), 8000);
+      }
+      el.classList.add('open');
+      el.innerHTML = `<div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px">📋 Séries desta sessão</div>` +
+        _treinoHist.slice(-5).reverse().map(h =>
+          `<div>${h.hora} — ${h.texto.slice(0, 28)}${h.texto.length > 28 ? '…' : ''}</div>`
+        ).join('');
+      clearTimeout(el._hideTimer);
+      el._hideTimer = setTimeout(() => el?.classList.remove('open'), 8000);
+    }
+
+    // ── Configuração ──
+    function treinoConfig() {
+      openM('💪 Configurar Treino', `
+    <div class="fg">
+      <div class="fl">Tempo de descanso (segundos)</div>
+      <input type="number" id="trDesc" min="5" max="600" value="${S._treinoDescanso || 60}">
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+      ${[30, 45, 60, 90, 120, 180].map(v =>
+        `<button class="vtab ${S._treinoDescanso == v ? 'on' : ''}" onclick="
+          document.getElementById('trDesc').value=${v};
+          document.querySelectorAll('.vtab').forEach(b=>b.classList.remove('on'));
+          this.classList.add('on')">${v}s</button>`
+      ).join('')}
+    </div>
+    <div class="fg" style="margin-top:8px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:var(--text2)">
+        <input type="checkbox" id="trSom" ${S._treinoSom ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--accent)">
+        Som ao finalizar descanso
+      </label>
+    </div>
+    <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6;margin-top:4px">
+      💡 O timer dispara quando você marca um <b>filho</b> da lista.<br>
+      Marcar um item raiz não dispara o timer.
+    </div>
+  `, () => {
+        S._treinoDescanso = parseInt(document.getElementById('trDesc').value) || 60;
+        S._treinoSom = document.getElementById('trSom').checked;
+        save(); renderTB();
       });
-      document.removeEventListener('focusin', _vozOnFocus, true);
-      document.removeEventListener('focusout', _vozOnBlur, true);
-      _vozStop();
-      _vozBtn = _vozBanner = _vozInterim = _vozOverlay = _vozTarget = null;
-    }
-
-    // Elementos que aceitam voz
-    function _vozEhCampoTexto(el) {
-      if (!el) return false;
-      const tag = el.tagName?.toLowerCase();
-      if (tag === 'input') {
-        const t = el.type?.toLowerCase() || 'text';
-        return ['text', 'search', 'url', 'email', 'password', 'number', 'tel'].includes(t);
-      }
-      if (tag === 'textarea') return true;
-      if (el.isContentEditable) return true;
-      return false;
-    }
-
-    function _vozOnFocus(e) {
-      const el = e.target;
-      if (!_vozEhCampoTexto(el)) return;
-      if (!_vozBtn) return;
-
-      _vozTarget = el;
-      _vozPosicionar(el);
-
-      // Se já está visível só reposiciona, senão mostra
-      _vozBtn.classList.add('visible');
-      _vozOverlay.classList.add('visible');
-    }
-
-    function _vozOnBlur(e) {
-      setTimeout(() => {
-        const active = document.activeElement;
-        // Não esconde se: clicou no botão, está gravando, ou o foco foi para outro campo de texto
-        if (active && active.id === 'vozBtn') return;
-        if (_vozListening) return;
-        if (_vozEhCampoTexto(active)) {
-          // Foco foi para outro campo — reposiciona
-          _vozTarget = active;
-          _vozPosicionar(active);
-          return;
-        }
-        _vozHideBtn();
-      }, 300);
-    }
-
-    function _vozHideBtn() {
-      if (_vozListening) return;
-      _vozBtn?.classList.remove('visible');
-      _vozOverlay?.classList.remove('visible');
-      _vozTarget = null;
-    }
-
-    function _vozPosicionar(el) {
-      if (!_vozBtn) return;
-      const rect = el.getBoundingClientRect();
-      // Tenta posicionar no canto direito do campo
-      let top = rect.top + (rect.height / 2) - 18;
-      let left = rect.right - 44;
-
-      // Garante que não sai da tela
-      top = Math.max(8, Math.min(top, window.innerHeight - 44));
-      left = Math.max(8, Math.min(left, window.innerWidth - 44));
-
-      _vozBtn.style.top = top + 'px';
-      _vozBtn.style.left = left + 'px';
-    }
-
-    // ── Toggle gravação ──
-    function _vozToggle() {
-      if (_vozListening) _vozStop();
-      else _vozStart();
-    }
-
-    function _vozStart() {
-      // Tenta Web Speech API
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) {
-        alert('Seu navegador não suporta reconhecimento de voz.\nUse Chrome ou Edge.');
-        return;
-      }
-
-      _vozRec = new SR();
-      _vozRec.continuous = true;
-      _vozRec.interimResults = true;
-      _vozRec.lang = 'pt-BR';
-      _vozRec.maxAlternatives = 1;
-
-      _vozRec.onstart = () => {
-        _vozListening = true;
-        _vozBtn?.classList.add('listening');
-        _vozBanner?.classList.add('visible');
-      };
-
-      _vozRec.onresult = e => {
-        let interim = '', final = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          const t = e.results[i][0].transcript;
-          if (e.results[i].isFinal) final += t;
-          else interim += t;
-        }
-
-        // Mostra texto interim
-        if (_vozInterim) {
-          _vozInterim.textContent = interim || final;
-          _vozInterim.classList.toggle('visible', !!(interim || final));
-        }
-
-        // Insere texto final no campo alvo
-        if (final && _vozTarget) {
-          _vozInserir(final);
-        }
-      };
-
-      _vozRec.onerror = e => {
-        if (e.error === 'no-speech') return; // ignora silêncio
-        if (e.error === 'aborted') return;
-        console.warn('Voz erro:', e.error);
-        _vozStop();
-      };
-
-      _vozRec.onend = () => {
-        // Se ainda deve estar ouvindo, reinicia (browser para após silêncio)
-        if (_vozListening) {
-          try { _vozRec.start(); } catch (e) { _vozStop(); }
-        }
-      };
-
-      try { _vozRec.start(); }
-      catch (e) { alert('Erro ao iniciar microfone:\n' + e.message); }
-    }
-
-    function _vozStop() {
-      _vozListening = false;
-      try { _vozRec?.stop(); _vozRec?.abort(); } catch (e) { }
-      _vozRec = null;
-      _vozBtn?.classList.remove('listening');
-      _vozBanner?.classList.remove('visible');
-      if (_vozInterim) {
-        _vozInterim.classList.remove('visible');
-        _vozInterim.textContent = '';
-      }
-    }
-
-    // ── Insere texto no campo focado ──
-    function _vozInserir(texto) {
-      const el = _vozTarget;
-      if (!el) return;
-
-      // Adiciona espaço se necessário
-      const espaco = texto.startsWith(' ') ? '' : ' ';
-
-      if (el.isContentEditable) {
-        // contenteditable (itext, notas, etc)
-        el.focus();
-        const sel = window.getSelection();
-        if (sel && sel.rangeCount) {
-          const range = sel.getRangeAt(0);
-          range.collapse(false);
-          const node = document.createTextNode(espaco + texto);
-          range.insertNode(node);
-          range.setStartAfter(node);
-          range.collapse(true);
-          sel.removeAllRanges(); sel.addRange(range);
-        } else {
-          el.textContent += (espaco + texto);
-        }
-        // Dispara evento para o onblur salvar
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-      } else {
-        // input / textarea
-        const start = el.selectionStart ?? el.value.length;
-        const end = el.selectionEnd ?? el.value.length;
-        const antes = el.value.slice(0, start);
-        const depois = el.value.slice(end);
-        el.value = antes + (espaco + texto) + depois;
-        const pos = start + (espaco + texto).length;
-        el.setSelectionRange(pos, pos);
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-      }
     }
     // ══════════════════════════════════════════════════════
     //  BOOT
