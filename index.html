@@ -5662,9 +5662,9 @@ Cogito ergo sum | René Descartes'></textarea>
         if (ehRaiz && item._treinoCronAtivo) {
           const elapsed = _treinoElapsed(item);
           out += `<span class="treino-rest-badge">⏱ ${_treinoFmtTempo(elapsed)} em andamento
-        <button style="background:none;border:none;color:var(--yellow);cursor:pointer;font-size:11px;padding:0 2px"
+        <button style="background:none;border:none;color:var(--yellow);cursor:pointer;font-size:13px;padding:0 2px"
           onclick="treinoPausarCron('${item.id}')">⏸</button>
-        <button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;padding:0 2px"
+        <button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0 2px"
           onclick="treinoStopCron('${item.id}')">⏹</button>
       </span>`;
         }
@@ -5674,9 +5674,9 @@ Cogito ergo sum | René Descartes'></textarea>
           const elapsed = _treinoElapsed(item);
           out += `<span class="treino-done-badge" style="color:var(--yellow);border-color:rgba(232,200,74,.3);background:rgba(232,200,74,.08)">
         ⏸ Pausado em ${_treinoFmtTempo(elapsed)}
-        <button style="background:none;border:none;color:var(--green);cursor:pointer;font-size:11px;padding:0 2px"
+        <button style="background:none;border:none;color:var(--green);cursor:pointer;font-size:12px;padding:0 2px"
           onclick="treinoRetomarCron('${item.id}')">▶</button>
-        <button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;padding:0 2px"
+        <button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:0 2px"
           onclick="treinoStopCron('${item.id}')">⏹</button>
       </span>`;
         }
@@ -5749,11 +5749,11 @@ Cogito ergo sum | René Descartes'></textarea>
     .treino-skip{background:rgba(255,255,255,.12);color:white}
     .treino-stop{background:var(--red);color:white}
     .treino-add30{background:rgba(124,106,247,.3);color:white}
-    .treino-done-badge{font-size:10px;font-family:'JetBrains Mono',monospace;
+    .treino-done-badge{font-size:14px;font-family:'JetBrains Mono',monospace;
       color:var(--green);background:rgba(62,207,142,.1);
       border:1px solid rgba(62,207,142,.3);padding:2px 8px;border-radius:20px;
       white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
-    .treino-rest-badge{font-size:10px;font-family:'JetBrains Mono',monospace;
+    .treino-rest-badge{font-size:14px;font-family:'JetBrains Mono',monospace;
       color:var(--accent);background:rgba(124,106,247,.12);
       border:1px solid rgba(124,106,247,.35);padding:2px 8px;border-radius:20px;
       white-space:nowrap;display:inline-flex;align-items:center;gap:4px;
