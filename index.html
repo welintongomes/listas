@@ -848,8 +848,8 @@ background:var(--accent); */
     }
 
     .iabtn {
-      width: 28px;
-      height: 28px;
+      width: 43px;
+      height: 22px;
       border-radius: 8px;
       border: none;
       background: var(--surface2);
@@ -860,7 +860,7 @@ background:var(--accent); */
       align-items: center;
       justify-content: center;
       transition: all .15s;
-      flex-shrink: 0
+      flex-shrink: 0;
     }
 
     .iabtn:active {
@@ -1201,14 +1201,16 @@ background:var(--accent); */
     }
 
     .mtitle {
+      text-align: center;
       font-size: 16px;
-      font-weight: 700
+      font-weight: 700;
     }
 
     .macts {
       margin-top: 18px;
       display: flex;
-      gap: 8px
+      gap: 8px;
+      flex-direction: row-reverse;
     }
 
     .fg {
@@ -1767,240 +1769,7 @@ background:var(--accent); */
     //  NOVOS PLUGINS
     // ══════════════════════════════════════════════════════
 
-    // ── 10. RECORRÊNCIA ───────────────────────────────────
-    reg('recurrence', {
-      name: 'Itens Recorrentes', icon: '🔁', desc: 'Reseta itens diária/semanalamente', def: false,
-      abtn(item) { return `<button class="iabtn" onclick="setRec('${item.id}')">🔁</button>`; },
-      meta(item) {
-        if (!item.recurrence) return '';
-        const labels = { daily: 'Todo dia', weekly: 'Toda semana', monthly: 'Todo mês' };
-        return `<span class="recbadge" onclick="setRec('${item.id}')">🔁 ${labels[item.recurrence] || item.recurrence}</span>`;
-      },
-      // Quando a lista é aberta, verifica se itens precisam ser resetados
-      hdr(list) {
-        checkRecurrence(list);
-        return '';
-      }
-    });
 
-    function checkRecurrence(list) {
-      const now = new Date();
-      const today = now.toISOString().slice(0, 10);
-      const allItems = [];
-      const col = a => a.forEach(i => { allItems.push(i); col(i.children || []); });
-      col(list.items);
-      let changed = false;
-      for (const item of allItems) {
-        if (!item.recurrence || !item.checked) continue;
-        const last = item._recLast;
-        if (!last) { item._recLast = today; continue; }
-        let shouldReset = false;
-        if (item.recurrence === 'daily' && last < today) shouldReset = true;
-        if (item.recurrence === 'weekly') {
-          const d1 = new Date(last), d2 = new Date(today);
-          shouldReset = (d2 - d1) / (1000 * 60 * 60 * 24) >= 7;
-        }
-        if (item.recurrence === 'monthly') {
-          const d1 = new Date(last), d2 = new Date(today);
-          shouldReset = d2.getMonth() !== d1.getMonth() || d2.getFullYear() !== d1.getFullYear();
-        }
-        if (shouldReset) { item.checked = false; item._recLast = today; changed = true; }
-      }
-      if (changed) save();
-    }
-
-    function setRec(id) {
-      const l = getL(); if (!l) return;
-      const item = find(l.items, id);
-      openM('Item Recorrente', `
-    <div class="fg"><div class="fl">Frequência de reset</div>
-      <select id="mrc">
-        <option value="" ${!item?.recurrence ? 'selected' : ''}>Sem recorrência</option>
-        <option value="daily" ${item?.recurrence === 'daily' ? 'selected' : ''}>Todo dia</option>
-        <option value="weekly" ${item?.recurrence === 'weekly' ? 'selected' : ''}>Toda semana</option>
-        <option value="monthly" ${item?.recurrence === 'monthly' ? 'selected' : ''}>Todo mês</option>
-      </select>
-    </div>
-    <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6">
-      O item será automaticamente desmarcado conforme a frequência escolhida quando você abrir o app.
-    </div>
-  `, () => {
-        const v = document.getElementById('mrc')?.value;
-        if (item) { item.recurrence = v || null; item._recLast = new Date().toISOString().slice(0, 10); save(); renderCnt(); }
-      });
-    }
-
-    // ── 11. EXPORT MARKDOWN / CSV ─────────────────────────
-    reg('exportmd', {
-      name: 'Export Markdown / CSV', icon: '📤', desc: 'Exporta lista em Markdown ou CSV', def: false,
-      tb() { return `<button class="tbbtn" onclick="openExportPanel()">📤 Exportar</button>`; }
-    });
-
-    function listToMarkdown(items, depth = 0) {
-      let out = '';
-      for (const item of items) {
-        const pad = '  '.repeat(depth);
-        const cb = item.checked ? '[x]' : '[ ]';
-        out += `${pad}- ${cb} ${item.text}\n`;
-        if (item.children?.length) out += listToMarkdown(item.children, depth + 1);
-      }
-      return out;
-    }
-
-    function listToCSV(items, depth = 0) {
-      let rows = [];
-      for (const item of items) {
-        rows.push([`"${'  '.repeat(depth) + item.text.replace(/"/g, '""')}"`, item.checked ? 'sim' : 'não',
-        item.priority || 'none', item.due || '', item.estimate || '', `"${(item.tags || []).map(t => t.label).join(', ')}"`].join(','));
-        if (item.children?.length) rows = rows.concat(listToCSV(item.children, depth + 1));
-      }
-      return rows;
-    }
-
-    function openExportPanel() {
-      const l = getL(); if (!l) return;
-      const md = `# ${l.name}\n\n` + listToMarkdown(l.items);
-      const csvRows = ['Texto,Concluído,Prioridade,Prazo,Estimativa,Tags', ...listToCSV(l.items)];
-      const csv = csvRows.join('\n');
-
-      openM('Exportar Lista', `
-    <div class="view-tabs" style="margin-bottom:4px">
-      <button class="vtab on" id="vtmd" onclick="swExport('md')">Markdown</button>
-      <button class="vtab" id="vtcsv" onclick="swExport('csv')">CSV</button>
-    </div>
-    <pre class="export-pre" id="expre">${esc(md)}</pre>
-    <div class="macts">
-      <button class="btn" onclick="copyExport()">📋 Copiar</button>
-      <button class="btn pri" onclick="dlExport()">⬇ Download</button>
-    </div>
-  `, null);
-      window._expData = { md, csv, mode: 'md' };
-    }
-
-    window.swExport = mode => {
-      window._expData.mode = mode;
-      document.getElementById('expre').textContent = mode === 'md' ? window._expData.md : window._expData.csv;
-      document.getElementById('vtmd').classList.toggle('on', mode === 'md');
-      document.getElementById('vtcsv').classList.toggle('on', mode === 'csv');
-    };
-    window.copyExport = () => {
-      const d = window._expData;
-      navigator.clipboard.writeText(d.mode === 'md' ? d.md : d.csv).then(() => alert('Copiado!'));
-    };
-    window.dlExport = () => {
-      const d = window._expData;
-      const content = d.mode === 'md' ? d.md : d.csv;
-      const ext = d.mode === 'md' ? 'md' : 'csv';
-      const l = getL();
-      const b = new Blob([content], { type: 'text/plain' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(b);
-      a.download = `${(l?.name || 'lista').replace(/\s+/g, '_')}.${ext}`; a.click();
-    };
-
-    // ── 12. COR DA LISTA ──────────────────────────────────
-    const LIST_COLORS = [
-      { name: 'roxo', hex: '#7c6af7' },
-      { name: 'verde', hex: '#3ecf8e' },
-      { name: 'azul', hex: '#4fa7e8' },
-      { name: 'vermelho', hex: '#e8565e' },
-      { name: 'laranja', hex: '#f0804b' },
-      { name: 'amarelo', hex: '#e8c84a' },
-      { name: 'rosa', hex: '#e87ac8' },
-      { name: 'branco', hex: '#888892' },
-    ];
-
-    reg('listcolor', {
-      name: 'Cor da Lista', icon: '🎨', desc: 'Cor personalizada por lista', def: false,
-      tb() {
-        const l = getL(); if (!l) return '';
-        const c = l.color || '#7c6af7';
-        return `<button class="tbbtn" onclick="openColorPicker()" style="gap:6px">
-      <span style="width:10px;height:10px;border-radius:50%;background:${c};display:inline-block"></span>Cor da lista
-    </button>`;
-      }
-    });
-
-    function openColorPicker() {
-      const l = getL(); if (!l) return;
-      let sel = l.color || '#7c6af7';
-      openM('Cor da Lista', `
-    <div class="fg"><div class="fl">Escolha uma cor</div>
-      <div class="cpick" id="lcp">
-        ${LIST_COLORS.map(c => `<div class="lcswatch ${c.hex === sel ? 'sel' : ''}" style="background:${c.hex}" data-c="${c.hex}" title="${c.name}" onclick="pickLC(this,'${c.hex}')"></div>`).join('')}
-      </div>
-    </div>
-  `, () => { l.color = sel; save(); renderAll(); });
-      window.pickLC = (el, c) => { sel = c; document.querySelectorAll('.lcswatch').forEach(e => e.classList.toggle('sel', e.dataset.c === c)); };
-    }
-
-    // ── 13. LINKS / URLs ──────────────────────────────────
-    reg('links', {
-      name: 'Links nos itens', icon: '🔗', desc: 'Adiciona URLs clicáveis nos itens', def: false,
-      abtn(item) { return `<button class="iabtn" onclick="setLink('${item.id}')">🔗</button>`; },
-      meta(item) {
-        if (!item.link) return '';
-        const domain = (() => { try { return new URL(item.link).hostname.replace('www.', ''); } catch (e) { return item.link; } })();
-        return `<a class="linkbadge" href="${esc(item.link)}" target="_blank" rel="noopener">🔗 ${esc(domain)}</a>`;
-      }
-    });
-
-    function setLink(id) {
-      const l = getL(); if (!l) return;
-      const item = find(l.items, id);
-      openM('Link / URL', `
-    <div class="fg"><div class="fl">URL</div>
-      <input type="url" id="mlk" placeholder="https://exemplo.com" value="${esc(item?.link || '')}">
-    </div>
-    ${item?.link ? `<button class="btn dng full" onclick="clrLink('${id}')">Remover link</button>` : ''}
-  `, () => {
-        const v = document.getElementById('mlk')?.value.trim();
-        if (item) { item.link = v || null; save(); renderCnt(); }
-      });
-    }
-    function clrLink(id) { const l = getL(); const item = find(l.items, id); if (item) { item.link = null; save(); closeM(); renderCnt(); } }
-
-    // ── 14. VISTA KANBAN ──────────────────────────────────
-    reg('kanban', {
-      name: 'Vista Kanban', icon: '📋', desc: 'Visualiza itens em colunas de status', def: false,
-      tb() { return `<div class="view-tabs"><button class="vtab ${S._view === 'list' ? 'on' : ''}" onclick="setView('list')">☰ Lista</button><button class="vtab ${S._view === 'kanban' ? 'on' : ''}" onclick="setView('kanban')">📋 Kanban</button></div>`; },
-      onRenderTop(lv, list) {
-        if (S._view !== 'kanban') return false;
-        const kb = document.createElement('div'); kb.innerHTML = renderKanban(list); lv.appendChild(kb);
-        return true; // substituiu a árvore
-      }
-    });
-
-    function setView(v) { S._view = v; renderCnt(); }
-
-    function renderKanban(list) {
-      const all = [];
-      const col = a => a.forEach(i => { all.push(i); col(i.children || []); });
-      col(list.items);
-
-      const todo = all.filter(i => !i.checked && i.priority !== 'high');
-      const urgent = all.filter(i => !i.checked && i.priority === 'high');
-      const done = all.filter(i => i.checked);
-
-      const card = i => `<div class="kanban-card ${i.checked ? 'done-card' : ''}" onclick="togChk('${i.id}',${!i.checked})">
-    ${esc(i.text)}
-    ${i.due ? `<div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace">📅 ${i.due}</div>` : ''}
-  </div>`;
-
-      return `<div class="kanban-wrap">
-    <div class="kanban-col">
-      <div class="kanban-hdr">🔴 Urgente <span style="margin-left:auto;font-size:11px;color:var(--text3)">${urgent.length}</span></div>
-      <div class="kanban-body">${urgent.map(card).join('') || '<div style="font-size:12px;color:var(--text3);padding:4px">Vazio</div>'}</div>
-    </div>
-    <div class="kanban-col">
-      <div class="kanban-hdr">📝 A fazer <span style="margin-left:auto;font-size:11px;color:var(--text3)">${todo.length}</span></div>
-      <div class="kanban-body">${todo.map(card).join('') || '<div style="font-size:12px;color:var(--text3);padding:4px">Vazio</div>'}</div>
-    </div>
-    <div class="kanban-col">
-      <div class="kanban-hdr">✅ Concluído <span style="margin-left:auto;font-size:11px;color:var(--text3)">${done.length}</span></div>
-      <div class="kanban-body">${done.map(card).join('') || '<div style="font-size:12px;color:var(--text3);padding:4px">Vazio</div>'}</div>
-    </div>
-  </div>`;
-    }
 
     // ══════════════════════════════════════════════════════
     //  GUIA: COMO CRIAR UM PLUGIN
@@ -2138,8 +1907,8 @@ function setStars(id) {
       <div class="ldot" style="background:${c}"></div>
       <div class="lname">${esc(l.name)}</div>
       <div class="lcnt">${d}/${t}</div>
-      <button class="ldel" onclick="event.stopPropagation();delL('${l.id}')">✕</button>
-    </div>`;
+      <button class="ldel" onclick="event.stopPropagation();confirmarDel('lista','${l.id}')">✕</button>
+      </div>`;
       }).join('');
 
       document.getElementById('hpill').textContent = `${S.lists.length} lista${S.lists.length !== 1 ? 's' : ''}`;
@@ -2263,8 +2032,9 @@ function setStars(id) {
 
         let pfx = ''; Object.values(PL).forEach(p => { if (pon(p.id) && p.pfx) pfx += p.pfx(item) || ''; });
         let abtns = `<button class="iabtn" title="Sub-item" onclick="addSub('${item.id}')">⊕</button>`;
+        abtns += pon('mover') ? `<button class="iabtn" title="Mover / Indentar" onclick="abrirMenuMover('${item.id}',this)">⇅</button>` : '';
         Object.values(PL).forEach(p => { if (pon(p.id) && p.abtn) abtns += p.abtn(item) || ''; });
-        abtns += `<button class="iabtn" onclick="delItem('${item.id}')" style="color:var(--red);opacity:.7">✕</button>`;
+        abtns += `<button class="iabtn" onclick="confirmarDel('item','${item.id}')" style="color:var(--red);opacity:.7">✕</button>`;
         let meta = ''; Object.values(PL).forEach(p => { if (pon(p.id) && p.meta) meta += p.meta(item) || ''; });
         let extra = ''; Object.values(PL).forEach(p => { if (pon(p.id) && p.extra) extra += p.extra(item) || ''; });
 
@@ -2540,6 +2310,473 @@ function setStars(id) {
       const inp = document.getElementById('sbSearch');
       if (inp) { inp.value = ''; filterSB(''); }
       document.getElementById('sbClear')?.classList.remove('visible');
+    }
+
+    function confirmarDel(tipo, id) {
+      const l = getL();
+      let nome = '';
+      if (tipo === 'item') {
+        const item = l ? find(l.items, id) : null;
+        nome = item?.text ? `"${item.text.slice(0, 40)}${item.text.length > 40 ? '…' : ''}"` : 'este item';
+      } else {
+        const lista = S.lists.find(l => l.id === id);
+        nome = lista?.name ? `a lista "${lista.name}"` : 'esta lista';
+      }
+
+      openM(`🗑️ Confirmar exclusão`, `
+    <div style="text-align:center;padding:8px 0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="font-size:40px">⚠️</div>
+      <div style="font-size:15px;color:var(--text);line-height:1.5">
+        Deseja excluir ${nome}?
+      </div>
+      ${tipo === 'lista' ? `<div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
+        Todos os itens dentro da lista serão perdidos.
+      </div>` : ''}
+    </div>
+    <div class="macts">
+      <button class="btn" onclick="closeM()">Cancelar</button>
+      <button class="btn" style="background:var(--red);border-color:var(--red);color:white;flex:1;margin-top:11px"
+        onclick="closeM();${tipo === 'item' ? `delItem('${id}')` : `delL('${id}')`}">
+        🗑️ Excluir
+      </button>
+    </div>
+  `, null);
+    }
+
+    // ── MOVER E INDENTAR ITENS ────────────────────────────
+    reg('mover', {
+      name: 'Mover e Indentar', icon: '⇅',
+      desc: 'Botão para mover e indentar itens com menu', def: true,
+      onToggle(on) {
+        if (!on) fecharMenuMover();
+        renderAll();
+      }
+    });
+
+    // ── CSS do menu ──
+    (() => {
+      const s = document.createElement('style');
+      s.id = 'css-mover';
+      s.textContent = `
+    .menu-mover{
+      position:fixed;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:6px;
+      display:flex;flex-direction:column;gap:3px;
+      z-index:5000;
+      box-shadow:0 8px 32px rgba(0,0,0,.5);
+      min-width:190px;
+      animation:menuIn .15s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes menuIn{
+      from{opacity:0;transform:scale(.93) translateY(-6px)}
+      to{opacity:1;transform:scale(1) translateY(0)}
+    }
+    .menu-mover-item{
+      display:flex;align-items:center;gap:10px;
+      padding:9px 12px;border-radius:8px;
+      cursor:pointer;border:none;background:transparent;
+      color:var(--text2);font-family:'Syne',sans-serif;
+      font-size:13px;font-weight:600;width:100%;text-align:left;
+      transition:background .1s;
+    }
+    .menu-mover-item:active{background:var(--surface2)}
+    .menu-mover-item:hover{background:var(--surface2);color:var(--text)}
+    .menu-mover-sep{height:1px;background:var(--border);margin:2px 4px}
+    .menu-mover-label{
+      font-size:10px;color:var(--text3);
+      font-family:'JetBrains Mono',monospace;
+      letter-spacing:1px;text-transform:uppercase;
+      padding:4px 12px 2px;
+    }
+    .menu-mover-overlay{position:fixed;inset:0;z-index:4999}
+  `;
+      document.head.appendChild(s);
+    })();
+
+    // ── Estado ──
+    let _menuMoverEl = null;
+
+    // ── Abre menu cascata ──
+    function abrirMenuMover(id, btnEl) {
+      if (_menuMoverEl) {
+        fecharMenuMover();
+        return;
+      }
+
+      const ov = document.createElement('div');
+      ov.id = 'menuMoverOv'; ov.className = 'menu-mover-overlay';
+      ov.onclick = fecharMenuMover;
+      document.body.appendChild(ov);
+
+      const menu = document.createElement('div');
+      menu.className = 'menu-mover';
+      menu.innerHTML = `
+    <div class="menu-mover-label">Posição</div>
+    <button class="menu-mover-item" onclick="fecharMenuMover();moverItem('${id}',-1,false)">
+      <span style="font-size:16px">↑</span> Mover para cima
+    </button>
+    <button class="menu-mover-item" onclick="fecharMenuMover();moverItem('${id}',1,false)">
+      <span style="font-size:16px">↓</span> Mover para baixo
+    </button>
+    <button class="menu-mover-item" onclick="fecharMenuMover();moverItem('${id}',-1,true)">
+      <span style="font-size:16px;color:var(--accent)">↑↑</span> Subir bloco inteiro
+    </button>
+    <button class="menu-mover-item" onclick="fecharMenuMover();moverItem('${id}',1,true)">
+      <span style="font-size:16px;color:var(--accent)">↓↓</span> Descer bloco inteiro
+    </button>
+    <div class="menu-mover-sep"></div>
+    <div class="menu-mover-label">Indentação</div>
+    <button class="menu-mover-item" onclick="fecharMenuMover();indent('${id}',false,true)">
+      <span style="font-size:16px">→</span> Indentar direita
+    </button>
+    <button class="menu-mover-item" onclick="fecharMenuMover();indent('${id}',false,false)">
+      <span style="font-size:16px">←</span> Indentar esquerda
+    </button>
+    <button class="menu-mover-item" onclick="fecharMenuMover();indent('${id}',true,true)">
+      <span style="font-size:16px;color:var(--accent)">→→</span> Indentar bloco direita
+    </button>
+    <button class="menu-mover-item" onclick="fecharMenuMover();indent('${id}',true,false)">
+      <span style="font-size:16px;color:var(--accent)">←←</span> Indentar bloco esquerda
+    </button>
+  `;
+
+      document.body.appendChild(menu);
+      _menuMoverEl = menu;
+
+      // Posiciona perto do botão sem sair da tela
+      const rect = btnEl.getBoundingClientRect();
+      const mw = 200, mh = 330;
+      let top = rect.bottom + 6, left = rect.left;
+      if (left + mw > window.innerWidth) left = window.innerWidth - mw - 8;
+      if (top + mh > window.innerHeight) top = rect.top - mh - 6;
+      menu.style.top = Math.max(8, top) + 'px';
+      menu.style.left = Math.max(8, left) + 'px';
+    }
+
+    function fecharMenuMover() {
+      _menuMoverEl?.remove(); _menuMoverEl = null;
+      document.getElementById('menuMoverOv')?.remove();
+    }
+
+    // ── Mover posição ──
+    function moverItem(id, dir, comBloco) {
+      const l = getL(); if (!l) return;
+
+      function getCtx(items, id) {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].id === id) return { arr: items, idx: i };
+          if (items[i].children?.length) {
+            const f = getCtx(items[i].children, id);
+            if (f) return f;
+          }
+        }
+        return null;
+      }
+
+      const ctx = getCtx(l.items, id); if (!ctx) return;
+      const { arr, idx } = ctx;
+
+      if (!comBloco) {
+        const alvo = idx + dir;
+        if (alvo < 0 || alvo >= arr.length) return;
+        [arr[idx], arr[alvo]] = [arr[alvo], arr[idx]];
+
+      } else {
+        if (dir === -1) {
+          if (idx === 0) return;
+          const antes = arr.splice(0, idx - 1);
+          const vizinho = arr.splice(0, 1)[0];
+          const bloco = arr.splice(0);
+          arr.push(...antes, ...bloco, vizinho);
+        } else {
+          if (idx >= arr.length - 1) return;
+          const antes = arr.splice(0, idx);
+          const bloco = arr.splice(0, arr.length - 1);
+          const vizinho = arr.splice(0, 1)[0];
+          arr.push(...antes, vizinho, ...bloco);
+        }
+      }
+
+      save(); renderCnt();
+    }
+
+    // ── Indentar ──
+    function indent(id, comBloco, dirDireita = true) {
+      const l = getL(); if (!l) return;
+
+      function getCtx(items, id, pai = null) {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].id === id) return { arr: items, idx: i, pai };
+          if (items[i].children?.length) {
+            const f = getCtx(items[i].children, id, items[i]);
+            if (f) return f;
+          }
+        }
+        return null;
+      }
+
+      const ctx = getCtx(l.items, id); if (!ctx) return;
+      const { arr, idx, pai } = ctx;
+
+      const bloco = comBloco ? arr.splice(idx) : arr.splice(idx, 1);
+
+      if (dirDireita) {
+        const anterior = arr[arr.length - 1];
+        if (!anterior) { arr.splice(idx, 0, ...bloco); return; }
+        if (!anterior.children) anterior.children = [];
+        anterior.children.push(...bloco);
+        anterior.collapsed = false;
+
+      } else {
+        if (!pai) { arr.splice(idx, 0, ...bloco); return; }
+        const ctxPai = getCtx(l.items, pai.id);
+        if (!ctxPai) { arr.splice(idx, 0, ...bloco); return; }
+        const { arr: arrAvo, idx: idxPai } = ctxPai;
+        const irmaosRestantes = arr.splice(idx);
+        arrAvo.splice(idxPai + 1, 0, ...bloco);
+        if (irmaosRestantes.length) {
+          arrAvo.splice(idxPai + 1 + bloco.length, 0, ...irmaosRestantes);
+        }
+      }
+
+      save(); renderCnt();
+    }
+    // ── 10. RECORRÊNCIA ───────────────────────────────────
+    reg('recurrence', {
+      name: 'Itens Recorrentes', icon: '🔁', desc: 'Reseta itens diária/semanalamente', def: false,
+      abtn(item) { return `<button class="iabtn" onclick="setRec('${item.id}')">🔁</button>`; },
+      meta(item) {
+        if (!item.recurrence) return '';
+        const labels = { daily: 'Todo dia', weekly: 'Toda semana', monthly: 'Todo mês' };
+        return `<span class="recbadge" onclick="setRec('${item.id}')">🔁 ${labels[item.recurrence] || item.recurrence}</span>`;
+      },
+      // Quando a lista é aberta, verifica se itens precisam ser resetados
+      hdr(list) {
+        checkRecurrence(list);
+        return '';
+      }
+    });
+
+    function checkRecurrence(list) {
+      const now = new Date();
+      const today = now.toISOString().slice(0, 10);
+      const allItems = [];
+      const col = a => a.forEach(i => { allItems.push(i); col(i.children || []); });
+      col(list.items);
+      let changed = false;
+      for (const item of allItems) {
+        if (!item.recurrence || !item.checked) continue;
+        const last = item._recLast;
+        if (!last) { item._recLast = today; continue; }
+        let shouldReset = false;
+        if (item.recurrence === 'daily' && last < today) shouldReset = true;
+        if (item.recurrence === 'weekly') {
+          const d1 = new Date(last), d2 = new Date(today);
+          shouldReset = (d2 - d1) / (1000 * 60 * 60 * 24) >= 7;
+        }
+        if (item.recurrence === 'monthly') {
+          const d1 = new Date(last), d2 = new Date(today);
+          shouldReset = d2.getMonth() !== d1.getMonth() || d2.getFullYear() !== d1.getFullYear();
+        }
+        if (shouldReset) { item.checked = false; item._recLast = today; changed = true; }
+      }
+      if (changed) save();
+    }
+
+    function setRec(id) {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, id);
+      openM('Item Recorrente', `
+    <div class="fg"><div class="fl">Frequência de reset</div>
+      <select id="mrc">
+        <option value="" ${!item?.recurrence ? 'selected' : ''}>Sem recorrência</option>
+        <option value="daily" ${item?.recurrence === 'daily' ? 'selected' : ''}>Todo dia</option>
+        <option value="weekly" ${item?.recurrence === 'weekly' ? 'selected' : ''}>Toda semana</option>
+        <option value="monthly" ${item?.recurrence === 'monthly' ? 'selected' : ''}>Todo mês</option>
+      </select>
+    </div>
+    <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6">
+      O item será automaticamente desmarcado conforme a frequência escolhida quando você abrir o app.
+    </div>
+  `, () => {
+        const v = document.getElementById('mrc')?.value;
+        if (item) { item.recurrence = v || null; item._recLast = new Date().toISOString().slice(0, 10); save(); renderCnt(); }
+      });
+    }
+
+    // ── 11. EXPORT MARKDOWN / CSV ─────────────────────────
+    reg('exportmd', {
+      name: 'Export Markdown / CSV', icon: '📤', desc: 'Exporta lista em Markdown ou CSV', def: false,
+      tb() { return `<button class="tbbtn" onclick="openExportPanel()">📤 Exportar</button>`; }
+    });
+
+    function listToMarkdown(items, depth = 0) {
+      let out = '';
+      for (const item of items) {
+        const pad = '  '.repeat(depth);
+        const cb = item.checked ? '[x]' : '[ ]';
+        out += `${pad}- ${cb} ${item.text}\n`;
+        if (item.children?.length) out += listToMarkdown(item.children, depth + 1);
+      }
+      return out;
+    }
+
+    function listToCSV(items, depth = 0) {
+      let rows = [];
+      for (const item of items) {
+        rows.push([`"${'  '.repeat(depth) + item.text.replace(/"/g, '""')}"`, item.checked ? 'sim' : 'não',
+        item.priority || 'none', item.due || '', item.estimate || '', `"${(item.tags || []).map(t => t.label).join(', ')}"`].join(','));
+        if (item.children?.length) rows = rows.concat(listToCSV(item.children, depth + 1));
+      }
+      return rows;
+    }
+
+    function openExportPanel() {
+      const l = getL(); if (!l) return;
+      const md = `# ${l.name}\n\n` + listToMarkdown(l.items);
+      const csvRows = ['Texto,Concluído,Prioridade,Prazo,Estimativa,Tags', ...listToCSV(l.items)];
+      const csv = csvRows.join('\n');
+
+      openM('Exportar Lista', `
+    <div class="view-tabs" style="margin-bottom:4px">
+      <button class="vtab on" id="vtmd" onclick="swExport('md')">Markdown</button>
+      <button class="vtab" id="vtcsv" onclick="swExport('csv')">CSV</button>
+    </div>
+    <pre class="export-pre" id="expre">${esc(md)}</pre>
+    <div class="macts">
+      <button class="btn" onclick="copyExport()">📋 Copiar</button>
+      <button class="btn pri" onclick="dlExport()">⬇ Download</button>
+    </div>
+  `, null);
+      window._expData = { md, csv, mode: 'md' };
+    }
+
+    window.swExport = mode => {
+      window._expData.mode = mode;
+      document.getElementById('expre').textContent = mode === 'md' ? window._expData.md : window._expData.csv;
+      document.getElementById('vtmd').classList.toggle('on', mode === 'md');
+      document.getElementById('vtcsv').classList.toggle('on', mode === 'csv');
+    };
+    window.copyExport = () => {
+      const d = window._expData;
+      navigator.clipboard.writeText(d.mode === 'md' ? d.md : d.csv).then(() => alert('Copiado!'));
+    };
+    window.dlExport = () => {
+      const d = window._expData;
+      const content = d.mode === 'md' ? d.md : d.csv;
+      const ext = d.mode === 'md' ? 'md' : 'csv';
+      const l = getL();
+      const b = new Blob([content], { type: 'text/plain' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+      a.download = `${(l?.name || 'lista').replace(/\s+/g, '_')}.${ext}`; a.click();
+    };
+
+    // ── 12. COR DA LISTA ──────────────────────────────────
+    const LIST_COLORS = [
+      { name: 'roxo', hex: '#7c6af7' },
+      { name: 'verde', hex: '#3ecf8e' },
+      { name: 'azul', hex: '#4fa7e8' },
+      { name: 'vermelho', hex: '#e8565e' },
+      { name: 'laranja', hex: '#f0804b' },
+      { name: 'amarelo', hex: '#e8c84a' },
+      { name: 'rosa', hex: '#e87ac8' },
+      { name: 'branco', hex: '#888892' },
+    ];
+
+    reg('listcolor', {
+      name: 'Cor da Lista', icon: '🎨', desc: 'Cor personalizada por lista', def: false,
+      tb() {
+        const l = getL(); if (!l) return '';
+        const c = l.color || '#7c6af7';
+        return `<button class="tbbtn" onclick="openColorPicker()" style="gap:6px">
+      <span style="width:10px;height:10px;border-radius:50%;background:${c};display:inline-block"></span>Cor da lista
+    </button>`;
+      }
+    });
+
+    function openColorPicker() {
+      const l = getL(); if (!l) return;
+      let sel = l.color || '#7c6af7';
+      openM('Cor da Lista', `
+    <div class="fg"><div class="fl">Escolha uma cor</div>
+      <div class="cpick" id="lcp">
+        ${LIST_COLORS.map(c => `<div class="lcswatch ${c.hex === sel ? 'sel' : ''}" style="background:${c.hex}" data-c="${c.hex}" title="${c.name}" onclick="pickLC(this,'${c.hex}')"></div>`).join('')}
+      </div>
+    </div>
+  `, () => { l.color = sel; save(); renderAll(); });
+      window.pickLC = (el, c) => { sel = c; document.querySelectorAll('.lcswatch').forEach(e => e.classList.toggle('sel', e.dataset.c === c)); };
+    }
+
+    // ── 13. LINKS / URLs ──────────────────────────────────
+    reg('links', {
+      name: 'Links nos itens', icon: '🔗', desc: 'Adiciona URLs clicáveis nos itens', def: false,
+      abtn(item) { return `<button class="iabtn" onclick="setLink('${item.id}')">🔗</button>`; },
+      meta(item) {
+        if (!item.link) return '';
+        const domain = (() => { try { return new URL(item.link).hostname.replace('www.', ''); } catch (e) { return item.link; } })();
+        return `<a class="linkbadge" href="${esc(item.link)}" target="_blank" rel="noopener">🔗 ${esc(domain)}</a>`;
+      }
+    });
+
+    function setLink(id) {
+      const l = getL(); if (!l) return;
+      const item = find(l.items, id);
+      openM('Link / URL', `
+    <div class="fg"><div class="fl">URL</div>
+      <input type="url" id="mlk" placeholder="https://exemplo.com" value="${esc(item?.link || '')}">
+    </div>
+    ${item?.link ? `<button class="btn dng full" onclick="clrLink('${id}')">Remover link</button>` : ''}
+  `, () => {
+        const v = document.getElementById('mlk')?.value.trim();
+        if (item) { item.link = v || null; save(); renderCnt(); }
+      });
+    }
+    function clrLink(id) { const l = getL(); const item = find(l.items, id); if (item) { item.link = null; save(); closeM(); renderCnt(); } }
+
+    // ── 14. VISTA KANBAN ──────────────────────────────────
+    reg('kanban', {
+      name: 'Vista Kanban', icon: '📋', desc: 'Visualiza itens em colunas de status', def: false,
+      tb() { return `<div class="view-tabs"><button class="vtab ${S._view === 'list' ? 'on' : ''}" onclick="setView('list')">☰ Lista</button><button class="vtab ${S._view === 'kanban' ? 'on' : ''}" onclick="setView('kanban')">📋 Kanban</button></div>`; },
+      onRenderTop(lv, list) {
+        if (S._view !== 'kanban') return false;
+        const kb = document.createElement('div'); kb.innerHTML = renderKanban(list); lv.appendChild(kb);
+        return true; // substituiu a árvore
+      }
+    });
+
+    function setView(v) { S._view = v; renderCnt(); }
+
+    function renderKanban(list) {
+      const all = [];
+      const col = a => a.forEach(i => { all.push(i); col(i.children || []); });
+      col(list.items);
+
+      const todo = all.filter(i => !i.checked && i.priority !== 'high');
+      const urgent = all.filter(i => !i.checked && i.priority === 'high');
+      const done = all.filter(i => i.checked);
+
+      const card = i => `<div class="kanban-card ${i.checked ? 'done-card' : ''}" onclick="togChk('${i.id}',${!i.checked})">
+    ${esc(i.text)}
+    ${i.due ? `<div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace">📅 ${i.due}</div>` : ''}
+  </div>`;
+
+      return `<div class="kanban-wrap">
+    <div class="kanban-col">
+      <div class="kanban-hdr">🔴 Urgente <span style="margin-left:auto;font-size:11px;color:var(--text3)">${urgent.length}</span></div>
+      <div class="kanban-body">${urgent.map(card).join('') || '<div style="font-size:12px;color:var(--text3);padding:4px">Vazio</div>'}</div>
+    </div>
+    <div class="kanban-col">
+      <div class="kanban-hdr">📝 A fazer <span style="margin-left:auto;font-size:11px;color:var(--text3)">${todo.length}</span></div>
+      <div class="kanban-body">${todo.map(card).join('') || '<div style="font-size:12px;color:var(--text3);padding:4px">Vazio</div>'}</div>
+    </div>
+    <div class="kanban-col">
+      <div class="kanban-hdr">✅ Concluído <span style="margin-left:auto;font-size:11px;color:var(--text3)">${done.length}</span></div>
+      <div class="kanban-body">${done.map(card).join('') || '<div style="font-size:12px;color:var(--text3);padding:4px">Vazio</div>'}</div>
+    </div>
+  </div>`;
     }
 
     // ── 16. QUIZ ──────────────────────────────────────────
@@ -6073,13 +6310,13 @@ Cogito ergo sum | René Descartes'></textarea>
     }
     renderAll();
     // service worker para deixar offline
-      if('serviceWorker' in navigator){
-    window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg=> console.log('[SW] OK:', reg.scope))
-        .catch(err=> console.error('[SW] Erro:', err));
-    });
-  }
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('[SW] OK:', reg.scope))
+          .catch(err => console.error('[SW] Erro:', err));
+      });
+    }
   </script>
 </body>
 
