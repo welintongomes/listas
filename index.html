@@ -2798,33 +2798,72 @@ function setStars(id) {
     });
 
     // Extrai conteúdo de um item — texto limpo + imagem se tiver
-    function _qExtrair(item) {
-      const textoLimpo = (item.text || '').replace(/\u27E8[\s\S]*?\u27E9/g, '').trim();
-      const temImg = item.imgs && item.imgs.length > 0;
-      return {
-        texto: textoLimpo,
-        img: temImg ? item.imgs[0] : null,
-        // chave única para comparar respostas
-        chave: item.id
-      };
-    }
 
+    function _qExtrair(item) {
+      if (!item) return { texto: '?', img: null, aud: null, chave: '' };
+
+      const textoLimpo = (item.text || '').replace(/\u27E8[\s\S]*?\u27E9/g, '').trim();
+
+      // Imagem
+      let img = null;
+      if (item.imgs && item.imgs.length > 0) img = item.imgs[0];
+
+      // Áudio — vai direto no objeto sem regex
+      let aud = null;
+      if (item.audios && typeof item.audios === 'object') {
+        const keys = Object.keys(item.audios);
+        for (const k of keys) {
+          const a = item.audios[k];
+          if (a && a.src && a.src.length > 10) {
+            const pid = 'qp_' + item.id + '_' + k;
+            window._qAudSrc = window._qAudSrc || {};
+            window._qAudSrc[pid] = a.src;
+            aud = { src: a.src, nome: a.nome || textoLimpo || 'Áudio', pid };
+            break;
+          }
+        }
+      }
+
+      return { texto: textoLimpo, img, aud, chave: item.id };
+    }
     // Renderiza conteúdo como HTML
     function _qHtml(c) {
       if (!c) return '';
       let html = '';
+
+      // Imagem
       if (c.img) {
-        html += `<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        html += `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:6px">
       <img src="${c.img.src}"
+        onclick="_qVerImg('${c.img.src}')"
         style="max-width:100%;max-height:150px;border-radius:8px;
-               object-fit:contain;border:1px solid var(--border)">
-      ${c.texto ? `<span style="font-size:12px;color:var(--text2)">${esc(c.texto)}</span>` : ''}
+               object-fit:contain;border:1px solid var(--border);cursor:zoom-in">
     </div>`;
-      } else {
-        html += `<span>${esc(c.texto || '...')}</span>`;
       }
+
+      // Áudio
+      if (c.aud) {
+        html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <button id="qbtn_${c.aud.pid}" onclick="_qTocar('${c.aud.pid}')"
+        style="width:40px;height:40px;border-radius:50%;background:var(--accent);
+               border:none;color:white;font-size:16px;cursor:pointer;flex-shrink:0;
+               display:flex;align-items:center;justify-content:center">▶</button>
+      <span style="font-size:13px;color:var(--text2)">${esc(c.aud.nome)}</span>
+    </div>`;
+      }
+
+      // Texto
+      if (c.texto) {
+        html += `<span style="font-size:15px">${esc(c.texto)}</span>`;
+      }
+
+      // Fallback
+      if (!html) html = '<span style="color:var(--text3)">...</span>';
+
       return html;
     }
+
+
 
     function iniciarQuiz() {
       const list = getL(); if (!list) return;
@@ -2886,6 +2925,9 @@ function setStars(id) {
     }
 
     function proximaQuiz() {
+      // Para todos os áudios ao trocar de pergunta
+      Object.values(window._qAudPlayers || {}).forEach(a => { a.pause(); a.currentTime = 0; });
+      window._qAudPlayers = {};
       S._quizIdx++;
       S._quizRespondeu = false;
       S._quizEscolha = null;
@@ -2894,6 +2936,33 @@ function setStars(id) {
         S._quizPerguntas = shuffle(S._quizPerguntas);
       }
       save(); renderCnt();
+    }
+
+    window._qAudSrc = {};
+    window._qAudPlayers = {};
+
+    function _qTocar(pid) {
+      // Para todos os outros
+      Object.entries(window._qAudPlayers).forEach(([id, a]) => {
+        if (id !== pid) {
+          a.pause(); a.currentTime = 0;
+          const b = document.getElementById('qbtn_' + id); if (b) b.textContent = '▶';
+        }
+      });
+
+      // Cria player se não existe
+      if (!window._qAudPlayers[pid]) {
+        const src = window._qAudSrc[pid];
+        if (!src) { console.warn('src não encontrado:', pid); return; }
+        const a = new Audio(src);
+        a.onended = () => { const b = document.getElementById('qbtn_' + pid); if (b) b.textContent = '▶'; };
+        window._qAudPlayers[pid] = a;
+      }
+
+      const a = window._qAudPlayers[pid];
+      const btn = document.getElementById('qbtn_' + pid);
+      if (a.paused) { a.play(); if (btn) btn.textContent = '⏸'; }
+      else { a.pause(); if (btn) btn.textContent = '▶'; }
     }
 
     function renderQuiz() {
