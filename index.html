@@ -172,15 +172,21 @@
       }
     }
 
-.sb-scroll{
-  overflow-y:auto;
-  padding:1px 12px 2px 12px;
-  height:200px;
-  transition:height .35s cubic-bezier(.4,0,.2,1);
-  flex-shrink:0;
-}
-.sb-scroll.expandido{height:340px}
-.sb-scroll.recolhido{height:80px}
+    .sb-scroll {
+      overflow-y: auto;
+      padding: 1px 12px 2px 12px;
+      height: 200px;
+      transition: height .35s cubic-bezier(.4, 0, .2, 1);
+      flex-shrink: 0;
+    }
+
+    .sb-scroll.expandido {
+      height: 340px
+    }
+
+    .sb-scroll.recolhido {
+      height: 80px
+    }
 
     .sb-label {
       font-size: 10px;
@@ -225,10 +231,14 @@
       display: none
     }
 
-.pg{
-  display:flex;flex-direction:column;gap:3px;margin-bottom:16px;
-  overflow-y:auto;overflow-x:hidden;
-}
+    .pg {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 16px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
 
     .prow {
       display: flex;
@@ -1562,16 +1572,18 @@ background:var(--accent); */
   <div class="body">
     <div class="overlay" id="ov" onclick="closeSB()"></div>
     <aside class="sidebar" id="sb">
-      <div class="sb-scroll" id="sbScrollPlugins" onscroll="_sbExpandir('plugins')">
-  <div class="sb-label" style="margin-top:4px">
+      <div class="sb-scroll" id="sbScrollPlugins" onmouseenter="_sbExpandir('plugins')"
+        ontouchstart="_sbExpandir('plugins')">
+        <div class="sb-label" style="margin-top:4px">
           Plugins
           <span id="sbPluginCount"
             style="float:right;opacity:.5;font-weight:400;text-transform:none;letter-spacing:0"></span>
         </div>
         <div class="pg" id="pg"></div>
       </div>
-      <div class="sb-scroll" id="sbScrollListas" onscroll="_sbExpandir('listas')">
-  <div class="sb-label">
+      <div class="sb-scroll" id="sbScrollListas" onmouseenter="_sbExpandir('listas')"
+        ontouchstart="_sbExpandir('listas')">
+        <div class="sb-label">
           Listas
           <span class="hpill" id="hpill" style="float:right">0</span>
         </div>
@@ -6412,23 +6424,23 @@ Cogito ergo sum | René Descartes'></textarea>
     //  BOOT
     // ══════════════════════════════════════════════════════
     // para expandir ou recolher um ou outro grupo de itens listas ou plugins
-    function _sbExpandir(qual){
-  const p = document.getElementById('sbScrollPlugins');
-  const l = document.getElementById('sbScrollListas');
-  if(!p || !l) return;
+    function _sbExpandir(qual) {
+      const p = document.getElementById('sbScrollPlugins');
+      const l = document.getElementById('sbScrollListas');
+      if (!p || !l) return;
 
-  if(qual === 'plugins'){
-    p.classList.add('expandido');
-    p.classList.remove('recolhido');
-    l.classList.add('recolhido');
-    l.classList.remove('expandido');
-  } else {
-    l.classList.add('expandido');
-    l.classList.remove('recolhido');
-    p.classList.add('recolhido');
-    p.classList.remove('expandido');
-  }
-}
+      if (qual === 'plugins') {
+        p.classList.add('expandido');
+        p.classList.remove('recolhido');
+        l.classList.add('recolhido');
+        l.classList.remove('expandido');
+      } else {
+        l.classList.add('expandido');
+        l.classList.remove('recolhido');
+        p.classList.add('recolhido');
+        p.classList.remove('expandido');
+      }
+    }
     load();
     // Roda onInit de todos os plugins
     Object.values(PL).forEach(p => { if (p.onInit) p.onInit(); });
