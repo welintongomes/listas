@@ -1617,8 +1617,8 @@ background:var(--accent); */
     <div class="logo">List<span>Flow</span></div>
 
     <div class="hright">
-      <button class="ibtn" onclick="exportJ()" title="Exportar JSON">⬇</button>
-      <button class="ibtn" onclick="importJ()" title="Importar JSON">⬆</button>
+      <button class="ibtn" onclick="exportJ()" title="Exportar JSON">⬆</button>
+      <button class="ibtn" onclick="importJ()" title="Importar JSON">⬇</button>
     </div>
   </div>
   <script>
@@ -2781,55 +2781,74 @@ function setStars(id) {
 
     // ── 16. QUIZ ──────────────────────────────────────────
     reg('quiz', {
-      name: 'Quiz / Flashcard', icon: '🧠', desc: 'Treino com perguntas e respostas embaralhadas', def: false,
+      name: 'Quiz / Flashcard', icon: '🧠',
+      desc: 'Treino com perguntas e respostas — suporta texto e imagem', def: false,
       tb() {
         if (!S._quizAtivo) return `<button class="tbbtn" onclick="iniciarQuiz()">🧠 Iniciar Quiz</button>`;
         return `<button class="tbbtn" onclick="encerrarQuiz()">✕ Sair do Quiz</button>`;
       },
-      // Hook: substitui toda a view quando ativo
       onRenderCnt(lv, list) {
         if (!S._quizAtivo) return false;
         const h = document.createElement('div');
         h.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--text3);margin-bottom:4px">${esc(list.name)}</div>`;
         lv.appendChild(h);
         const v = document.createElement('div'); v.innerHTML = renderQuiz(); lv.appendChild(v);
-        return true; // tomou conta
+        return true;
       }
     });
 
-    // ── Estado do quiz ──
-    // S._quizAtivo     : bool
-    // S._quizPerguntas : [{pai, filhos[], correta}] — lista embaralhada
-    // S._quizIdx       : índice atual
-    // S._quizPontos    : acertos
-    // S._quizTotal     : total respondido
-    // S._quizRespondeu : bool — já escolheu nesta pergunta?
+    // Extrai conteúdo de um item — texto limpo + imagem se tiver
+    function _qExtrair(item) {
+      const textoLimpo = (item.text || '').replace(/\u27E8[\s\S]*?\u27E9/g, '').trim();
+      const temImg = item.imgs && item.imgs.length > 0;
+      return {
+        texto: textoLimpo,
+        img: temImg ? item.imgs[0] : null,
+        // chave única para comparar respostas
+        chave: item.id
+      };
+    }
+
+    // Renderiza conteúdo como HTML
+    function _qHtml(c) {
+      if (!c) return '';
+      let html = '';
+      if (c.img) {
+        html += `<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+      <img src="${c.img.src}"
+        style="max-width:100%;max-height:150px;border-radius:8px;
+               object-fit:contain;border:1px solid var(--border)">
+      ${c.texto ? `<span style="font-size:12px;color:var(--text2)">${esc(c.texto)}</span>` : ''}
+    </div>`;
+      } else {
+        html += `<span>${esc(c.texto || '...')}</span>`;
+      }
+      return html;
+    }
 
     function iniciarQuiz() {
       const list = getL(); if (!list) return;
 
-      // Coleta só itens PAI que têm pelo menos 2 filhos
       const candidatos = list.items.filter(i => i.children && i.children.length >= 2);
-      if (candidatos.length === 0) {
-        alert('Para o quiz, crie itens com pelo menos 2 filhos.\nOs pais serão as perguntas e os filhos as respostas.');
+      if (!candidatos.length) {
+        alert('Para o quiz, crie itens com pelo menos 2 filhos.\nOs pais serão as perguntas e os filhos as respostas.\n\nDica: adicione imagens aos itens com o plugin 🖼️');
         return;
       }
 
-      // Monta perguntas: cada filho do pai é uma opção, o primeiro filho é a "correta"
-      // (ou seja: o usuário define a correta sendo o PRIMEIRO filho)
-      const perguntas = candidatos.map(pai => {
-        const filhos = [...pai.children];
-        const correta = filhos[0].text; // primeiro filho = resposta certa
-        const opcoes = shuffle([...filhos.map(f => f.text)]);
-        return { pergunta: pai.text, opcoes, correta };
-      });
+      // Guarda apenas os IDs — busca os itens originais sempre na hora de renderizar
+      const perguntas = shuffle(candidatos.map(pai => ({
+        paiId: pai.id,
+        certaId: pai.children[0].id,
+        opcaoIds: shuffle(pai.children.map(f => f.id))
+      })));
 
       S._quizAtivo = true;
-      S._quizPerguntas = shuffle(perguntas);
+      S._quizPerguntas = perguntas;
       S._quizIdx = 0;
       S._quizPontos = 0;
       S._quizTotal = 0;
       S._quizRespondeu = false;
+      S._quizEscolha = null;
       save(); renderAll();
     }
 
@@ -2847,22 +2866,32 @@ function setStars(id) {
       return a;
     }
 
-    function responderQuiz(opcao) {
-      if (S._quizRespondeu) return; // já respondeu, aguarda próxima
+    // Busca item por id em toda a árvore
+    function _qAcharItem(id) {
+      const list = getL(); if (!list) return null;
+      const todos = [];
+      const varrer = arr => arr.forEach(i => { todos.push(i); if (i.children?.length) varrer(i.children); });
+      varrer(list.items);
+      return todos.find(i => i.id === id) || null;
+    }
+
+    function responderQuiz(opcaoId) {
+      if (S._quizRespondeu) return;
       S._quizRespondeu = true;
+      S._quizEscolha = opcaoId;
       S._quizTotal++;
       const q = S._quizPerguntas[S._quizIdx];
-      if (opcao === q.correta) S._quizPontos++;
+      if (opcaoId === q.certaId) S._quizPontos++;
       save(); renderCnt();
     }
 
     function proximaQuiz() {
       S._quizIdx++;
       S._quizRespondeu = false;
+      S._quizEscolha = null;
       if (S._quizIdx >= S._quizPerguntas.length) {
-        // Terminou todas as perguntas
         S._quizIdx = 0;
-        S._quizPerguntas = shuffle(S._quizPerguntas); // embaralha de novo pro próximo ciclo
+        S._quizPerguntas = shuffle(S._quizPerguntas);
       }
       save(); renderCnt();
     }
@@ -2870,79 +2899,109 @@ function setStars(id) {
     function renderQuiz() {
       const perguntas = S._quizPerguntas;
       const idx = S._quizIdx;
-      const q = perguntas[idx];
+      const qd = perguntas[idx];
       const pontos = S._quizPontos;
       const total = S._quizTotal;
       const respondeu = S._quizRespondeu;
+      const escolha = S._quizEscolha;
       const pct = total > 0 ? Math.round(pontos / total * 100) : 0;
-      const restantes = perguntas.length;
+      const acertou = respondeu && escolha === qd.certaId;
 
-      // Cores das opções após responder
-      const corOpcao = opcao => {
+      // Busca itens originais com todos os dados (imgs, etc)
+      const paiItem = _qAcharItem(qd.paiId);
+      const certaItem = _qAcharItem(qd.certaId);
+      if (!paiItem) return '<div style="color:var(--red);padding:20px">Erro: pergunta não encontrada.</div>';
+
+      const pergC = _qExtrair(paiItem);
+      const certaC = _qExtrair(certaItem || { id: qd.certaId, text: '?' });
+      const opcoes = qd.opcaoIds.map(id => {
+        const item = _qAcharItem(id);
+        return { id, c: _qExtrair(item || { id, text: '?' }) };
+      });
+
+      const estiloOp = op => {
         if (!respondeu) return `background:var(--surface2);border-color:var(--border);color:var(--text)`;
-        if (opcao === q.correta) return `background:rgba(62,207,142,.15);border-color:var(--green);color:var(--green)`;
-        return `background:rgba(232,86,94,.08);border-color:rgba(232,86,94,.3);color:var(--text3)`;
+        if (op.id === qd.certaId) return `background:rgba(62,207,142,.15);border-color:var(--green);color:var(--green)`;
+        if (op.id === escolha) return `background:rgba(232,86,94,.1);border-color:rgba(232,86,94,.4);color:var(--red)`;
+        return `background:var(--surface2);border-color:var(--border);color:var(--text3);opacity:.5`;
       };
 
-      const iconeOpcao = opcao => {
+      const iconeOp = op => {
         if (!respondeu) return '';
-        if (opcao === q.correta) return '✅ ';
-        return '❌ ';
+        if (op.id === qd.certaId) return '<span style="margin-right:6px">✅</span>';
+        if (op.id === escolha) return '<span style="margin-right:6px">❌</span>';
+        return '';
       };
 
       return `
-    <div style="display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;flex-direction:column;gap:14px">
 
-      <!-- Placar -->
-      <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px">
-        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
-          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Pontuação</div>
-          <div style="display:flex;align-items:baseline;gap:6px">
-            <span style="font-size:24px;font-weight:800;color:var(--accent)">${pontos}</span>
-            <span style="font-size:13px;color:var(--text3)">/ ${total} respondidas</span>
-          </div>
-          <div style="background:var(--border);border-radius:99px;height:4px;overflow:hidden;margin-top:2px">
-            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:99px;transition:width .4s"></div>
-          </div>
+    <!-- Placar -->
+    <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Pontuação</div>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <span style="font-size:24px;font-weight:800;color:var(--accent)">${pontos}</span>
+          <span style="font-size:13px;color:var(--text3)">/ ${total} respondidas</span>
         </div>
-        <div style="text-align:center;padding-left:12px;border-left:1px solid var(--border)">
-          <div style="font-size:22px;font-weight:800;color:${pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--yellow)' : 'var(--red)'}">${pct}%</div>
-          <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">${idx + 1} / ${restantes}</div>
+        <div style="background:var(--border);border-radius:99px;height:4px;overflow:hidden;margin-top:2px">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:99px;transition:width .4s"></div>
         </div>
       </div>
-
-      <!-- Pergunta -->
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:18px 16px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">🧠 Pergunta ${idx + 1} de ${restantes}</div>
-        <div style="font-size:17px;font-weight:700;color:var(--text);line-height:1.4">${esc(q.pergunta)}</div>
+      <div style="text-align:center;padding-left:12px;border-left:1px solid var(--border)">
+        <div style="font-size:22px;font-weight:800;color:${pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--yellow)' : 'var(--red)'}">${pct}%</div>
+        <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">${idx + 1} / ${perguntas.length}</div>
       </div>
+    </div>
 
-      <!-- Opções -->
+    <!-- Pergunta -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:18px 16px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">
+        🧠 Pergunta ${idx + 1} de ${perguntas.length}
+      </div>
+      <div style="font-size:17px;font-weight:700;color:var(--text);line-height:1.5">
+        ${_qHtml(pergC)}
+      </div>
+    </div>
+
+    <!-- Opções -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${opcoes.map(op => `
+        <button onclick="responderQuiz('${op.id}')"
+          style="width:100%;padding:13px 16px;border-radius:var(--r);border:1px solid;
+                 font-family:'Syne',sans-serif;font-size:14px;font-weight:600;
+                 cursor:pointer;text-align:left;transition:all .2s;${estiloOp(op)}">
+          ${iconeOp(op)}${_qHtml(op.c)}
+        </button>`).join('')}
+    </div>
+
+    <!-- Feedback -->
+    ${respondeu ? `
       <div style="display:flex;flex-direction:column;gap:8px">
-        ${q.opcoes.map(op => `
-          <button onclick="responderQuiz('${esc(op).replace(/'/g, "&#39;")}')"
-            style="width:100%;padding:13px 16px;border-radius:var(--r);border:1px solid;font-family:'Syne',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-align:left;transition:all .2s;${corOpcao(op)}">
-            ${iconeOpcao(op)}${esc(op)}
-          </button>`).join('')}
-      </div>
-
-      <!-- Botão próxima / feedback -->
-      ${respondeu ? `
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="padding:12px 14px;border-radius:var(--r);background:${q.opcoes.find(o => o === q.correta) === q.correta ? 'rgba(62,207,142,.1)' : 'rgba(62,207,142,.1)'};border:1px solid rgba(62,207,142,.25);font-size:13px;color:var(--green);font-family:'JetBrains Mono',monospace">
-            ✅ Resposta certa: <b>${esc(q.correta)}</b>
+        <div style="padding:14px;border-radius:var(--r);
+          background:${acertou ? 'rgba(62,207,142,.1)' : 'rgba(232,86,94,.08)'};
+          border:1px solid ${acertou ? 'rgba(62,207,142,.3)' : 'rgba(232,86,94,.3)'};
+          display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:15px;font-weight:700;color:${acertou ? 'var(--green)' : 'var(--red)'}">
+            ${acertou ? '🎉 Correto!' : '❌ Errou!'}
           </div>
-          <button onclick="proximaQuiz()" class="btn pri" style="width:100%;padding:13px">
-            ${idx + 1 >= restantes ? '🔄 Reiniciar Quiz' : 'Próxima →'}
-          </button>
-        </div>` : `
-        <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;text-align:center">
-          Toque em uma opção para responder
-        </div>`}
+          <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">
+            Resposta certa:
+          </div>
+          <div style="font-size:14px;font-weight:600;color:var(--green)">
+            ${_qHtml(certaC)}
+          </div>
+        </div>
+        <button onclick="proximaQuiz()" class="btn pri" style="width:100%;padding:13px;margin-top:0">
+          ${idx + 1 >= perguntas.length ? '🔄 Reiniciar Quiz' : 'Próxima →'}
+        </button>
+      </div>` : `
+      <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;text-align:center">
+        Toque em uma opção para responder
+      </div>`}
 
-      <!-- Botão sair -->
-      <button onclick="encerrarQuiz()" class="btn" style="width:100%">✕ Encerrar Quiz</button>
-    </div>`;
+    <button onclick="encerrarQuiz()" class="btn" style="width:100%">✕ Encerrar Quiz</button>
+  </div>`;
     }
     // plugin estrelas
     reg('stars', {
