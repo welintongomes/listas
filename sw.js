@@ -1,4 +1,4 @@
-const CACHE = 'listflow-v6';
+const CACHE = 'listflow-v7';
 
 // Tudo que o app precisa para funcionar offline
 const ASSETS = [
@@ -10,57 +10,57 @@ const ASSETS = [
 ];
 
 // ── Install: guarda os assets no cache ──
-self.addEventListener('install', e=>{
+self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(cache=>{
+    caches.open(CACHE).then(cache => {
       // Tenta cachear cada asset individualmente
       // para não quebrar tudo se um falhar (ex: fonte específica)
       return Promise.allSettled(
-        ASSETS.map(url=>
-          cache.add(url).catch(err=>
+        ASSETS.map(url =>
+          cache.add(url).catch(err =>
             console.warn('[SW] Não cacheou:', url, err)
           )
         )
       );
-    }).then(()=> self.skipWaiting())
+    }).then(() => self.skipWaiting())
   );
 });
 
 // ── Activate: limpa caches antigos ──
-self.addEventListener('activate', e=>{
+self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys=>
+    caches.keys().then(keys =>
       Promise.all(
         keys
-          .filter(k=> k !== CACHE)
-          .map(k=>{ console.log('[SW] Deletando cache antigo:', k); return caches.delete(k); })
+          .filter(k => k !== CACHE)
+          .map(k => { console.log('[SW] Deletando cache antigo:', k); return caches.delete(k); })
       )
-    ).then(()=> self.clients.claim())
+    ).then(() => self.clients.claim())
   );
 });
 
 // ── Fetch: serve do cache, cai na rede se não tiver ──
-self.addEventListener('fetch', e=>{
+self.addEventListener('fetch', e => {
   // Ignora requests não GET e chrome-extension
-  if(e.request.method !== 'GET') return;
-  if(e.request.url.startsWith('chrome-extension')) return;
+  if (e.request.method !== 'GET') return;
+  if (e.request.url.startsWith('chrome-extension')) return;
 
   e.respondWith(
-    caches.match(e.request).then(cached=>{
-      if(cached) return cached;
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
 
       // Não está no cache — busca na rede e guarda para depois
-      return fetch(e.request).then(response=>{
+      return fetch(e.request).then(response => {
         // Só cacheia responses válidas
-        if(!response || response.status !== 200 || response.type === 'error'){
+        if (!response || response.status !== 200 || response.type === 'error') {
           return response;
         }
         const clone = response.clone();
-        caches.open(CACHE).then(cache=> cache.put(e.request, clone));
+        caches.open(CACHE).then(cache => cache.put(e.request, clone));
         return response;
-      }).catch(()=>{
+      }).catch(() => {
         // Offline e não tem cache — retorna página principal como fallback
-        if(e.request.destination === 'document'){
+        if (e.request.destination === 'document') {
           return caches.match('./index.html');
         }
       });
@@ -69,6 +69,6 @@ self.addEventListener('fetch', e=>{
 });
 
 // ── Mensagem para forçar update ──
-self.addEventListener('message', e=>{
-  if(e.data === 'skipWaiting') self.skipWaiting();
+self.addEventListener('message', e => {
+  if (e.data === 'skipWaiting') self.skipWaiting();
 });
