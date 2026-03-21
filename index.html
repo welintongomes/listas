@@ -181,7 +181,7 @@
     }
 
     .sb-scroll.expandido {
-      height: 395px
+      height: 343px
     }
 
     .sb-scroll.recolhido {
@@ -827,9 +827,10 @@ background:var(--accent); */
       outline: none;
       background: transparent;
       border: none;
-      font-family: 'Syne', sans-serif;
+      font-family: 'JetBrains Mono', monospace;
       cursor: text;
-      white-space: nowrap;
+      white-space: pre-wrap;
+      word-break: break-word;
       display: block;
       min-height: 20px
     }
@@ -2056,8 +2057,8 @@ function setStars(id) {
         ${(pon('audio') && item.text && item.text.includes('⟨🎙'))
             ? `<div class="itext-rich ${item.checked ? 'done' : ''}">${renderRichText(item)}</div>`
             : `<div class="itext ${item.checked ? 'done' : ''}" contenteditable="true" spellcheck="false"
-              onblur="renItem('${item.id}',this.innerText)"
-              onkeydown="ikey(event,'${item.id}')">${esc(item.text)}</div>`
+            onblur="renItem('${item.id}',this.innerText)"
+            onkeydown="ikey(event,'${item.id}')">${esc(item.text).replace(/\n/g, '<br>')}</div>`
           }
         ${meta ? `<div class="imeta">${meta}</div>` : ''}
         ${extra}
@@ -2126,10 +2127,16 @@ function setStars(id) {
 
     function ikey(e, id) {
       if (e.key === 'Enter') {
-        e.preventDefault(); const l = getL(); if (!l) return;
-        const par = getpar(l.items, id); const arr = par ? par.children : l.items;
-        const idx = arr.findIndex(i => i.id === id); const item = mkItem('');
-        arr.splice(idx + 1, 0, item); save(); renderCnt(); setTimeout(() => focI(item.id), 60);
+        if (e.shiftKey) {
+          // Shift+Enter = cria novo item (comportamento antigo)
+          e.preventDefault();
+          const l = getL(); if (!l) return;
+          const par = getpar(l.items, id); const arr = par ? par.children : l.items;
+          const idx = arr.findIndex(i => i.id === id); const item = mkItem('');
+          arr.splice(idx + 1, 0, item); save(); renderCnt(); setTimeout(() => focI(item.id), 60);
+        }
+        // Enter normal = quebra linha dentro do item (comportamento padrão do contenteditable)
+        // Não faz nada — deixa o browser inserir \n naturalmente
       }
       if (e.key === 'Tab') {
         e.preventDefault(); const l = getL(); if (!l) return;
@@ -2838,7 +2845,7 @@ function setStars(id) {
       return { texto: textoLimpo, img, aud, chave: item.id };
     }
     // Renderiza conteúdo como HTML
-    function _qHtml(c) {
+    function _qHtml(c, isOpcao = false) {
       if (!c) return '';
       let html = '';
 
@@ -2847,7 +2854,7 @@ function setStars(id) {
         html += `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:6px">
       <img src="${c.img.src}"
         onclick="_qVerImg('${c.img.src}')"
-        style="max-width:100%;max-height:150px;border-radius:8px;
+        style="max-width:100%;max-height:${isOpcao ? '100px' : '150px'};border-radius:8px;
                object-fit:contain;border:1px solid var(--border);cursor:zoom-in">
     </div>`;
       }
@@ -2863,14 +2870,39 @@ function setStars(id) {
     </div>`;
       }
 
-      // Texto
+      // Texto pré-formatado
       if (c.texto) {
-        html += `<span style="font-size:15px">${esc(c.texto)}</span>`;
+        const temCodigo = c.texto.includes('\n') || c.texto.includes('  ');
+        if (temCodigo) {
+          html += `<pre style="
+          font-size:${isOpcao ? '12px' : '13px'};
+          font-family:'JetBrains Mono',monospace;
+          white-space:pre;
+          overflow-x:auto;
+          overflow-y:hidden;
+          margin:0;
+          padding:${isOpcao ? '6px 8px' : '10px 12px'};
+          background:rgba(0,0,0,.2);
+          border-radius:6px;
+          border:1px solid var(--border);
+          color:inherit;
+          line-height:1.6;
+          text-align:left;
+          font-weight:400;
+          max-width:100%">${esc(c.texto)}</pre>`;
+        } else {
+          html += `<span style="
+        font-size:${isOpcao ? '14px' : '16px'};
+        font-family:'Syne',sans-serif;
+        white-space:pre-wrap;
+        word-break:break-word;
+        font-weight:${isOpcao ? '600' : '700'};
+        line-height:1.5;
+        text-align:left">${esc(c.texto)}</span>`;
+        }
       }
 
-      // Fallback
       if (!html) html = '<span style="color:var(--text3)">...</span>';
-
       return html;
     }
 
@@ -3051,7 +3083,7 @@ function setStars(id) {
           style="width:100%;padding:13px 16px;border-radius:var(--r);border:1px solid;
                  font-family:'Syne',sans-serif;font-size:14px;font-weight:600;
                  cursor:pointer;text-align:left;transition:all .2s;${estiloOp(op)}">
-          ${iconeOp(op)}${_qHtml(op.c)}
+          ${iconeOp(op)}${_qHtml(op.c, true)}
         </button>`).join('')}
     </div>
 
