@@ -6737,6 +6737,759 @@ Cogito ergo sum | René Descartes'></textarea>
         save(); renderTB();
       });
     }
+    // ── XADREZ ────────────────────────────────────────────
+    reg('xadrez', {
+      name: 'Xadrez', icon: '♟️',
+      desc: 'Jogue xadrez contra a IA ou outro jogador', def: false,
+      tb() { return pon('xadrez') ? `<button class="tbbtn" onclick="openXadrezScreen()">♟️ Xadrez</button>` : ''; },
+      onToggle(on) {
+        if (!on) {
+          const s = document.getElementById('xadrezScreen');
+          const m = document.querySelector('.main');
+          if (s) { s.style.display = 'none'; }
+          if (m) m.style.display = 'flex';
+          const b = document.getElementById('xadrezBtn');
+          if (b) b.remove();
+          document.getElementById('fab').style.display = getL() ? 'flex' : 'none';
+        } else {
+          _xadrezInit();
+        }
+      }
+    });
+
+    // ── CSS ──────────────────────────────────────────────
+    (() => {
+      const s = document.createElement('style');
+      s.textContent = `
+    .xadrez-screen{flex:1;overflow-y:auto;overflow-x:hidden;
+      padding:16px;flex-direction:column;gap:16px;
+      background:var(--bg);box-sizing:border-box;}
+
+    .xadrez-board-wrap{
+      display:flex;flex-direction:column;align-items:center;gap:8px;
+    }
+
+    .xadrez-board{
+      display:grid;grid-template-columns:repeat(8,1fr);
+      width:min(480px,92vw);height:min(480px,92vw);
+      border:3px solid var(--border);border-radius:6px;overflow:hidden;
+      box-shadow:0 8px 32px rgba(0,0,0,.5);
+    }
+
+    .xc{
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;position:relative;
+      transition:background .15s;
+      width:100%;aspect-ratio:1;
+    }
+    .xc.claro{background:#f0d9b5}
+    .xc.escuro{background:#b58863}
+    .xc.sel{background:#7fc97f !important;box-shadow:inset 0 0 0 3px rgba(0,150,0,.6)}
+    .xc.dest{background:#7fc97f99 !important}
+    .xc.dest::after{
+      content:'';position:absolute;
+      width:30%;height:30%;border-radius:50%;
+      background:rgba(0,0,0,.25);
+    }
+    .xc.xeque{background:#e87a7a !important}
+    .xc.ultmov{background:#cdd16f99 !important}
+    .xc:active{opacity:.85}
+
+    .xpeca{
+      font-size:min(7.5vw,36px);color:black;line-height:1;
+      user-select:none;pointer-events:none;
+      filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
+      transition:transform .1s;
+    }
+
+    /* Coordenadas */
+    .xcoord-row{
+      display:flex;width:min(480px,92vw);
+      justify-content:space-around;padding:0 2px;
+    }
+    .xcoord-col{
+      display:flex;flex-direction:column;
+      height:min(480px,92vw);justify-content:space-around;
+      padding:2px 0;
+    }
+    .xcoord{
+      font-size:10px;font-family:'JetBrains Mono',monospace;
+      color:var(--text3);width:16px;text-align:center;
+    }
+
+    /* Info */
+    .xadrez-info{
+      background:var(--surface2);border:1px solid var(--border);
+      border-radius:var(--r);padding:12px 16px;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:12px;flex-wrap:wrap;width:min(480px,92vw);
+    }
+    .xadrez-turno{
+      font-size:14px;font-weight:700;color:var(--text);
+      display:flex;align-items:center;gap:8px;
+    }
+    .xadrez-status{
+      font-size:12px;font-family:'JetBrains Mono',monospace;
+      color:var(--text3);
+    }
+
+    /* Peças capturadas */
+    .xadrez-caps{
+      background:var(--surface2);border:1px solid var(--border);
+      border-radius:var(--r);padding:10px 14px;
+      width:min(480px,92vw);display:flex;flex-direction:column;gap:6px;
+    }
+    .xcaps-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .xcaps-label{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;width:60px;flex-shrink:0}
+    .xcap-peca{font-size:18px;line-height:1}
+
+    /* Controles */
+    .xadrez-ctrl{
+      display:flex;gap:8px;flex-wrap:wrap;width:min(480px,92vw);
+    }
+
+    /* Histórico */
+    .xadrez-hist{
+      background:var(--surface2);border:1px solid var(--border);
+      border-radius:var(--r);padding:10px 14px;
+      width:min(480px,85.2vw);max-height:120px;overflow-y:auto;
+    }
+    .xhist-grid{
+      display:grid;grid-template-columns:24px 1fr 1fr;
+      gap:2px 8px;font-size:11px;font-family:'JetBrains Mono',monospace;
+    }
+    .xhist-n{color:var(--text3)}
+    .xhist-b{color:var(--text)}
+    .xhist-p{color:var(--text2)}
+
+    /* Promoção */
+    .xprom-modal{
+      position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .xprom-box{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:14px;padding:20px;display:flex;flex-direction:column;
+      gap:12px;align-items:center;
+    }
+    .xprom-pecas{display:flex;gap:12px}
+    .xprom-btn{
+      width:56px;height:56px;border-radius:10px;border:1px solid var(--border);
+      background:var(--surface2);cursor:pointer;font-size:32px;
+      display:flex;align-items:center;justify-content:center;
+      transition:all .15s;
+    }
+    .xprom-btn:hover{background:var(--accent);border-color:var(--accent)}
+    .xprom-btn:active{transform:scale(.93)}
+  `;
+      document.head.appendChild(s);
+    })();
+
+    // ── PEÇAS ──────────────────────────────────────────
+    const _XP = {
+      // brancas
+      K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙',
+      // pretas
+      k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟'
+    };
+
+    // Posição inicial FEN
+    const _XFEN_INIT = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+    // Estado do jogo
+    let _XG = null; // estado completo do jogo
+
+    function _xadrezInit() {
+      if (!document.getElementById('xadrezScreen')) {
+        const s = document.createElement('div');
+        s.id = 'xadrezScreen'; s.className = 'xadrez-screen';
+        s.style.display = 'none';
+        document.querySelector('.body').appendChild(s);
+      }
+      if (!document.getElementById('xadrezBtn')) {
+        const b = document.createElement('button');
+        b.id = 'xadrezBtn'; b.title = 'Xadrez'; b.textContent = '♟️';
+        b.className = 'ibtn'; b.onclick = openXadrezScreen;
+        document.querySelector('.hright').prepend(b);
+      }
+    }
+
+    function openXadrezScreen() {
+      const s = document.getElementById('xadrezScreen');
+      const m = document.querySelector('.main');
+      const b = document.getElementById('xadrezBtn');
+      const fab = document.getElementById('fab');
+      if (!s || !m) return;
+      const isOpen = s.style.display === 'flex';
+      if (isOpen) {
+        s.style.display = 'none'; m.style.display = 'flex';
+        b.style.background = ''; b.style.color = '';
+        fab.style.display = getL() ? 'flex' : 'none';
+      } else {
+        m.style.display = 'none'; s.style.display = 'flex';
+        b.style.background = 'var(--accent)'; b.style.color = 'white';
+        fab.style.display = 'none';
+        if (!_XG) _xNovoJogo();
+        else _xRender();
+      }
+    }
+
+    // ── NOVO JOGO ──────────────────────────────────────
+    function _xNovoJogo(modo) {
+      _XG = {
+        tab: _xFenParaTab(_XFEN_INIT),
+        turno: 'w', // w=brancas p=pretas
+        modo: modo || _XG?.modo || 'pvp', // pvp ou pvc
+        sel: null,     // casa selecionada [r,c]
+        destinos: [],  // casas válidas
+        xeque: false,
+        fim: null,     // null | 'branco'|'preto'|'empate'
+        capB: [],      // peças capturadas pelas brancas
+        capP: [],      // peças capturadas pelas pretas
+        hist: [],      // histórico de movimentos
+        ultMov: null,  // último movimento [{r,c},{r,c}]
+        roques: { wK: true, wQ: true, bK: true, bQ: true },
+        enPassant: null, // {r,c} casa en passant
+      };
+      _xRender();
+    }
+
+    // ── FEN → Tabuleiro ──────────────────────────────
+    function _xFenParaTab(fen) {
+      const tab = [];
+      const rows = fen.split(' ')[0].split('/');
+      for (const row of rows) {
+        const linha = [];
+        for (const c of row) {
+          if (isNaN(c)) linha.push(c);
+          else for (let i = 0; i < parseInt(c); i++) linha.push('');
+        }
+        tab.push(linha);
+      }
+      return tab;
+    }
+
+    // ── RENDER PRINCIPAL ─────────────────────────────
+    function _xRender() {
+      const s = document.getElementById('xadrezScreen');
+      if (!s || s.style.display !== 'flex') return;
+
+      const g = _XG;
+      const t = g.tab;
+
+      // Monta o tabuleiro
+      let casas = '';
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const claro = (r + c) % 2 === 0;
+          const peca = t[r][c];
+          const isSel = g.sel && g.sel[0] === r && g.sel[1] === c;
+          const isDest = g.destinos.some(d => d[0] === r && d[1] === c);
+          const isXeque = g.xeque && (
+            (g.turno === 'w' && peca === 'K') || (g.turno === 'b' && peca === 'k')
+          );
+          const isUlt = g.ultMov && (
+            (g.ultMov[0][0] === r && g.ultMov[0][1] === c) ||
+            (g.ultMov[1][0] === r && g.ultMov[1][1] === c)
+          );
+          let cls = claro ? 'claro' : 'escuro';
+          if (isSel) cls += ' sel';
+          else if (isDest) cls += ' dest';
+          else if (isXeque) cls += ' xeque';
+          else if (isUlt) cls += ' ultmov';
+
+          casas += `<div class="xc ${cls}" onclick="_xClique(${r},${c})">
+        ${peca ? `<span class="xpeca">${_XP[peca] || ''}</span>` : ''}
+      </div>`;
+        }
+      }
+
+      // Coordenadas
+      const letras = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+      const numeros = ['8', '7', '6', '5', '4', '3', '2', '1'];
+
+      // Status
+      let statusTxt = '';
+      if (g.fim) statusTxt = g.fim === 'empate' ? '½-½' : g.fim === 'branco' ? '1-0' : '0-1';
+      else if (g.xeque) statusTxt = '⚠️ Xeque!';
+      else statusTxt = g.modo === 'pvc' && g.turno === 'b' ? '🤖 IA pensando...' : '';
+
+      // Peças capturadas
+      const capBHtml = g.capB.map(p => `<span class="xcap-peca">${_XP[p] || ''}</span>`).join('');
+      const capPHtml = g.capP.map(p => `<span class="xcap-peca">${_XP[p.toUpperCase()] || ''}</span>`).join('');
+
+      // Histórico
+      let histHtml = '';
+      for (let i = 0; i < g.hist.length; i += 2) {
+        const n = Math.floor(i / 2) + 1;
+        histHtml += `<span class="xhist-n">${n}.</span>
+      <span class="xhist-b">${g.hist[i] || ''}</span>
+      <span class="xhist-p">${g.hist[i + 1] || ''}</span>`;
+      }
+
+      s.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="font-size:18px;font-weight:800;color:var(--text)">♟️ Xadrez</div>
+      <div style="display:flex;gap:6px">
+        <button class="vtab ${g.modo === 'pvp' ? 'on' : ''}" onclick="_xNovoJogo('pvp')">👥 PvP</button>
+        <button class="vtab ${g.modo === 'pvc' ? 'on' : ''}" onclick="_xNovoJogo('pvc')">🤖 vs IA</button>
+      </div>
+    </div>
+
+    <!-- Info turno -->
+    <div class="xadrez-info">
+      <div class="xadrez-turno">
+        <span style="font-size:20px">${g.turno === 'w' ? '♔' : '♚'}</span>
+        ${g.fim ? `Fim: ${g.fim === 'empate' ? 'Empate' : g.fim === 'branco' ? 'Brancas vencem' : 'Pretas vencem'}`
+          : `Vez das ${g.turno === 'w' ? 'brancas' : 'pretas'}`}
+      </div>
+      <div class="xadrez-status">${statusTxt}</div>
+    </div>
+
+    <!-- Tabuleiro -->
+    <div class="xadrez-board-wrap">
+      <div class="xcoord-row">
+        ${letras.map(l => `<span class="xcoord">${l}</span>`).join('')}
+      </div>
+      <div style="display:flex;gap:4px;align-items:center">
+        <div class="xcoord-col">
+          ${numeros.map(n => `<span class="xcoord">${n}</span>`).join('')}
+        </div>
+        <div class="xadrez-board">${casas}</div>
+      </div>
+    </div>
+
+    <!-- Capturadas -->
+    <div class="xadrez-caps">
+      <div class="xcaps-row">
+        <span class="xcaps-label">♔ capturou</span>${capBHtml || '<span style="color:var(--text3);font-size:12px">—</span>'}
+      </div>
+      <div class="xcaps-row">
+        <span class="xcaps-label">♚ capturou</span>${capPHtml || '<span style="color:var(--text3);font-size:12px">—</span>'}
+      </div>
+    </div>
+
+    <!-- Controles -->
+    <div class="xadrez-ctrl">
+      <button class="btn" style="flex:1;margin-top:0" onclick="_xNovoJogo()">🔄 Novo jogo</button>
+      <button class="btn" style="flex:1;margin-top:0" onclick="_xDesfazer()">↩ Desfazer</button>
+    </div>
+
+    <!-- Histórico -->
+    ${g.hist.length ? `
+    <div class="xadrez-caps">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Histórico</div>
+      <div class="xadrez-hist"><div class="xhist-grid">${histHtml}</div></div>
+    </div>`: ''}
+  `;
+    }
+
+    // ── CLIQUE NA CASA ───────────────────────────────
+    function _xClique(r, c) {
+      const g = _XG; if (!g || g.fim) return;
+      if (g.modo === 'pvc' && g.turno === 'b') return; // IA jogando
+
+      const peca = g.tab[r][c];
+      const eBranca = peca && peca === peca.toUpperCase() && peca !== '';
+      const ePreto = peca && peca === peca.toLowerCase();
+      const turnoB = g.turno === 'w';
+
+      if (g.sel) {
+        // Verifica se é destino válido
+        const isDest = g.destinos.some(d => d[0] === r && d[1] === c);
+        if (isDest) {
+          _xMover(g.sel[0], g.sel[1], r, c);
+          return;
+        }
+        // Clicou em outra peça do mesmo time
+        if ((turnoB && eBranca) || (!turnoB && ePreto)) {
+          g.sel = [r, c];
+          g.destinos = _xMovimentos(r, c, g);
+          _xRender(); return;
+        }
+        // Desmarca
+        g.sel = null; g.destinos = []; _xRender(); return;
+      }
+
+      // Seleciona peça
+      if ((turnoB && eBranca) || (!turnoB && ePreto)) {
+        g.sel = [r, c];
+        g.destinos = _xMovimentos(r, c, g);
+        _xRender();
+      }
+    }
+
+    // ── EXECUTAR MOVIMENTO ───────────────────────────
+    function _xMover(r1, c1, r2, c2, promEscolha) {
+      const g = _XG;
+      const peca = g.tab[r1][c1];
+      const capturada = g.tab[r2][c2];
+      const not = _xNotacao(peca, r1, c1, r2, c2, g);
+
+      // Captura
+      if (capturada) {
+        if (g.turno === 'w') g.capB.push(capturada);
+        else g.capP.push(capturada);
+      }
+
+      // En passant
+      if ((peca === 'P' || peca === 'p') && g.enPassant && r2 === g.enPassant[0] && c2 === g.enPassant[1]) {
+        const capR = g.turno === 'w' ? r2 + 1 : r2 - 1;
+        const capPeca = g.tab[capR][c2];
+        if (capPeca) g.turno === 'w' ? g.capB.push(capPeca) : g.capP.push(capPeca);
+        g.tab[capR][c2] = '';
+      }
+
+      // Move peça
+      g.tab[r2][c2] = peca;
+      g.tab[r1][c1] = '';
+
+      // Roque
+      if (peca === 'K' && Math.abs(c2 - c1) === 2) {
+        if (c2 === 6) { g.tab[r1][5] = g.tab[r1][7]; g.tab[r1][7] = ''; }
+        else { g.tab[r1][3] = g.tab[r1][0]; g.tab[r1][0] = ''; }
+      }
+      if (peca === 'k' && Math.abs(c2 - c1) === 2) {
+        if (c2 === 6) { g.tab[r2][5] = g.tab[r2][7]; g.tab[r2][7] = ''; }
+        else { g.tab[r2][3] = g.tab[r2][0]; g.tab[r2][0] = ''; }
+      }
+
+      // Atualiza direitos de roque
+      if (peca === 'K') { g.roques.wK = false; g.roques.wQ = false; }
+      if (peca === 'k') { g.roques.bK = false; g.roques.bQ = false; }
+      if (r1 === 0 && c1 === 0) g.roques.bQ = false;
+      if (r1 === 0 && c1 === 7) g.roques.bK = false;
+      if (r1 === 7 && c1 === 0) g.roques.wQ = false;
+      if (r1 === 7 && c1 === 7) g.roques.wK = false;
+
+      // En passant novo
+      g.enPassant = null;
+      if (peca === 'P' && r1 - r2 === 2) g.enPassant = [r1 - 1, c1];
+      if (peca === 'p' && r2 - r1 === 2) g.enPassant = [r1 + 1, c1];
+
+      // Promoção de peão
+      if (peca === 'P' && r2 === 0) {
+        if (promEscolha) { g.tab[r2][c2] = promEscolha; _xAposMovimento(not); }
+        else { _xMostrarPromocao(r2, c2, not, 'w'); return; }
+      } else if (peca === 'p' && r2 === 7) {
+        if (promEscolha) { g.tab[r2][c2] = promEscolha; _xAposMovimento(not); }
+        else { _xMostrarPromocao(r2, c2, not, 'b'); return; }
+      } else {
+        _xAposMovimento(not);
+      }
+    }
+
+    function _xAposMovimento(not) {
+      const g = _XG;
+      g.sel = null; g.destinos = [];
+      g.ultMov = [[_xUltMov[0], _xUltMov[1]], [_xUltMov[2], _xUltMov[3]]];
+
+      // Troca turno
+      g.turno = g.turno === 'w' ? 'b' : 'w';
+
+      // Verifica xeque
+      g.xeque = _xEmXeque(g.turno, g.tab, g);
+
+      // Adiciona ao histórico
+      g.hist.push(not + (g.xeque ? '+' : ''));
+
+      // Verifica xeque-mate / afogamento
+      const temMov = _xTemMovimentos(g.turno, g);
+      if (!temMov) {
+        if (g.xeque) g.fim = g.turno === 'w' ? 'preto' : 'branco';
+        else g.fim = 'empate';
+      }
+
+      _xRender();
+
+      // IA joga se for modo pvc e vez das pretas
+      if (!g.fim && g.modo === 'pvc' && g.turno === 'b') {
+        setTimeout(() => _xIAJogar(), 500);
+      }
+    }
+
+    // Guarda coords do último movimento para _xAposMovimento
+    let _xUltMov = [0, 0, 0, 0];
+    const _xMoverOrig = _xMover;
+
+    // ── MOVIMENTOS VÁLIDOS ───────────────────────────
+    function _xMovimentos(r, c, g) {
+      const peca = g.tab[r][c];
+      if (!peca) return [];
+      const branca = peca === peca.toUpperCase();
+      const destinos = [];
+
+      const add = (nr, nc) => {
+        if (nr < 0 || nr > 7 || nc < 0 || nc > 7) return false;
+        const alvo = g.tab[nr][nc];
+        if (alvo) {
+          const alvoBranca = alvo === alvo.toUpperCase();
+          if (branca !== alvoBranca) destinos.push([nr, nc]);
+          return false;
+        }
+        destinos.push([nr, nc]); return true;
+      };
+
+      const linha = (dr, dc) => { let nr = r + dr, nc = c + dc; while (add(nr, nc)) { nr += dr; nc += dc; } };
+
+      const p = peca.toLowerCase();
+
+      if (p === 'p') {
+        const dir = branca ? -1 : 1;
+        const ini = branca ? 6 : 1;
+        if (r + dir >= 0 && r + dir <= 7 && !g.tab[r + dir][c]) {
+          destinos.push([r + dir, c]);
+          if (r === ini && !g.tab[r + 2 * dir][c]) destinos.push([r + 2 * dir, c]);
+        }
+        // Capturas diagonais
+        for (const dc of [-1, 1]) {
+          const nr = r + dir, nc = c + dc;
+          if (nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
+            const alvo = g.tab[nr][nc];
+            if (alvo && (branca ? alvo === alvo.toLowerCase() : alvo === alvo.toUpperCase()))
+              destinos.push([nr, nc]);
+            // En passant
+            if (g.enPassant && nr === g.enPassant[0] && nc === g.enPassant[1])
+              destinos.push([nr, nc]);
+          }
+        }
+      } else if (p === 'r') { linha(1, 0); linha(-1, 0); linha(0, 1); linha(0, -1); }
+      else if (p === 'b') { linha(1, 1); linha(1, -1); linha(-1, 1); linha(-1, -1); }
+      else if (p === 'q') { linha(1, 0); linha(-1, 0); linha(0, 1); linha(0, -1); linha(1, 1); linha(1, -1); linha(-1, 1); linha(-1, -1); }
+      else if (p === 'n') {
+        for (const [dr, dc] of [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]]) add(r + dr, c + dc);
+      } else if (p === 'k') {
+        for (const [dr, dc] of [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]) add(r + dr, c + dc);
+        // Roque
+        const row = branca ? 7 : 0;
+        if (r === row && c === 4) {
+          if (branca) {
+            if (g.roques.wK && !g.tab[row][5] && !g.tab[row][6] &&
+              !_xCasaAtacada(row, 4, 'b', g.tab) && !_xCasaAtacada(row, 5, 'b', g.tab) && !_xCasaAtacada(row, 6, 'b', g.tab))
+              destinos.push([row, 6]);
+            if (g.roques.wQ && !g.tab[row][1] && !g.tab[row][2] && !g.tab[row][3] &&
+              !_xCasaAtacada(row, 4, 'b', g.tab) && !_xCasaAtacada(row, 3, 'b', g.tab) && !_xCasaAtacada(row, 2, 'b', g.tab))
+              destinos.push([row, 2]);
+          } else {
+            if (g.roques.bK && !g.tab[row][5] && !g.tab[row][6] &&
+              !_xCasaAtacada(row, 4, 'w', g.tab) && !_xCasaAtacada(row, 5, 'w', g.tab) && !_xCasaAtacada(row, 6, 'w', g.tab))
+              destinos.push([row, 6]);
+            if (g.roques.bQ && !g.tab[row][1] && !g.tab[row][2] && !g.tab[row][3] &&
+              !_xCasaAtacada(row, 4, 'w', g.tab) && !_xCasaAtacada(row, 3, 'w', g.tab) && !_xCasaAtacada(row, 2, 'w', g.tab))
+              destinos.push([row, 2]);
+          }
+        }
+      }
+
+      // Filtra movimentos que deixam o rei em xeque
+      return destinos.filter(([nr, nc]) => {
+        const tabCopia = g.tab.map(r => [...r]);
+        tabCopia[nr][nc] = tabCopia[r][c];
+        tabCopia[r][c] = '';
+        return !_xEmXeque(branca ? 'w' : 'b', tabCopia, g);
+      });
+    }
+
+    function _xCasaAtacada(r, c, porQuem, tab) {
+      for (let pr = 0; pr < 8; pr++) {
+        for (let pc = 0; pc < 8; pc++) {
+          const p = tab[pr][pc];
+          if (!p) continue;
+          const eB = p === p.toUpperCase();
+          if (porQuem === 'b' && eB) continue;
+          if (porQuem === 'w' && !eB) continue;
+          const g2 = { tab, roques: { wK: false, wQ: false, bK: false, bQ: false }, enPassant: null };
+          const movs = _xMovimentosBrutos(pr, pc, g2);
+          if (movs.some(m => m[0] === r && m[1] === c)) return true;
+        }
+      }
+      return false;
+    }
+
+    function _xMovimentosBrutos(r, c, g) {
+      // igual _xMovimentos mas sem filtrar xeque (evita recursão infinita)
+      const peca = g.tab[r][c]; if (!peca) return [];
+      const branca = peca === peca.toUpperCase();
+      const destinos = [];
+      const add = (nr, nc) => {
+        if (nr < 0 || nr > 7 || nc < 0 || nc > 7) return false;
+        const alvo = g.tab[nr][nc];
+        if (alvo) { const ab = alvo === alvo.toUpperCase(); if (branca !== ab) destinos.push([nr, nc]); return false; }
+        destinos.push([nr, nc]); return true;
+      };
+      const linha = (dr, dc) => { let nr = r + dr, nc = c + dc; while (add(nr, nc)) { nr += dr; nc += dc; } };
+      const p = peca.toLowerCase();
+      if (p === 'r') { linha(1, 0); linha(-1, 0); linha(0, 1); linha(0, -1); }
+      else if (p === 'b') { linha(1, 1); linha(1, -1); linha(-1, 1); linha(-1, -1); }
+      else if (p === 'q') { linha(1, 0); linha(-1, 0); linha(0, 1); linha(0, -1); linha(1, 1); linha(1, -1); linha(-1, 1); linha(-1, -1); }
+      else if (p === 'n') { for (const [dr, dc] of [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]]) add(r + dr, c + dc); }
+      else if (p === 'k') { for (const [dr, dc] of [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]) add(r + dr, c + dc); }
+      else if (p === 'p') {
+        const dir = branca ? -1 : 1;
+        for (const dc of [-1, 1]) {
+          const nr = r + dir, nc = c + dc;
+          if (nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
+            const alvo = g.tab[nr][nc];
+            if (alvo && (branca ? alvo === alvo.toLowerCase() : alvo === alvo.toUpperCase())) destinos.push([nr, nc]);
+          }
+        }
+      }
+      return destinos;
+    }
+
+    function _xEmXeque(turno, tab, g) {
+      // Acha o rei
+      const rei = turno === 'w' ? 'K' : 'k';
+      let rr = -1, rc = -1;
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (tab[r][c] === rei) { rr = r; rc = c; }
+      if (rr === -1) return false;
+      return _xCasaAtacada(rr, rc, turno === 'w' ? 'b' : 'w', tab);
+    }
+
+    function _xTemMovimentos(turno, g) {
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const p = g.tab[r][c]; if (!p) continue;
+          const eB = p === p.toUpperCase();
+          if (turno === 'w' && !eB) continue;
+          if (turno === 'b' && eB) continue;
+          if (_xMovimentos(r, c, g).length > 0) return true;
+        }
+      }
+      return false;
+    }
+
+    // ── NOTAÇÃO ALGÉBRICA SIMPLES ────────────────────
+    const _xCols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    function _xNotacao(peca, r1, c1, r2, c2, g) {
+      _xUltMov = [r1, c1, r2, c2];
+      const dest = _xCols[c2] + (8 - r2);
+      const p = peca.toLowerCase();
+      if (p === 'p') return c1 !== c2 ? _xCols[c1] + 'x' + dest : dest;
+      const simb = { r: 'T', n: 'C', b: 'B', q: 'D', k: 'R' }[p] || '';
+      const cap = g.tab[r2][c2] ? 'x' : '';
+      return simb + cap + dest;
+    }
+
+    // ── PROMOÇÃO ─────────────────────────────────────
+    function _xMostrarPromocao(r, c, not, cor) {
+      const pecas = cor === 'w' ? ['Q', 'R', 'B', 'N'] : ['q', 'r', 'b', 'n'];
+      const modal = document.createElement('div');
+      modal.className = 'xprom-modal';
+      modal.innerHTML = `
+    <div class="xprom-box">
+      <div style="font-size:14px;font-weight:700;color:var(--text)">Promover peão</div>
+      <div class="xprom-pecas">
+        ${pecas.map(p => `
+          <button class="xprom-btn" onclick="_xEscolherPromocao('${r}','${c}','${p}','${not}')">
+            ${_XP[p]}
+          </button>`).join('')}
+      </div>
+    </div>`;
+      document.body.appendChild(modal);
+    }
+
+    function _xEscolherPromocao(r, c, peca, not) {
+      document.querySelector('.xprom-modal')?.remove();
+      _XG.tab[parseInt(r)][parseInt(c)] = peca;
+      _xAposMovimento(not + '=' + (_XP[peca] || peca));
+    }
+
+    // ── IA (minimax simples) ──────────────────────────
+    const _xValores = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+    const _xBonus = {
+      p: [[0, 0, 0, 0, 0, 0, 0, 0], [50, 50, 50, 50, 50, 50, 50, 50], [10, 10, 20, 30, 30, 20, 10, 10], [5, 5, 10, 25, 25, 10, 5, 5], [0, 0, 0, 20, 20, 0, 0, 0], [5, -5, -10, 0, 0, -10, -5, 5], [5, 10, 10, -20, -20, 10, 10, 5], [0, 0, 0, 0, 0, 0, 0, 0]],
+      n: [[-50, -40, -30, -30, -30, -30, -40, -50], [-40, -20, 0, 0, 0, 0, -20, -40], [-30, 0, 10, 15, 15, 10, 0, -30], [-30, 5, 15, 20, 20, 15, 5, -30], [-30, 0, 15, 20, 20, 15, 0, -30], [-30, 5, 10, 15, 15, 10, 5, -30], [-40, -20, 0, 5, 5, 0, -20, -40], [-50, -40, -30, -30, -30, -30, -40, -50]],
+      b: [[-20, -10, -10, -10, -10, -10, -10, -20], [-10, 0, 0, 0, 0, 0, 0, -10], [-10, 0, 5, 10, 10, 5, 0, -10], [-10, 5, 5, 10, 10, 5, 5, -10], [-10, 0, 10, 10, 10, 10, 0, -10], [-10, 10, 10, 10, 10, 10, 10, -10], [-10, 5, 0, 0, 0, 0, 5, -10], [-20, -10, -10, -10, -10, -10, -10, -20]],
+      r: [[0, 0, 0, 0, 0, 0, 0, 0], [5, 10, 10, 10, 10, 10, 10, 5], [-5, 0, 0, 0, 0, 0, 0, -5], [-5, 0, 0, 0, 0, 0, 0, -5], [-5, 0, 0, 0, 0, 0, 0, -5], [-5, 0, 0, 0, 0, 0, 0, -5], [-5, 0, 0, 0, 0, 0, 0, -5], [0, 0, 0, 5, 5, 0, 0, 0]],
+      q: [[-20, -10, -10, -5, -5, -10, -10, -20], [-10, 0, 0, 0, 0, 0, 0, -10], [-10, 0, 5, 5, 5, 5, 0, -10], [-5, 0, 5, 5, 5, 5, 0, -5], [0, 0, 5, 5, 5, 5, 0, -5], [-10, 5, 5, 5, 5, 5, 0, -10], [-10, 0, 5, 0, 0, 0, 0, -10], [-20, -10, -10, -5, -5, -10, -10, -20]],
+      k: [[-30, -40, -40, -50, -50, -40, -40, -30], [-30, -40, -40, -50, -50, -40, -40, -30], [-30, -40, -40, -50, -50, -40, -40, -30], [-30, -40, -40, -50, -50, -40, -40, -30], [-20, -30, -30, -40, -40, -30, -30, -20], [-10, -20, -20, -20, -20, -20, -20, -10], [20, 20, 0, 0, 0, 0, 20, 20], [20, 30, 10, 0, 0, 10, 30, 20]]
+    };
+
+    function _xAvaliar(tab) {
+      let score = 0;
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const p = tab[r][c]; if (!p) continue;
+          const branca = p === p.toUpperCase();
+          const tipo = p.toLowerCase();
+          const val = _xValores[tipo] || 0;
+          const bon = (_xBonus[tipo] || [])[branca ? r : 7 - r]?.[branca ? c : 7 - c] || 0;
+          score += (branca ? 1 : -1) * (val + bon);
+        }
+      }
+      return score;
+    }
+
+    function _xTodosMovimentos(turno, g) {
+      const movs = [];
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const p = g.tab[r][c]; if (!p) continue;
+          const eB = p === p.toUpperCase();
+          if (turno === 'w' && !eB) continue;
+          if (turno === 'b' && eB) continue;
+          for (const [nr, nc] of _xMovimentos(r, c, g)) movs.push([r, c, nr, nc]);
+        }
+      }
+      return movs;
+    }
+
+    function _xMinimax(g, prof, alpha, beta, maxim) {
+      if (prof === 0) return _xAvaliar(g.tab);
+      const movs = _xTodosMovimentos(maxim ? 'w' : 'b', g);
+      if (!movs.length) return maxim ? -99999 : 99999;
+      if (maxim) {
+        let best = -99999;
+        for (const [r1, c1, r2, c2] of movs) {
+          const g2 = { ...g, tab: g.tab.map(r => [...r]), roques: { ...g.roques } };
+          g2.tab[r2][c2] = g2.tab[r1][c1]; g2.tab[r1][c1] = '';
+          g2.turno = 'b';
+          const v = _xMinimax(g2, prof - 1, alpha, beta, false);
+          best = Math.max(best, v); alpha = Math.max(alpha, v);
+          if (beta <= alpha) break;
+        }
+        return best;
+      } else {
+        let best = 99999;
+        for (const [r1, c1, r2, c2] of movs) {
+          const g2 = { ...g, tab: g.tab.map(r => [...r]), roques: { ...g.roques } };
+          g2.tab[r2][c2] = g2.tab[r1][c1]; g2.tab[r1][c1] = '';
+          g2.turno = 'w';
+          const v = _xMinimax(g2, prof - 1, alpha, beta, true);
+          best = Math.min(best, v); beta = Math.min(beta, v);
+          if (beta <= alpha) break;
+        }
+        return best;
+      }
+    }
+
+    function _xIAJogar() {
+      const g = _XG; if (!g || g.fim || g.turno !== 'b') return;
+      const movs = _xTodosMovimentos('b', g);
+      if (!movs.length) return;
+
+      let best = 99999, bestMov = movs[0];
+      // Embaralha para variar quando empate
+      movs.sort(() => Math.random() - .5);
+      for (const [r1, c1, r2, c2] of movs) {
+        const g2 = { ...g, tab: g.tab.map(r => [...r]), roques: { ...g.roques } };
+        g2.tab[r2][c2] = g2.tab[r1][c1]; g2.tab[r1][c1] = '';
+        g2.turno = 'w';
+        const v = _xMinimax(g2, 2, -99999, 99999, true);
+        if (v < best) { best = v; bestMov = [r1, c1, r2, c2]; }
+      }
+      const [r1, c1, r2, c2] = bestMov;
+      _xUltMov = [r1, c1, r2, c2];
+      _xMover(r1, c1, r2, c2, 'q'); // auto-promove para rainha
+    }
+
+    // ── DESFAZER ─────────────────────────────────────
+    function _xDesfazer() {
+      // Implementação simples: reinicia (histórico completo viria com mais estado)
+      if (_XG?.hist?.length === 0) return;
+      _xNovoJogo(_XG?.modo);
+    }
     // ══════════════════════════════════════════════════════
     //  BOOT
     // ══════════════════════════════════════════════════════
