@@ -7490,6 +7490,576 @@ Cogito ergo sum | René Descartes'></textarea>
       if (_XG?.hist?.length === 0) return;
       _xNovoJogo(_XG?.modo);
     }
+    // ── BLACKJACK ─────────────────────────────────────────
+    reg('blackjack', {
+      name: 'Blackjack', icon: '🃏',
+      desc: 'Jogue Blackjack contra o dealer', def: false,
+      tb() { return pon('blackjack') ? `<button class="tbbtn" onclick="openBJScreen()">🃏 Blackjack</button>` : ''; },
+      onToggle(on) {
+        if (!on) {
+          const s = document.getElementById('bjScreen');
+          const m = document.querySelector('.main');
+          if (s) s.style.display = 'none';
+          if (m) m.style.display = 'flex';
+          const b = document.getElementById('bjBtn');
+          if (b) b.remove();
+          document.getElementById('fab').style.display = getL() ? 'flex' : 'none';
+        } else { _bjInit(); }
+      }
+    });
+
+    // ── CSS ──────────────────────────────────────────────
+    (() => {
+      const s = document.createElement('style');
+      s.textContent = `
+    .bj-screen{
+      flex:1;overflow-y:auto;overflow-x:scroll;
+      padding:16px;flex-direction:column;gap:16px;
+      background:radial-gradient(ellipse at 50% 0%,#1a4a2e 0%,#0d2818 60%,#0a0a0f 100%);
+      box-sizing:border-box;min-height:0;
+    }
+
+    /* Mesa feltro */
+    .bj-mesa{
+      background:radial-gradient(ellipse at 50% 40%,#1e5c34 0%,#154525 100%);
+      border:3px solid #8B6914;border-radius:20px;
+      padding:20px;display:flex;flex-direction:column;gap:16px;
+      box-shadow:0 8px 40px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.05);
+      position:relative;overflow:clip;
+    }
+    .bj-mesa::before{
+      content:'';position:absolute;inset:6px;
+      border:1px solid rgba(139,105,20,.4);border-radius:16px;pointer-events:none;
+    }
+
+    /* Área do dealer / jogador */
+    .bj-area{display:flex;flex-direction:column;gap:8px}
+    .bj-area-label{
+      font-size:11px;font-weight:700;letter-spacing:2px;
+      text-transform:uppercase;color:rgba(255,255,255,.5);
+      font-family:'JetBrains Mono',monospace;
+      display:flex;align-items:center;gap:8px;
+    }
+    .bj-pontos{
+      font-size:13px;font-family:'JetBrains Mono',monospace;
+      color:#e8c84a;font-weight:700;
+    }
+    .bj-pontos.bust{color:#e8565e}
+    .bj-pontos.bj{color:#3ecf8e}
+
+    /* Cartas */
+    .bj-cartas{
+      display:flex;gap:8px;flex-wrap:wrap;min-height:90px;
+      align-items:flex-start;
+    }
+    .bj-carta{
+      width:58px;height:84px;border-radius:8px;
+      display:flex;flex-direction:column;justify-content:space-between;
+      padding:5px 6px;font-family:'Syne',sans-serif;font-weight:800;
+      box-shadow:0 4px 12px rgba(0,0,0,.5);
+      animation:cartaEntrar .3s cubic-bezier(.4,0,.2,1);
+      flex-shrink:0;position:relative;user-select:none;
+    }
+    @keyframes cartaEntrar{
+      from{opacity:0;transform:translateY(-20px) rotate(-5deg)}
+      to{opacity:1;transform:translateY(0) rotate(0)}
+    }
+    .bj-carta.branca{
+      background:white;color:#111;border:1px solid #ddd;
+    }
+    .bj-carta.vermelha{
+      background:white;color:#dc143c;border:1px solid #ddd;
+    }
+    .bj-carta.costas{
+      background:linear-gradient(135deg,#1a237e,#283593);
+      border:2px solid #3949ab;
+    }
+    .bj-carta.costas::after{
+      content:'🂠';font-size:40px;position:absolute;
+      top:50%;left:50%;transform:translate(-50%,-50%);
+      opacity:.3;
+    }
+    .bj-carta-val{font-size:15px;line-height:1}
+    .bj-carta-naipe{font-size:20px;text-align:center;line-height:1}
+    .bj-carta-val-b{font-size:15px;line-height:1;align-self:flex-end;transform:rotate(180deg)}
+
+    /* Divider */
+    .bj-divider{
+      height:1px;background:rgba(255,255,255,.1);margin:0 -20px;
+    }
+
+    /* Fichas e saldo */
+    .bj-saldo-wrap{
+      display:flex;align-items:center;justify-content:space-between;
+      flex-wrap:wrap;gap:8px;
+    }
+    .bj-saldo{
+      font-size:18px;font-weight:800;color:#e8c84a;
+      font-family:'JetBrains Mono',monospace;
+      display:flex;align-items:center;gap:6px;
+    }
+    .bj-aposta-atual{
+      font-size:12px;font-family:'JetBrains Mono',monospace;
+      color:rgba(255,255,255,.6);
+    }
+
+    /* Fichas */
+    .bj-fichas{
+      display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    }
+    .bj-ficha{
+      width:50px;height:50px;border-radius:50%;
+      border:3px dashed rgba(255,255,255,.5);
+      font-size:11px;font-weight:800;font-family:'JetBrains Mono',monospace;
+      cursor:pointer;transition:all .15s;
+      display:flex;align-items:center;justify-content:center;
+      color:white;box-shadow:0 4px 10px rgba(0,0,0,.4);
+      flex-shrink:0;
+    }
+    .bj-ficha:active{transform:scale(.9) translateY(2px)}
+    .bj-ficha.f1{background:radial-gradient(circle,#e8e8e8,#aaa);color:#333;border-color:rgba(0,0,0,.3)}
+    .bj-ficha.f5{background:radial-gradient(circle,#ff6b6b,#cc0000)}
+    .bj-ficha.f25{background:radial-gradient(circle,#4fa7e8,#1a5fa8)}
+    .bj-ficha.f100{background:radial-gradient(circle,#2ecc71,#1a7a43)}
+    .bj-ficha.f500{background:radial-gradient(circle,#a57af0,#6a3fa8)}
+    .bj-ficha:disabled,.bj-ficha[disabled]{opacity:.35;pointer-events:none}
+
+    /* Botões de ação */
+    .bj-acoes{
+      display:flex;gap:8px;flex-wrap:wrap;
+    }
+    .bj-btn{
+      flex:1;min-width:80px;padding:12px 8px;border-radius:10px;
+      font-family:'Syne',sans-serif;font-size:13px;font-weight:700;
+      cursor:pointer;border:none;transition:all .15s;
+      display:flex;align-items:center;justify-content:center;gap:6px;
+    }
+    .bj-btn:active{transform:scale(.95);opacity:.85}
+    .bj-btn:disabled{opacity:.3;pointer-events:none}
+    .bj-btn.hit{background:linear-gradient(135deg,#2ecc71,#27ae60);color:white}
+    .bj-btn.stand{background:linear-gradient(135deg,#e74c3c,#c0392b);color:white}
+    .bj-btn.double{background:linear-gradient(135deg,#e8c84a,#d4a017);color:#111}
+    .bj-btn.split{background:linear-gradient(135deg,#a57af0,#7c4fa8);color:white}
+    .bj-btn.deal{background:linear-gradient(135deg,#e8c84a,#d4a017);color:#111;font-size:15px}
+    .bj-btn.novo{background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2)}
+    .bj-btn.limpar{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.1)}
+
+    /* Resultado */
+    .bj-resultado{
+      text-align:center;padding:16px;border-radius:12px;
+      font-size:20px;font-weight:800;font-family:'Syne',sans-serif;
+      animation:bjRes .4s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes bjRes{
+      from{opacity:0;transform:scale(.8)}
+      to{opacity:1;transform:scale(1)}
+    }
+    .bj-resultado.ganhou{
+      background:rgba(62,207,142,.15);border:2px solid rgba(62,207,142,.4);color:#3ecf8e;
+    }
+    .bj-resultado.perdeu{
+      background:rgba(232,86,94,.15);border:2px solid rgba(232,86,94,.4);color:#e8565e;
+    }
+    .bj-resultado.empate{
+      background:rgba(232,200,74,.1);border:2px solid rgba(232,200,74,.3);color:#e8c84a;
+    }
+
+    /* Histórico de mãos */
+    .bj-hist{
+      display:flex;gap:6px;flex-wrap:wrap;
+    }
+    .bj-hist-item{
+      font-size:10px;font-family:'JetBrains Mono',monospace;
+      padding:2px 8px;border-radius:20px;
+    }
+    .bj-hist-item.g{background:rgba(62,207,142,.15);color:#3ecf8e;border:1px solid rgba(62,207,142,.3)}
+    .bj-hist-item.p{background:rgba(232,86,94,.1);color:#e8565e;border:1px solid rgba(232,86,94,.3)}
+    .bj-hist-item.e{background:rgba(232,200,74,.08);color:#e8c84a;border:1px solid rgba(232,200,74,.2)}
+
+    /* Stats */
+    .bj-stats{
+      display:flex;gap:12px;flex-wrap:wrap;justify-content:center;
+    }
+    .bj-stat{
+      display:flex;flex-direction:column;align-items:center;gap:2px;
+      background:rgba(0,0,0,.2);border-radius:10px;padding:8px 14px;
+    }
+    .bj-stat-val{font-size:18px;font-weight:800;color:#e8c84a;font-family:'JetBrains Mono',monospace}
+    .bj-stat-label{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px}
+  `;
+      document.head.appendChild(s);
+    })();
+
+    // ── ESTADO ──────────────────────────────────────────
+    function _bjEstadoInicial() {
+      return {
+        saldo: 1000, aposta: 0,
+        maoCasa: [], maoJog: [],
+        deck: [], fase: 'apostando',
+        resultado: null,
+        hist: [],
+        stats: { ganhos: 0, perdas: 0, empates: 0, maiorSaldo: 1000 },
+      };
+    }
+    if (!S._bj || !S._bj.stats) S._bj = _bjEstadoInicial();
+
+    const _BJ_NAIPES = ['♠', '♥', '♦', '♣'];
+    const _BJ_VALS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    function _bjCorNaipe(n) { return (n === '♥' || n === '♦') ? 'vermelha' : 'branca'; }
+    function _bjInit() {
+      if (!document.getElementById('bjScreen')) {
+        const s = document.createElement('div');
+        s.id = 'bjScreen'; s.className = 'bj-screen';
+        s.style.display = 'none';
+        document.querySelector('.body').appendChild(s);
+      }
+      if (!document.getElementById('bjBtn')) {
+        const b = document.createElement('button');
+        b.id = 'bjBtn'; b.title = 'Blackjack'; b.textContent = '🃏';
+        b.className = 'ibtn'; b.onclick = openBJScreen;
+        document.querySelector('.hright').prepend(b);
+      }
+    }
+
+    function openBJScreen() {
+      const s = document.getElementById('bjScreen');
+      const m = document.querySelector('.main');
+      const b = document.getElementById('bjBtn');
+      const fab = document.getElementById('fab');
+      if (!s || !m) return;
+      const isOpen = s.style.display === 'flex';
+      if (isOpen) {
+        s.style.display = 'none'; m.style.display = 'flex';
+        b.style.background = ''; b.style.color = '';
+        fab.style.display = getL() ? 'flex' : 'none';
+      } else {
+        m.style.display = 'none'; s.style.display = 'flex';
+        b.style.background = 'var(--accent)'; b.style.color = 'white';
+        fab.style.display = 'none';
+        _bjRender();
+      }
+    }
+
+    // ── BARALHO ──────────────────────────────────────
+    function _bjNovoDeck() {
+      const deck = [];
+      for (let d = 0; d < 6; d++) // 6 baralhos
+        for (const n of _BJ_NAIPES)
+          for (const v of _BJ_VALS)
+            deck.push({ v, n });
+      // Embaralha
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    }
+
+    function _bjTirar() {
+      const g = S._bj;
+      if (g.deck.length < 20) g.deck = _bjNovoDeck();
+      return g.deck.pop();
+    }
+
+    function _bjValCarta(v) {
+      if (v === 'A') return 11;
+      if (['J', 'Q', 'K'].includes(v)) return 10;
+      return parseInt(v);
+    }
+
+    function _bjPontos(mao) {
+      let total = 0, ases = 0;
+      for (const c of mao) {
+        total += _bjValCarta(c.v);
+        if (c.v === 'A') ases++;
+      }
+      while (total > 21 && ases > 0) { total -= 10; ases--; }
+      return total;
+    }
+
+    function _bjEBJ(mao) { return mao.length === 2 && _bjPontos(mao) === 21; }
+
+    // ── AÇÕES DO JOGO ────────────────────────────────
+    function bjApostar(val) {
+      const g = S._bj;
+      if (g.fase !== 'apostando') return;
+      if (g.aposta + val > g.saldo) return;
+      g.aposta += val;
+      save(); _bjRender();
+    }
+
+    function bjLimparAposta() {
+      const g = S._bj;
+      if (g.fase !== 'apostando') { g.aposta = 0; g.fase = 'apostando'; g.maoCasa = []; g.maoJog = []; g.resultado = null; save(); _bjRender(); return; }
+      g.aposta = 0; save(); _bjRender();
+    }
+
+    function bjDeal() {
+      const g = S._bj;
+      if (g.aposta <= 0 || g.aposta > g.saldo) return;
+      if (g.deck.length < 20) g.deck = _bjNovoDeck();
+
+      g.maoJog = [_bjTirar(), _bjTirar()];
+      g.maoCasa = [_bjTirar(), { ...(_bjTirar()), oculta: true }];
+      g.fase = 'jogando';
+      g.resultado = null;
+
+      // Blackjack imediato?
+      if (_bjEBJ(g.maoJog)) {
+        _bjFimRodada();
+      } else {
+        save(); _bjRender();
+      }
+    }
+
+    function bjHit() {
+      const g = S._bj;
+      if (g.fase !== 'jogando') return;
+      g.maoJog.push(_bjTirar());
+      if (_bjPontos(g.maoJog) > 21) _bjFimRodada();
+      else { save(); _bjRender(); }
+    }
+
+    function bjStand() {
+      const g = S._bj;
+      if (g.fase !== 'jogando') return;
+      // Revela carta oculta
+      g.maoCasa = g.maoCasa.map(c => ({ ...c, oculta: false }));
+      // Dealer joga
+      while (_bjPontos(g.maoCasa) < 17) g.maoCasa.push(_bjTirar());
+      _bjFimRodada();
+    }
+
+    function bjDouble() {
+      const g = S._bj;
+      if (g.fase !== 'jogando' || g.maoJog.length !== 2 || g.aposta * 2 > g.saldo) return;
+      g.aposta *= 2;
+      g.maoJog.push(_bjTirar());
+      g.maoCasa = g.maoCasa.map(c => ({ ...c, oculta: false }));
+      while (_bjPontos(g.maoCasa) < 17) g.maoCasa.push(_bjTirar());
+      _bjFimRodada();
+    }
+
+    function _bjFimRodada() {
+      const g = S._bj;
+      g.maoCasa = g.maoCasa.map(c => ({ ...c, oculta: false }));
+      const pJ = _bjPontos(g.maoJog);
+      const pC = _bjPontos(g.maoCasa);
+      const bjJ = _bjEBJ(g.maoJog);
+      const bjC = _bjEBJ(g.maoCasa);
+
+      let res, delta = 0;
+      if (pJ > 21) {
+        res = 'perdeu'; delta = -g.aposta;
+      } else if (bjJ && !bjC) {
+        res = 'ganhou'; delta = Math.floor(g.aposta * 1.5); // paga 3:2
+      } else if (bjC && !bjJ) {
+        res = 'perdeu'; delta = -g.aposta;
+      } else if (pC > 21 || pJ > pC) {
+        res = 'ganhou'; delta = g.aposta;
+      } else if (pJ === pC) {
+        res = 'empate'; delta = 0;
+      } else {
+        res = 'perdeu'; delta = -g.aposta;
+      }
+
+      g.saldo += delta;
+      g.resultado = { tipo: res, delta, pJ, pC };
+      g.fase = 'fim';
+      g.hist.push(res === 'ganhou' ? 'g' : res === 'perdeu' ? 'p' : 'e');
+      if (g.hist.length > 20) g.hist.shift();
+
+      if (res === 'ganhou') g.stats.ganhos++;
+      else if (res === 'perdeu') g.stats.perdas++;
+      else g.stats.empates++;
+      if (g.saldo > g.stats.maiorSaldo) g.stats.maiorSaldo = g.saldo;
+
+      // Saldo zerado
+      if (g.saldo <= 0) g.saldo = 500; // reload automático
+
+      save(); _bjRender();
+    }
+
+    function bjNovaRodada() {
+      const g = S._bj;
+      g.aposta = 0; g.fase = 'apostando';
+      g.maoCasa = []; g.maoJog = []; g.resultado = null;
+      save(); _bjRender();
+    }
+
+    function bjRestart() {
+      S._bj = {
+        saldo: 1000, aposta: 0, maoCasa: [], maoJog: [],
+        deck: [], fase: 'apostando', resultado: null,
+        hist: [], stats: { ganhos: 0, perdas: 0, empates: 0, maiorSaldo: 1000 },
+      };
+      save(); _bjRender();
+    }
+
+    // ── RENDER ───────────────────────────────────────
+    function _bjCartaHtml(carta) {
+      if (carta.oculta) return `<div class="bj-carta costas"></div>`;
+      const cor = _bjCorNaipe(carta.n);
+      return `<div class="bj-carta ${cor}">
+    <span class="bj-carta-val">${carta.v}${carta.n}</span>
+    <span class="bj-carta-naipe">${carta.n}</span>
+    <span class="bj-carta-val-b">${carta.v}${carta.n}</span>
+  </div>`;
+    }
+
+    function _bjRender() {
+      const s = document.getElementById('bjScreen');
+      if (!s || s.style.display !== 'flex') return;
+      if (!S._bj) S._bj = _bjEstadoInicial();
+      if (!S._bj.stats) S._bj.stats = { ganhos: 0, perdas: 0, empates: 0, maiorSaldo: 1000 };
+      if (!S._bj.hist) S._bj.hist = [];
+      if (!S._bj.deck) S._bj.deck = [];
+      const g = S._bj;
+      // ... resto da função
+
+      const pJ = g.maoJog.length ? _bjPontos(g.maoJog) : 0;
+      const pC = g.maoCasa.length ? _bjPontos(g.maoCasa.filter(c => !c.oculta)) : 0;
+      const bjJ = _bjEBJ(g.maoJog);
+      const bjC = _bjEBJ(g.maoCasa);
+
+      const ptClsJ = pJ > 21 ? 'bust' : bjJ ? 'bj' : '';
+      const ptClsC = pC > 21 ? 'bust' : bjC ? 'bj' : '';
+
+      // Fichas disponíveis
+      const fichas = [
+        { v: 1, cls: 'f1' }, { v: 5, cls: 'f5' }, { v: 25, cls: 'f25' },
+        { v: 100, cls: 'f100' }, { v: 500, cls: 'f500' }
+      ];
+
+      const podeApostar = g.fase === 'apostando';
+      const podeJogar = g.fase === 'jogando';
+      const podeDeal = podeApostar && g.aposta > 0;
+      const podeDouble = podeJogar && g.maoJog.length === 2 && g.aposta * 2 <= g.saldo;
+
+      // Resultado
+      let resHtml = '';
+      if (g.resultado) {
+        const r = g.resultado;
+        const txt = r.tipo === 'ganhou'
+          ? `🎉 Ganhou! +${r.delta} fichas${bjJ ? ' — BLACKJACK! 🃏' : ''}`
+          : r.tipo === 'perdeu'
+            ? `💸 Perdeu ${Math.abs(r.delta)} fichas${r.pJ > 21 ? ' — Estourou!' : bjC ? ' — Dealer BJ!' : ''}`
+            : `🤝 Empate! Aposta devolvida`;
+        resHtml = `<div class="bj-resultado ${r.tipo}">${txt}</div>`;
+      }
+
+      // Histórico visual
+      const histHtml = g.hist.slice(-12).map(h =>
+        `<span class="bj-hist-item ${h}">${h === 'g' ? 'W' : h === 'p' ? 'L' : 'D'}</span>`
+      ).join('');
+
+      s.innerHTML = `
+    <!-- Cabeçalho -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="font-size:18px;font-weight:800;color:white">🃏 Blackjack</div>
+      <button class="bj-btn novo" style="flex:0;padding:8px 14px;font-size:12px" onclick="bjRestart()">
+        🔄 Zerar
+      </button>
+    </div>
+
+    <!-- Mesa principal -->
+    <div class="bj-mesa">
+
+      <!-- Dealer -->
+      <div class="bj-area">
+        <div class="bj-area-label">
+          🏦 Dealer
+          ${g.maoCasa.length ? `<span class="bj-pontos ${ptClsC}">${pC}${pC > 21 ? ' BUST' : bjC ? ' BJ' : ''}</span>` : ''}
+        </div>
+        <div class="bj-cartas">
+          ${g.maoCasa.map(c => _bjCartaHtml(c)).join('')}
+        </div>
+      </div>
+
+      <div class="bj-divider"></div>
+
+      <!-- Jogador -->
+      <div class="bj-area">
+        <div class="bj-area-label">
+          👤 Você
+          ${g.maoJog.length ? `<span class="bj-pontos ${ptClsJ}">${pJ}${pJ > 21 ? ' BUST' : bjJ ? ' BJ!' : ''}</span>` : ''}
+        </div>
+        <div class="bj-cartas">
+          ${g.maoJog.map(c => _bjCartaHtml(c)).join('')}
+        </div>
+      </div>
+
+      <!-- Resultado -->
+      ${resHtml}
+
+      <!-- Ações de jogo -->
+      ${podeJogar ? `
+      <div class="bj-acoes">
+        <button class="bj-btn hit" onclick="bjHit()">👆 Pedir</button>
+        <button class="bj-btn stand" onclick="bjStand()">✋ Parar</button>
+        <button class="bj-btn double" onclick="bjDouble()" ${podeDouble ? '' : 'disabled'}>⚡ Dobrar</button>
+      </div>`: ''}
+
+      ${g.fase === 'fim' ? `
+      <div class="bj-acoes">
+        <button class="bj-btn deal" onclick="bjNovaRodada()" style="font-size:15px">▶ Nova Rodada</button>
+      </div>`: ''}
+
+    </div>
+
+    <!-- Saldo e fichas -->
+    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px">
+      <div class="bj-saldo-wrap">
+        <div class="bj-saldo">
+          🪙 ${g.saldo.toLocaleString('pt-BR')}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+          ${g.aposta > 0 ? `<div class="bj-aposta-atual">Aposta: ${g.aposta}</div>` : ''}
+          ${podeApostar && g.aposta > 0 ? `<button class="bj-btn limpar" style="flex:0;padding:4px 10px;font-size:11px;margin-top:0" onclick="bjLimparAposta()">✕ Limpar</button>` : ''}
+          ${g.fase === 'fim' && g.aposta > 0 ? `<button class="bj-btn limpar" style="flex:0;padding:4px 10px;font-size:11px;margin-top:0" onclick="bjLimparAposta()">↺ Repetir aposta</button>` : ''}
+        </div>
+      </div>
+
+      <!-- Fichas -->
+      ${podeApostar ? `
+      <div class="bj-fichas">
+        ${fichas.map(f => `
+          <button class="bj-ficha ${f.cls}" onclick="bjApostar(${f.v})"
+            ${f.v > g.saldo - g.aposta ? 'disabled' : ''}>
+            ${f.v}
+          </button>`).join('')}
+      </div>
+      <button class="bj-btn deal" onclick="bjDeal()" ${podeDeal ? '' : 'disabled'}>
+        🃏 Distribuir
+      </button>`: ''}
+    </div>
+
+    <!-- Histórico e stats -->
+    ${g.hist.length ? `
+    <div style="background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.35)">Histórico</div>
+      <div class="bj-hist">${histHtml}</div>
+      <div class="bj-stats">
+        <div class="bj-stat">
+          <div class="bj-stat-val" style="color:#3ecf8e">${g.stats.ganhos}</div>
+          <div class="bj-stat-label">Vitórias</div>
+        </div>
+        <div class="bj-stat">
+          <div class="bj-stat-val" style="color:#e8565e">${g.stats.perdas}</div>
+          <div class="bj-stat-label">Derrotas</div>
+        </div>
+        <div class="bj-stat">
+          <div class="bj-stat-val" style="color:#e8c84a">${g.stats.empates}</div>
+          <div class="bj-stat-label">Empates</div>
+        </div>
+        <div class="bj-stat">
+          <div class="bj-stat-val">🪙${g.stats.maiorSaldo}</div>
+          <div class="bj-stat-label">Recorde</div>
+        </div>
+      </div>
+    </div>`: ''}
+  `;
+    }
     // ══════════════════════════════════════════════════════
     //  BOOT
     // ══════════════════════════════════════════════════════
