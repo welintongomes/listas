@@ -123,55 +123,6 @@
     }
 
     /* ─── SIDEBAR ─── */
-    .sidebar {
-      width: 250px;
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      overflow: clip;
-      transition: transform .3s cubic-bezier(.4, 0, .2, 1);
-      z-index: 40
-    }
-
-    @media(max-width:680px) {
-      .sidebar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        transform: translateX(-100%);
-        box-shadow: 6px 0 30px rgba(0, 0, 0, .6)
-      }
-
-      .sidebar.open {
-        transform: translateX(0)
-      }
-
-      .overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(0, 0, 0, .55);
-        z-index: 39;
-        display: none
-      }
-
-      .overlay.open {
-        display: block
-      }
-    }
-
-    @media(min-width:681px) {
-      .overlay {
-        display: none !important
-      }
-
-      .mbtn {
-        display: none !important
-      }
-    }
-
     .sb-scroll {
       overflow-y: auto;
       padding: 1px 12px 2px 12px;
@@ -186,15 +137,6 @@
 
     .sb-scroll.recolhido {
       height: 115px
-    }
-
-    .sb-label {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--text3);
-      padding: 4px 4px 8px
     }
 
     .sb-search {
@@ -221,235 +163,6 @@
 
     .sb-search input::placeholder {
       color: var(--text3)
-    }
-
-    .prow.sb-hidden {
-      display: none
-    }
-
-    .lent.sb-hidden {
-      display: none
-    }
-
-    .pg {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      margin-bottom: 16px;
-      overflow-y: auto;
-      overflow-x: hidden;
-    }
-
-    .prow {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 3px;
-      border-radius: var(--r);
-      cursor: pointer;
-      transition: background .15s;
-      border: 1px solid transparent;
-      user-select: none;
-    }
-
-    .prow:active {
-      opacity: .8
-    }
-
-    .prow.on {
-      background: rgba(124, 106, 247, .1);
-      border-color: rgba(124, 106, 247, .2)
-    }
-
-    .picon {
-      font-size: 18px;
-      width: 22px;
-      text-align: center
-    }
-
-    .pinfo {
-      flex: 1;
-      min-width: 0
-    }
-
-    .pname {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text2)
-    }
-
-    .prow.on .pname {
-      color: var(--accent)
-    }
-
-    .pdesc {
-      font-size: 11px;
-      color: var(--text3);
-      margin-top: 1px
-    }
-
-    .tpill {
-      width: 36px;
-      height: 20px;
-      border-radius: 10px;
-      background: var(--border);
-      position: relative;
-      transition: background .2s;
-      flex-shrink: 0
-    }
-
-    .tpill::after {
-      content: '';
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: white;
-      top: 3px;
-      left: 3px;
-      transition: transform .2s
-    }
-
-    .prow.on .tpill {
-      background: var(--accent)
-    }
-
-    .prow.on .tpill::after {
-      transform: translateX(16px)
-    }
-
-    .lents {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      max-height: 375px;
-      overflow-y: auto;
-      overflow-x: hidden;
-    }
-
-    .lent {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px;
-      border-radius: var(--r);
-      cursor: pointer;
-      transition: background .15s;
-      border: 1px solid transparent
-    }
-
-    .lent:active {
-      opacity: .8
-    }
-
-    .lent.on {
-      background: rgba(124, 106, 247, .1);
-      border-color: rgba(124, 106, 247, .2)
-    }
-
-    .ldot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      opacity: .4
-    }
-
-    .lent.on .ldot {
-      opacity: 1
-    }
-
-    .lname {
-      flex: 1;
-      font-size: 13px;
-      color: var(--text2);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap
-    }
-
-    .lent.on .lname {
-      color: var(--text)
-    }
-
-    .lcnt {
-      font-size: 10px;
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--text3);
-      flex-shrink: 0
-    }
-
-    .ldel {
-      width: 20px;
-      height: 20px;
-      border-radius: 5px;
-      border: none;
-      background: transparent;
-      color: var(--text3);
-      font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity .15s
-    }
-
-    .lent:hover .ldel,
-    .lent:active .ldel {
-      opacity: 1
-    }
-
-    .sb-foot {
-      padding: 12px;
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px
-    }
-
-    .nlbtn {
-      width: 100%;
-      padding: 11px;
-      border-radius: var(--r);
-      background: rgba(124, 106, 247, .1);
-      border: 1px dashed rgba(124, 106, 247, .35);
-      color: var(--accent);
-      font-family: 'Syne', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background .15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px
-    }
-
-    .nlbtn:active {
-      background: rgba(124, 106, 247, .2)
-    }
-
-    .guidebtn {
-      width: 100%;
-      padding: 9px;
-      border-radius: var(--r);
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text3);
-      font-family: 'Syne', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px
-    }
-
-    .guidebtn:active {
-      opacity: .7
     }
 
     /* ─── MAIN ─── */
@@ -836,7 +549,7 @@ background:var(--accent); */
     }
 
     .itext.done {
-      text-decoration: line-through;
+      /* text-decoration: line-through; */
       color: var(--text3)
     }
 
@@ -1545,11 +1258,96 @@ background:var(--accent); */
       padding: 10px 12px 0
     }
 
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      width: 270px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow: hidden;
+      transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+      z-index: 40;
+    }
+
+    @media(max-width:680px) {
+      .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        box-shadow: 6px 0 30px rgba(0, 0, 0, .6)
+      }
+
+      .sidebar.open {
+        transform: translateX(0)
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, .55);
+        z-index: 39;
+        display: none
+      }
+
+      .overlay.open {
+        display: block
+      }
+    }
+
+    @media(min-width:681px) {
+      .overlay {
+        display: none !important
+      }
+
+      .mbtn {
+        display: none !important
+      }
+    }
+
+    /* Cabeçalho fixo da sidebar */
+    .sb-header {
+      padding: 12px 12px 0;
+      flex-shrink: 0;
+    }
+
+    /* Busca */
+    .sb-search-wrap {
+      position: relative;
+      padding: 10px 12px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sb-search-wrap input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      padding: 8px 32px 8px 12px;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .sb-search-wrap input:focus {
+      border-color: var(--accent)
+    }
+
+    .sb-search-wrap input::placeholder {
+      color: var(--text3)
+    }
+
     .sb-clear {
       position: absolute;
-      left: 24px;
-      top: 56%;
-      transform: translateY(-6px);
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
       background: none;
       border: none;
       color: var(--text3);
@@ -1565,6 +1363,322 @@ background:var(--accent); */
       align-items: center;
       justify-content: center
     }
+
+    /* Seções com scroll independente */
+    .sb-section {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      transition: flex .35s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .sb-section.expandido {
+      flex: 3
+    }
+
+    .sb-section.recolhido {
+      flex: 0.6
+    }
+
+    .sb-section:not(.expandido):not(.recolhido) {
+      flex: 1
+    }
+
+    .sb-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px 6px;
+      flex-shrink: 0;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .sb-section-header:active {
+      opacity: .7
+    }
+
+    .sb-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sb-label-count {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text3);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 20px;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .sb-section-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 0 8px 8px;
+      min-height: 0;
+    }
+
+    .sb-section-body::-webkit-scrollbar {
+      width: 3px
+    }
+
+    .sb-section-body::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    .sb-section-body::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px
+    }
+
+    /* Divisor entre seções */
+    .sb-divider {
+      height: 1px;
+      background: var(--border);
+      flex-shrink: 0;
+      margin: 0;
+    }
+
+    /* Plugin rows */
+    .pg {
+      display: flex;
+      flex-direction: column;
+      gap: 2px
+    }
+
+    .prow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 6px;
+      border-radius: var(--r);
+      cursor: pointer;
+      transition: background .15s;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .prow:active {
+      opacity: .8
+    }
+
+    .prow.on {
+      background: rgba(124, 106, 247, .1);
+      border-color: rgba(124, 106, 247, .2)
+    }
+
+    .prow.sb-hidden {
+      display: none
+    }
+
+    .picon {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0
+    }
+
+    .pinfo {
+      flex: 1;
+      min-width: 0
+    }
+
+    .pname {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2)
+    }
+
+    .prow.on .pname {
+      color: var(--accent)
+    }
+
+    .pdesc {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 1px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    .tpill {
+      width: 32px;
+      height: 18px;
+      border-radius: 9px;
+      background: var(--border);
+      position: relative;
+      transition: background .2s;
+      flex-shrink: 0;
+    }
+
+    .tpill::after {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: white;
+      top: 3px;
+      left: 3px;
+      transition: transform .2s;
+    }
+
+    .prow.on .tpill {
+      background: var(--accent)
+    }
+
+    .prow.on .tpill::after {
+      transform: translateX(14px)
+    }
+
+    /* Lista entries */
+    .lents {
+      display: flex;
+      flex-direction: column;
+      gap: 2px
+    }
+
+    .lent {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 6px;
+      border-radius: var(--r);
+      cursor: pointer;
+      transition: background .15s;
+      border: 1px solid transparent;
+    }
+
+    .lent:active {
+      opacity: .8
+    }
+
+    .lent.on {
+      background: rgba(124, 106, 247, .1);
+      border-color: rgba(124, 106, 247, .2)
+    }
+
+    .lent.sb-hidden {
+      display: none
+    }
+
+    .ldot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      opacity: .4
+    }
+
+    .lent.on .ldot {
+      opacity: 1
+    }
+
+    .lname {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text2);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    .lent.on .lname {
+      color: var(--text)
+    }
+
+    .lcnt {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text3);
+      flex-shrink: 0
+    }
+
+    .ldel {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      border: none;
+      background: transparent;
+      color: var(--text3);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+
+    .lent:hover .ldel,
+    .lent:active .ldel {
+      opacity: 1
+    }
+
+    /* Rodapé */
+    .sb-foot {
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nlbtn {
+      width: 100%;
+      padding: 10px;
+      border-radius: var(--r);
+      background: rgba(124, 106, 247, .1);
+      border: 1px dashed rgba(124, 106, 247, .35);
+      color: var(--accent);
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .nlbtn:active {
+      background: rgba(124, 106, 247, .2)
+    }
+
+    .guidebtn {
+      width: 100%;
+      padding: 8px;
+      border-radius: var(--r);
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text3);
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .guidebtn:active {
+      opacity: .7
+    }
   </style>
 </head>
 
@@ -1573,32 +1687,52 @@ background:var(--accent); */
   <div class="body">
     <div class="overlay" id="ov" onclick="closeSB()"></div>
     <aside class="sidebar" id="sb">
-      <div class="sb-scroll" id="sbScrollPlugins" onmouseenter="_sbExpandir('plugins')"
+
+      <!-- Seção Plugins -->
+      <div class="sb-section" id="sbSectionPlugins" onmouseenter="_sbExpandir('plugins')"
         ontouchstart="_sbExpandir('plugins')">
-        <div class="sb-label" style="margin-top:4px">
-          Plugins
-          <span id="sbPluginCount"
-            style="float:right;opacity:.5;font-weight:400;text-transform:none;letter-spacing:0"></span>
+        <div class="sb-section-header" onclick="_sbExpandir('plugins')">
+          <div class="sb-label">
+            🔌 Plugins
+            <span class="sb-label-count" id="sbPluginCount"></span>
+          </div>
+          <span style="font-size:10px;color:var(--text3)" id="sbPluginArrow">▼</span>
         </div>
-        <div class="pg" id="pg"></div>
+        <div class="sb-section-body">
+          <div class="pg" id="pg"></div>
+        </div>
       </div>
-      <div class="sb-scroll" id="sbScrollListas" onmouseenter="_sbExpandir('listas')"
+
+      <div class="sb-divider"></div>
+
+      <!-- Seção Listas -->
+      <div class="sb-section" id="sbSectionListas" onmouseenter="_sbExpandir('listas')"
         ontouchstart="_sbExpandir('listas')">
-        <div class="sb-label">
-          Listas
-          <span class="hpill" id="hpill" style="float:right">0</span>
+        <div class="sb-section-header" onclick="_sbExpandir('listas')">
+          <div class="sb-label">
+            📋 Listas
+            <span class="sb-label-count" id="hpill">0</span>
+          </div>
+          <span style="font-size:10px;color:var(--text3)" id="sbListasArrow">▼</span>
         </div>
-        <div class="lents" id="lents"></div>
+        <div class="sb-section-body">
+          <div class="lents" id="lents"></div>
+        </div>
       </div>
-      <div class="sb-search">
+
+      <!-- Busca unificada no topo -->
+      <div class="sb-search-wrap">
         <input type="text" id="sbSearch" placeholder="🔍 Buscar plugin ou lista..."
           oninput="filterSB(this.value);toggleSbClear(this)">
         <button class="sb-clear" id="sbClear" onclick="clearSBSearch()" title="Limpar">✕</button>
       </div>
+
+      <!-- Rodapé -->
       <div class="sb-foot">
         <button class="nlbtn" onclick="newList()">＋ Nova lista</button>
         <button class="guidebtn" onclick="openGuide()">📖 Como criar um plugin</button>
       </div>
+
     </aside>
 
     <div class="main">
@@ -2022,12 +2156,22 @@ function setStars(id) {
         const tree = document.createElement('div'); tree.id = 'it';
         rTree(list.items, tree);
         lv.appendChild(tree);
+
       }
 
       // Hook onRenderBottom — depois da árvore (ex: orçamento)
       Object.values(PL).forEach(p => {
         if (pon(p.id) && p.onRenderBottom) p.onRenderBottom(lv, list);
       });
+
+      // Restaura busca ativa após re-render preservando scroll
+      const _si = document.getElementById('si');
+      if (_si && _si.value.trim()) {
+        const _cnt = document.getElementById('cnt');
+        const _scrollPos = _cnt?.scrollTop || 0;
+        doSearch(_si.value, true); // true = modo silencioso, não recolhe filhos expandidos
+        setTimeout(() => { if (_cnt) _cnt.scrollTop = _scrollPos; }, 30);
+      }
     }
 
     function rTree(items, cont) {
@@ -2209,7 +2353,7 @@ function setStars(id) {
       }
     }
 
-    function doSearch(q) {
+    function doSearch(q, preservarFilhos = false) {
       const qu = (q || '').toLowerCase().trim();
       const l = getL();
 
@@ -2233,7 +2377,7 @@ function setStars(id) {
         return;
       }
 
-      // Busca nos DADOS recursivamente (encontra itens mesmo colapsados)
+      // Busca nos DADOS recursivamente
       const matchIds = new Set();
       const parentIds = new Set();
 
@@ -2244,15 +2388,23 @@ function setStars(id) {
             matchIds.add(item.id);
             pais.forEach(pid => parentIds.add(pid));
           }
-          if (item.children && item.children.length) {
-            deep(item.children, pais.concat([item.id]));
-          }
+          if (item.children?.length) deep(item.children, pais.concat([item.id]));
         }
       }
       if (l) deep(l.items, []);
 
-      // Expande TODOS os kids para garantir que itens ocultos estão no DOM
-      document.querySelectorAll('.kids').forEach(kids => kids.classList.remove('col'));
+      // Expande apenas kids de itens com match ou pais de match
+      // Respeita collapsed manual do usuário para os demais
+      if (l) {
+        document.querySelectorAll('.kids').forEach(kids => {
+          const paiId = (kids.id || '').replace('ch-', '');
+          if (!paiId) return;
+          const item = find(l.items, paiId);
+          // Só expande se é pai de match ou tem match — respeita collapsed nos outros
+          if (item && item.collapsed) kids.classList.add('col');
+          else kids.classList.remove('col');
+        });
+      }
 
       // Aplica visibilidade e highlight
       document.querySelectorAll('.irow').forEach(row => {
@@ -2260,6 +2412,7 @@ function setStars(id) {
         const itext = row.querySelector('.itext');
 
         if (matchIds.has(id)) {
+          // Item com match: sempre visível + destaque
           row.classList.remove('search-hidden');
           if (itext) {
             const texto = itext.innerText || '';
@@ -2269,17 +2422,41 @@ function setStars(id) {
               '<mark style="background:#e8c84a;color:#111;border-radius:3px;padding:0 3px;font-weight:700">$1</mark>');
           }
         } else if (parentIds.has(id)) {
+          // Pai de match: visível sem destaque
           row.classList.remove('search-hidden');
         } else {
-          row.classList.add('search-hidden');
+          // Sem relação com match
+          if (!preservarFilhos) {
+            // Modo normal: esconde
+            row.classList.add('search-hidden');
+          } else {
+            // Modo preservar: só esconde se não for filho de um match visível
+            const kidsDoMatch = [...matchIds].some(mid => {
+              const el = document.getElementById('ch-' + mid);
+              return el && el.contains(row);
+            });
+            if (!kidsDoMatch) row.classList.add('search-hidden');
+            else row.classList.remove('search-hidden');
+          }
         }
       });
 
-      // Recolhe kids que não têm nenhum match nem pai de match
+      // Recolhe kids sem relação com match
+      // Aplica visibilidade dos kids respeitando collapsed salvo
       document.querySelectorAll('.kids').forEach(kids => {
         const paiId = (kids.id || '').replace('ch-', '');
         if (!paiId) return;
-        if (!parentIds.has(paiId) && !matchIds.has(paiId)) {
+        const item = l ? find(l.items, paiId) : null;
+
+        if (matchIds.has(paiId) || parentIds.has(paiId)) {
+          // É match ou pai de match — expande SOMENTE se não foi recolhido manualmente
+          if (item && item.collapsed) {
+            kids.classList.add('col'); // usuário recolheu, respeita
+          } else {
+            kids.classList.remove('col'); // expande para mostrar o match
+          }
+        } else {
+          // Sem relação com match — recolhe
           kids.classList.add('col');
         }
       });
@@ -2303,14 +2480,122 @@ function setStars(id) {
     // ══════════════════════════════════════════════════════
     //  EXPORT / IMPORT JSON
     // ══════════════════════════════════════════════════════
-    function exportJ() { const b = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'listflow.json'; a.click(); }
+    function exportJ() {
+      const l = getL();
+      // Se tem lista ativa, oferece escolha
+      openM('⬆ Exportar', `
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn pri" style="margin-top:0" onclick="closeM();_exportLista()">
+        📋 Exportar lista atual${l ? ' — ' + esc(l.name) : ''}
+      </button>
+      <button class="btn" style="margin-top:0" onclick="closeM();_exportTudo()">
+        🗂️ Exportar tudo (backup completo)
+      </button>
+    </div>
+  `, null);
+    }
+
+    function _exportLista() {
+      const l = getL();
+      if (!l) { alert('Nenhuma lista selecionada.'); return; }
+      const dado = { versao: 'lista', lista: l };
+      const b = new Blob([JSON.stringify(dado, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = (l.name || 'lista').replace(/\s+/g, '_') + '.json';
+      a.click();
+    }
+
+    function _exportTudo() {
+      const b = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = 'listflow_backup.json';
+      a.click();
+    }
+
     function importJ() {
-      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
+      openM('⬇ Importar', `
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn pri" style="margin-top:0" onclick="closeM();_importLista()">
+        📋 Importar lista individual
+        <div style="font-size:11px;font-weight:400;opacity:.7;margin-top:2px">Adiciona à sua coleção atual</div>
+      </button>
+      <button class="btn" style="margin-top:0" onclick="closeM();_importTudo()">
+        🗂️ Restaurar backup completo
+        <div style="font-size:11px;font-weight:400;opacity:.7;margin-top:2px">Substitui todos os dados</div>
+      </button>
+    </div>
+  `, null);
+    }
+
+    function _importLista() {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = '.json';
       inp.onchange = e => {
-        const f = e.target.files[0]; if (!f) return; const r = new FileReader();
-        r.onload = ev => { try { const d = JSON.parse(ev.target.result); if (d.lists) { S = d; save(); renderAll(); } } catch { alert('Arquivo inválido'); } };
+        const f = e.target.files[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = ev => {
+          try {
+            const d = JSON.parse(ev.target.result);
+            // Aceita arquivo de lista individual ou backup completo
+            if (d.versao === 'lista' && d.lista) {
+              // Lista individual exportada por este app
+              const lista = d.lista;
+              lista.id = genId(); // novo id para evitar conflito
+              S.lists.push(lista);
+              S.active = lista.id;
+              save(); renderAll();
+              alert(`✅ Lista "${lista.name}" importada com sucesso!`);
+            } else if (d.lists) {
+              // É um backup completo — importa cada lista individualmente
+              openM('📋 Importar do backup', `
+            <div class="fg"><div class="fl">Escolha qual lista importar</div>
+              <select id="impSel" style="font-size:14px">
+                ${d.lists.map((l, i) => `<option value="${i}">${esc(l.name)} (${l.items?.length || 0} itens)</option>`).join('')}
+              </select>
+            </div>
+            <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:4px">
+              A lista será adicionada às suas listas atuais.
+            </div>
+          `, () => {
+                const idx = parseInt(document.getElementById('impSel').value);
+                const lista = { ...d.lists[idx], id: genId() };
+                S.lists.push(lista);
+                S.active = lista.id;
+                save(); renderAll();
+                alert(`✅ Lista "${lista.name}" importada!`);
+              });
+            } else {
+              alert('Arquivo não reconhecido. Use um arquivo exportado pelo ListFlow.');
+            }
+          } catch { alert('Arquivo inválido ou corrompido.'); }
+        };
         r.readAsText(f);
-      }; inp.click();
+      };
+      inp.click();
+    }
+
+    function _importTudo() {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = '.json';
+      inp.onchange = e => {
+        const f = e.target.files[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = ev => {
+          try {
+            const d = JSON.parse(ev.target.result);
+            if (d.lists) {
+              S = d; save(); renderAll();
+              alert('✅ Backup restaurado com sucesso!');
+            } else {
+              alert('Este arquivo não é um backup completo.');
+            }
+          } catch { alert('Arquivo inválido.'); }
+        };
+        r.readAsText(f);
+      };
+      inp.click();
     }
     //x funçoes para x nas barras de pesquisa
     function toggleSrchClear(input) {
@@ -6457,20 +6742,22 @@ Cogito ergo sum | René Descartes'></textarea>
     // ══════════════════════════════════════════════════════
     // para expandir ou recolher um ou outro grupo de itens listas ou plugins
     function _sbExpandir(qual) {
-      const p = document.getElementById('sbScrollPlugins');
-      const l = document.getElementById('sbScrollListas');
-      if (!p || !l) return;
+      const sp = document.getElementById('sbSectionPlugins');
+      const sl = document.getElementById('sbSectionListas');
+      const ap = document.getElementById('sbPluginArrow');
+      const al = document.getElementById('sbListasArrow');
+      if (!sp || !sl) return;
 
       if (qual === 'plugins') {
-        p.classList.add('expandido');
-        p.classList.remove('recolhido');
-        l.classList.add('recolhido');
-        l.classList.remove('expandido');
+        sp.classList.add('expandido'); sp.classList.remove('recolhido');
+        sl.classList.add('recolhido'); sl.classList.remove('expandido');
+        if (ap) ap.textContent = '▲';
+        if (al) al.textContent = '▼';
       } else {
-        l.classList.add('expandido');
-        l.classList.remove('recolhido');
-        p.classList.add('recolhido');
-        p.classList.remove('expandido');
+        sl.classList.add('expandido'); sl.classList.remove('recolhido');
+        sp.classList.add('recolhido'); sp.classList.remove('expandido');
+        if (al) al.textContent = '▲';
+        if (ap) ap.textContent = '▼';
       }
     }
     load();
