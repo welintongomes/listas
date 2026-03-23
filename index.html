@@ -8060,6 +8060,541 @@ Cogito ergo sum | René Descartes'></textarea>
     </div>`: ''}
   `;
     }
+    // ── DAMAS ─────────────────────────────────────────────
+    reg('damas', {
+      name: 'Damas', icon: '🔴',
+      desc: 'Jogue damas contra IA ou outro jogador', def: false,
+      tb() { return pon('damas') ? `<button class="tbbtn" onclick="openDamasScreen()">🔴 Damas</button>` : ''; },
+      onToggle(on) {
+        if (!on) {
+          const s = document.getElementById('damasScreen');
+          const m = document.querySelector('.main');
+          if (s) s.style.display = 'none';
+          if (m) m.style.display = 'flex';
+          const b = document.getElementById('damasBtn');
+          if (b) b.remove();
+          document.getElementById('fab').style.display = getL() ? 'flex' : 'none';
+        } else { _damasInit(); }
+      }
+    });
+
+    (() => {
+      const s = document.createElement('style');
+      s.textContent = `
+    .damas-screen{
+      flex:1;overflow-y:auto;overflow-x:hidden;
+      padding:16px;flex-direction:column;gap:16px;
+      background:radial-gradient(ellipse at 50% 0%,#1a1a2e 0%,#0d0d1a 60%,#0a0a0f 100%);
+      box-sizing:border-box;min-height:0;
+    }
+    .damas-board-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+    .damas-board{
+      display:grid;grid-template-columns:repeat(8,1fr);
+      width:min(460px,92vw);height:min(460px,92vw);
+      border:4px solid #8B6914;border-radius:8px;overflow:hidden;
+      box-shadow:0 8px 40px rgba(0,0,0,.7);
+    }
+    .dc{
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;position:relative;transition:all .15s;
+    }
+    .dc.claro{background:#f0d9b5}
+    .dc.escuro{background:#8B4513}
+    .dc.sel{background:#7fc97f !important;box-shadow:inset 0 0 0 3px rgba(0,180,0,.7)}
+    .dc.dest{background:#7fc97f88 !important}
+    .dc.dest::after{
+      content:'';position:absolute;
+      width:35%;height:35%;border-radius:50%;
+      background:rgba(0,0,0,.3);pointer-events:none;
+    }
+    .dc.ultmov{background:#cdd16f88 !important}
+    .dc:active{opacity:.8}
+    .dp{
+      width:72%;height:72%;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:min(5vw,22px);
+      box-shadow:0 3px 8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.3);
+      transition:transform .15s;pointer-events:none;
+      position:relative;
+    }
+    .dp.verm{background:radial-gradient(circle at 35% 35%,#ff6b6b,#cc0000)}
+    .dp.pret{background:radial-gradient(circle at 35% 35%,#555,#111)}
+    .dp.dama::after{
+      content:'♛';position:absolute;
+      font-size:min(4vw,18px);color:gold;
+      text-shadow:0 1px 2px rgba(0,0,0,.8);
+    }
+    .damas-info{
+      background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);
+      border-radius:var(--r);padding:12px 16px;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:12px;flex-wrap:wrap;width:min(460px,92vw);
+    }
+    .damas-turno{font-size:14px;font-weight:700;color:white;display:flex;align-items:center;gap:8px}
+    .damas-score{
+      display:flex;gap:16px;font-family:'JetBrains Mono',monospace;
+    }
+    .ds-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+    .ds-val{font-size:18px;font-weight:800}
+    .ds-label{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px}
+    .damas-result{
+      text-align:center;padding:16px;border-radius:12px;
+      font-size:18px;font-weight:800;width:min(460px,92vw);
+      animation:drIn .4s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes drIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+    .damas-result.verm{background:rgba(204,0,0,.2);border:2px solid rgba(204,0,0,.5);color:#ff6b6b}
+    .damas-result.pret{background:rgba(100,100,100,.2);border:2px solid rgba(150,150,150,.4);color:#ccc}
+    .damas-result.emp{background:rgba(232,200,74,.1);border:2px solid rgba(232,200,74,.3);color:#e8c84a}
+    .damas-ctrl{display:flex;gap:8px;flex-wrap:wrap;width:min(460px,92vw)}
+    .db-btn{
+      flex:1;padding:11px 8px;border-radius:10px;
+      font-family:'Syne',sans-serif;font-size:13px;font-weight:700;
+      cursor:pointer;border:none;transition:all .15s;
+      display:flex;align-items:center;justify-content:center;gap:6px;
+    }
+    .db-btn:active{transform:scale(.95);opacity:.85}
+    .db-btn.novo{background:rgba(255,255,255,.12);color:white;border:1px solid rgba(255,255,255,.2)}
+    .db-btn.desfazer{background:rgba(232,200,74,.15);color:#e8c84a;border:1px solid rgba(232,200,74,.3)}
+    .damas-hist{
+      width:min(460px,92vw);
+      background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--r);padding:10px 14px;
+      font-size:11px;font-family:'JetBrains Mono',monospace;
+      color:rgba(255,255,255,.4);max-height:80px;overflow-y:auto;
+    }
+    .damas-coord{font-size:10px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.3);width:min(460px,92vw);display:flex;justify-content:space-around;padding:0 2px}
+  `;
+      document.head.appendChild(s);
+    })();
+
+    // ── ESTADO ──────────────────────────────────────────
+    function _damasEstadoInicial(modo) {
+      // tab: 0=vazio, 1=vermelho, 2=preto, 3=dama vermelha, 4=dama preta
+      const tab = Array(8).fill(null).map(() => Array(8).fill(0));
+      // Peças pretas (rows 0-2)
+      for (let r = 0; r < 3; r++)
+        for (let c = 0; c < 8; c++)
+          if ((r + c) % 2 !== 0) tab[r][c] = 2;
+      // Peças vermelhas (rows 5-7)
+      for (let r = 5; r < 8; r++)
+        for (let c = 0; c < 8; c++)
+          if ((r + c) % 2 !== 0) tab[r][c] = 1;
+      return {
+        tab, turno: 1, // 1=vermelho, 2=preto
+        modo: modo || 'pvp',
+        sel: null, movimentos: [],
+        capturas: [], // capturas obrigatórias
+        capSeq: null, // peça em sequência de captura
+        ultMov: [], fim: null,
+        placar: { verm: 0, pret: 0 },
+        hist: [],
+        snapshot: null, // para desfazer
+      };
+    }
+
+    let _DG = null;
+
+    function _damasInit() {
+      if (!document.getElementById('damasScreen')) {
+        const s = document.createElement('div');
+        s.id = 'damasScreen'; s.className = 'damas-screen';
+        s.style.display = 'none';
+        document.querySelector('.body').appendChild(s);
+      }
+      if (!document.getElementById('damasBtn')) {
+        const b = document.createElement('button');
+        b.id = 'damasBtn'; b.title = 'Damas'; b.textContent = '🔴';
+        b.className = 'ibtn'; b.onclick = openDamasScreen;
+        document.querySelector('.hright').prepend(b);
+      }
+    }
+
+    function openDamasScreen() {
+      const s = document.getElementById('damasScreen');
+      const m = document.querySelector('.main');
+      const b = document.getElementById('damasBtn');
+      const fab = document.getElementById('fab');
+      if (!s || !m) return;
+      const isOpen = s.style.display === 'flex';
+      if (isOpen) {
+        s.style.display = 'none'; m.style.display = 'flex';
+        b.style.background = ''; b.style.color = '';
+        fab.style.display = getL() ? 'flex' : 'none';
+      } else {
+        m.style.display = 'none'; s.style.display = 'flex';
+        b.style.background = 'var(--accent)'; b.style.color = 'white';
+        fab.style.display = 'none';
+        if (!_DG) _DG = _damasEstadoInicial('pvp');
+        _damasRender();
+      }
+    }
+
+    // ── LÓGICA ──────────────────────────────────────────
+    function _dTipo(p) { return p === 1 || p === 3 ? 'verm' : 'pret'; }
+    function _dEDama(p) { return p >= 3; }
+    function _dDoTurno(p, t) { return t === 1 ? (p === 1 || p === 3) : (p === 2 || p === 4); }
+
+    function _dMovimentos(r, c, tab, turno, apenasCaptura = false) {
+      const p = tab[r][c]; if (!p || !_dDoTurno(p, turno)) return [];
+      const dama = _dEDama(p);
+      const dirs = dama ? [[-1, -1], [-1, 1], [1, -1], [1, 1]] :
+        turno === 1 ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+      const movs = [], caps = [];
+
+      for (const [dr, dc] of dirs) {
+        if (dama) {
+          // Dama: move várias casas
+          let nr = r + dr, nc = c + dc;
+          let capturou = false, capR = -1, capC = -1;
+          while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+            const alvo = tab[nr][nc];
+            if (alvo === 0) {
+              if (capturou) caps.push({ de: [r, c], para: [nr, nc], cap: [capR, capC] });
+              else movs.push({ de: [r, c], para: [nr, nc] });
+            } else if (!_dDoTurno(alvo, turno) && alvo !== 0 && !capturou) {
+              capturou = true; capR = nr; capC = nc;
+            } else break;
+            nr += dr; nc += dc;
+          }
+        } else {
+          // Peão: move 1 casa
+          const nr = r + dr, nc = c + dc;
+          if (nr < 0 || nr > 7 || nc < 0 || nc > 7) continue;
+          const alvo = tab[nr][nc];
+          if (alvo === 0 && !apenasCaptura) movs.push({ de: [r, c], para: [nr, nc] });
+          if (alvo !== 0 && !_dDoTurno(alvo, turno)) {
+            const sr = r + 2 * dr, sc = c + 2 * dc;
+            if (sr >= 0 && sr < 8 && sc >= 0 && sc < 8 && tab[sr][sc] === 0)
+              caps.push({ de: [r, c], para: [sr, sc], cap: [nr, nc] });
+          }
+        }
+      }
+      return caps.length > 0 || apenasCaptura ? caps : movs;
+    }
+
+    function _dTodasCapturas(tab, turno) {
+      const caps = [];
+      for (let r = 0; r < 8; r++)
+        for (let c = 0; c < 8; c++)
+          if (tab[r][c] && _dDoTurno(tab[r][c], turno))
+            caps.push(..._dMovimentos(r, c, tab, turno, true));
+      return caps;
+    }
+
+    function _dTodosMovimentos(tab, turno) {
+      const caps = _dTodasCapturas(tab, turno);
+      if (caps.length) return caps;
+      const movs = [];
+      for (let r = 0; r < 8; r++)
+        for (let c = 0; c < 8; c++)
+          if (tab[r][c] && _dDoTurno(tab[r][c], turno))
+            movs.push(..._dMovimentos(r, c, tab, turno));
+      return movs;
+    }
+
+    function damasClicar(r, c) {
+      const g = _DG; if (!g || g.fim) return;
+      if (g.modo === 'pvc' && g.turno === 2) return;
+      const tab = g.tab;
+      const p = tab[r][c];
+
+      // Se tem sequência de captura, só pode mover a peça em sequência
+      if (g.capSeq) {
+        const [sr, sc] = g.capSeq;
+        if (r === sr && c === sc) { _damasRender(); return; } // clicou na mesma peça
+        if (g.sel && g.movimentos.some(m => m.para[0] === r && m.para[1] === c)) {
+          _dExecutarMov(g.sel[0], g.sel[1], r, c); return;
+        }
+        return;
+      }
+
+      // Capturas obrigatórias
+      const capsObrig = _dTodasCapturas(tab, g.turno);
+
+      if (g.sel) {
+        // Verifica se é destino válido
+        if (g.movimentos.some(m => m.para[0] === r && m.para[1] === c)) {
+          _dExecutarMov(g.sel[0], g.sel[1], r, c); return;
+        }
+        // Clicou em outra peça do mesmo time
+        if (p && _dDoTurno(p, g.turno)) {
+          // Se há capturas obrigatórias, só pode selecionar peças que capturam
+          const podeSelect = capsObrig.length === 0 || capsObrig.some(m => m.de[0] === r && m.de[1] === c);
+          if (podeSelect) {
+            g.sel = [r, c];
+            const movsPeca = _dMovimentos(r, c, tab, g.turno, capsObrig.length > 0);
+            g.movimentos = movsPeca;
+            _damasRender(); return;
+          }
+        }
+        g.sel = null; g.movimentos = []; _damasRender(); return;
+      }
+
+      // Seleciona peça
+      if (p && _dDoTurno(p, g.turno)) {
+        const podeSelect = capsObrig.length === 0 || capsObrig.some(m => m.de[0] === r && m.de[1] === c);
+        if (podeSelect) {
+          g.sel = [r, c];
+          const movsPeca = _dMovimentos(r, c, tab, g.turno, capsObrig.length > 0);
+          g.movimentos = movsPeca;
+          _damasRender();
+        }
+      }
+    }
+
+    function _dExecutarMov(r1, c1, r2, c2) {
+      const g = _DG;
+      g.snapshot = JSON.parse(JSON.stringify(g.tab)); // salva para desfazer
+
+      const tab = g.tab;
+      const p = tab[r1][c1];
+      const mov = g.movimentos.find(m => m.para[0] === r2 && m.para[1] === c2);
+
+      // Move
+      tab[r2][c2] = p;
+      tab[r1][c1] = 0;
+      g.ultMov = [[r1, c1], [r2, c2]];
+
+      let capturou = false;
+      if (mov && mov.cap) {
+        tab[mov.cap[0]][mov.cap[1]] = 0;
+        capturou = true;
+      }
+
+      // Promoção a dama
+      if (p === 1 && r2 === 0) tab[r2][c2] = 3;
+      if (p === 2 && r2 === 7) tab[r2][c2] = 4;
+
+      // Sequência de captura?
+      if (capturou) {
+        const novaCaps = _dMovimentos(r2, c2, tab, g.turno, true);
+        if (novaCaps.length > 0 && tab[r2][c2] < 3) { // peão em sequência (dama já tratada diferente)
+          g.capSeq = [r2, c2];
+          g.sel = [r2, c2];
+          g.movimentos = novaCaps;
+          g.hist.push(`${g.turno === 1 ? 'V' : 'P'}: (${r1},${c1})→(${r2},${c2}) captura!`);
+          _damasRender();
+          return;
+        }
+      }
+
+      g.capSeq = null; g.sel = null; g.movimentos = [];
+      g.hist.push(`${g.turno === 1 ? 'V' : 'P'}: (${r1},${c1})→(${r2},${c2})${capturou ? ' ×' : ''}`);
+
+      // Verifica fim
+      _dVerificarFim();
+
+      if (!g.fim) {
+        g.turno = g.turno === 1 ? 2 : 1;
+        // Verifica se próximo tem movimentos
+        if (_dTodosMovimentos(tab, g.turno).length === 0) {
+          g.fim = g.turno === 1 ? 'pret' : 'verm';
+          if (g.fim === 'verm') g.placar.verm++;
+          else g.placar.pret++;
+        }
+        _damasRender();
+        if (g.modo === 'pvc' && g.turno === 2 && !g.fim)
+          setTimeout(() => _damasIA(), 500);
+      }
+    }
+
+    function _dVerificarFim() {
+      const g = _DG; const tab = g.tab;
+      let verm = 0, pret = 0;
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        if (tab[r][c] === 1 || tab[r][c] === 3) verm++;
+        if (tab[r][c] === 2 || tab[r][c] === 4) pret++;
+      }
+      if (verm === 0) { g.fim = 'pret'; g.placar.pret++; }
+      if (pret === 0) { g.fim = 'verm'; g.placar.verm++; }
+    }
+
+    // ── IA ──────────────────────────────────────────────
+    function _dAvaliarTab(tab) {
+      let score = 0;
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        const p = tab[r][c];
+        if (p === 1) score -= 10 - (r * 0.5);   // vermelho perde ponto (IA é preto)
+        if (p === 2) score += 10 - ((7 - r) * 0.5); // preto ganha ponto
+        if (p === 3) score -= 18;
+        if (p === 4) score += 18;
+      }
+      return score;
+    }
+
+    function _dMinimax(tab, prof, alpha, beta, maxim, turno) {
+      const movs = _dTodosMovimentos(tab, turno);
+      if (prof === 0 || movs.length === 0) return _dAvaliarTab(tab);
+
+      if (maxim) {
+        let best = -99999;
+        for (const m of movs) {
+          const t2 = tab.map(r => [...r]);
+          t2[m.para[0]][m.para[1]] = t2[m.de[0]][m.de[1]];
+          t2[m.de[0]][m.de[1]] = 0;
+          if (m.cap) t2[m.cap[0]][m.cap[1]] = 0;
+          if (t2[m.para[0]][m.para[1]] === 2 && m.para[0] === 7) t2[m.para[0]][m.para[1]] = 4;
+          const v = _dMinimax(t2, prof - 1, alpha, beta, false, 1);
+          best = Math.max(best, v); alpha = Math.max(alpha, v);
+          if (beta <= alpha) break;
+        }
+        return best;
+      } else {
+        let best = 99999;
+        for (const m of movs) {
+          const t2 = tab.map(r => [...r]);
+          t2[m.para[0]][m.para[1]] = t2[m.de[0]][m.de[1]];
+          t2[m.de[0]][m.de[1]] = 0;
+          if (m.cap) t2[m.cap[0]][m.cap[1]] = 0;
+          if (t2[m.para[0]][m.para[1]] === 1 && m.para[0] === 0) t2[m.para[0]][m.para[1]] = 3;
+          const v = _dMinimax(t2, prof - 1, alpha, beta, true, 2);
+          best = Math.min(best, v); beta = Math.min(beta, v);
+          if (beta <= alpha) break;
+        }
+        return best;
+      }
+    }
+
+    function _damasIA() {
+      const g = _DG; if (!g || g.fim || g.turno !== 2) return;
+      const movs = _dTodosMovimentos(g.tab, 2);
+      if (!movs.length) return;
+
+      movs.sort(() => Math.random() - .5);
+      let best = -99999, bestMov = movs[0];
+      for (const m of movs) {
+        const t2 = g.tab.map(r => [...r]);
+        t2[m.para[0]][m.para[1]] = t2[m.de[0]][m.de[1]];
+        t2[m.de[0]][m.de[1]] = 0;
+        if (m.cap) t2[m.cap[0]][m.cap[1]] = 0;
+        const v = _dMinimax(t2, 3, -99999, 99999, false, 1);
+        if (v > best) { best = v; bestMov = m; }
+      }
+
+      g.sel = [bestMov.de[0], bestMov.de[1]];
+      g.movimentos = [bestMov];
+      _dExecutarMov(bestMov.de[0], bestMov.de[1], bestMov.para[0], bestMov.para[1]);
+    }
+
+    function damasNovoJogo(modo) {
+      _DG = _damasEstadoInicial(modo || _DG?.modo || 'pvp');
+      _damasRender();
+    }
+
+    function damasDesfazer() {
+      const g = _DG; if (!g || !g.snapshot) return;
+      g.tab = g.snapshot; g.snapshot = null;
+      g.turno = g.turno === 1 ? 2 : 1;
+      g.sel = null; g.movimentos = []; g.capSeq = null;
+      g.fim = null; g.ultMov = [];
+      if (g.hist.length) g.hist.pop();
+      _damasRender();
+    }
+
+    // ── RENDER ──────────────────────────────────────────
+    function _damasRender() {
+      const s = document.getElementById('damasScreen');
+      if (!s || s.style.display !== 'flex') return;
+      const g = _DG;
+      const tab = g.tab;
+
+      let casas = '';
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const claro = (r + c) % 2 === 0;
+          const p = tab[r][c];
+          const isSel = g.sel && g.sel[0] === r && g.sel[1] === c;
+          const isDest = g.movimentos.some(m => m.para[0] === r && m.para[1] === c);
+          const isUlt = g.ultMov.some(u => u[0] === r && u[1] === c);
+
+          let cls = claro ? 'claro' : 'escuro';
+          if (isSel) cls += ' sel';
+          else if (isDest) cls += ' dest';
+          else if (isUlt && !isSel) cls += ' ultmov';
+
+          let pecaHtml = '';
+          if (p) {
+            const cor = p === 1 || p === 3 ? 'verm' : 'pret';
+            const dama = p >= 3 ? ' dama' : '';
+            pecaHtml = `<div class="dp ${cor}${dama}"></div>`;
+          }
+
+          casas += `<div class="dc ${cls}" onclick="damasClicar(${r},${c})">${pecaHtml}</div>`;
+        }
+      }
+
+      // Conta peças
+      let nVerm = 0, nPret = 0;
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        if (tab[r][c] === 1 || tab[r][c] === 3) nVerm++;
+        if (tab[r][c] === 2 || tab[r][c] === 4) nPret++;
+      }
+
+      const letras = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+      let statusTxt = '';
+      if (g.fim) statusTxt = '';
+      else if (g.capSeq) statusTxt = '⚡ Captura obrigatória!';
+      else if (g.modo === 'pvc' && g.turno === 2) statusTxt = '🤖 IA pensando...';
+      else statusTxt = `Vez das ${g.turno === 1 ? '🔴 vermelhas' : '⚫ pretas'}`;
+
+      let resultHtml = '';
+      if (g.fim) {
+        const vencedor = g.fim === 'verm' ? '🔴 Vermelhas vencem!' : '⚫ Pretas vencem!';
+        resultHtml = `<div class="damas-result ${g.fim}">${vencedor}</div>`;
+      }
+
+      s.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="font-size:18px;font-weight:800;color:white">🔴 Damas</div>
+      <div style="display:flex;gap:6px">
+        <button class="vtab ${g.modo === 'pvp' ? 'on' : ''}" onclick="damasNovoJogo('pvp')">👥 PvP</button>
+        <button class="vtab ${g.modo === 'pvc' ? 'on' : ''}" onclick="damasNovoJogo('pvc')">🤖 vs IA</button>
+      </div>
+    </div>
+
+    <div class="damas-info">
+      <div class="damas-turno">
+        <span style="font-size:20px">${g.turno === 1 ? '🔴' : '⚫'}</span>
+        ${g.fim ? `Fim de jogo` : statusTxt}
+      </div>
+      <div class="damas-score">
+        <div class="ds-item">
+          <div class="ds-val" style="color:#ff6b6b">${nVerm} 🔴</div>
+          <div class="ds-label">Verm.</div>
+        </div>
+        <div class="ds-item">
+          <div class="ds-val" style="color:#aaa">${nPret} ⚫</div>
+          <div class="ds-label">Pret.</div>
+        </div>
+        <div class="ds-item">
+          <div class="ds-val" style="color:#e8c84a">${g.placar.verm}-${g.placar.pret}</div>
+          <div class="ds-label">Placar</div>
+        </div>
+      </div>
+    </div>
+
+    ${resultHtml}
+
+    <div class="damas-board-wrap">
+      <div class="damas-coord">
+        ${letras.map(l => `<span>${l}</span>`).join('')}
+      </div>
+      <div class="damas-board">${casas}</div>
+    </div>
+
+    <div class="damas-ctrl">
+      <button class="db-btn novo" onclick="damasNovoJogo()">🔄 Novo jogo</button>
+      <button class="db-btn desfazer" onclick="damasDesfazer()" ${g.snapshot ? '' : 'disabled'}>↩ Desfazer</button>
+    </div>
+
+    ${g.hist.length ? `
+    <div class="damas-hist">
+      ${g.hist.slice(-8).join(' | ')}
+    </div>`: ''}
+  `;
+    }
     // ══════════════════════════════════════════════════════
     //  BOOT
     // ══════════════════════════════════════════════════════
