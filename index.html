@@ -5232,7 +5232,7 @@ function setStars(id) {
 
     // ── CALCULADORAS PERSONALIZADAS ───────────────────────
     reg('calcbox', {
-      name: 'Calculadoras', icon: '🧮',
+      name: 'Calculadoras', icon: '📊',
       desc: 'Calculadoras personalizadas sempre à mão', def: false,
       onToggle(on) {
         if (!on) {
@@ -6022,7 +6022,711 @@ function setStars(id) {
       S._calcs = (S._calcs || []).filter(c => c.id !== id);
       save(); _calcAtualizarCards();
     }
+    // ── CALCULADORA PROFISSIONAL ───────────────────────────
+    reg('calcpro', {
+      name: 'Calculadora Pro', icon: '🧮',
+      desc: 'Calculadora científica completa estilo app', def: false,
+      tb() { return pon('calcpro') ? `<button class="tbbtn" onclick="openCalcPro()">🧮 Calc</button>` : ''; },
+      onToggle(on) {
+        if (!on) {
+          const s = document.getElementById('calcproScreen');
+          const m = document.querySelector('.main');
+          if (s) s.style.display = 'none';
+          if (m) m.style.display = 'flex';
+          const b = document.getElementById('calcproBtn');
+          if (b) b.remove();
+          document.getElementById('fab').style.display = getL() ? 'flex' : 'none';
+        } else { _calcproInit(); }
+      }
+    });
 
+    // ── CSS ──────────────────────────────────────────────
+    (() => {
+      const s = document.createElement('style');
+      s.textContent = `
+    .cp-screen{
+      flex:1;overflow:hidden;flex-direction:column;
+      background:#1c1c1e;box-sizing:border-box;
+    }
+
+    /* Abas */
+    .cp-tabs{
+      display:flex;background:#1c1c1e;
+      border-bottom:1px solid #2c2c2e;flex-shrink:0;
+    }
+    .cp-tab{
+      flex:1;padding:10px 4px;text-align:center;
+      font-size:11px;font-weight:700;font-family:'Syne',sans-serif;
+      color:#636366;cursor:pointer;transition:all .2s;
+      border-bottom:2px solid transparent;letter-spacing:.5px;
+      text-transform:uppercase;
+    }
+    .cp-tab.on{color:#ff9f0a;border-bottom-color:#ff9f0a}
+
+    /* Display */
+    .cp-display{
+      background:#1c1c1e;padding:12px 20px 8px;
+      display:flex;flex-direction:column;align-items:flex-end;
+      gap:4px;flex-shrink:0;min-height:120px;justify-content:flex-end;
+    }
+    .cp-hist{
+      font-size:16px;color:#636366;font-family:'JetBrains Mono',monospace;
+      text-align:right;min-height:22px;word-break:break-all;
+      max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .cp-expr{
+      font-size:28px;color:#ebebf5;font-family:'JetBrains Mono',monospace;
+      text-align:right;word-break:break-all;line-height:1.2;
+      max-width:100%;transition:font-size .1s;
+    }
+    .cp-expr.small{font-size:20px}
+    .cp-expr.xsmall{font-size:15px}
+    .cp-resultado{
+      font-size:42px;font-weight:300;color:#ffffff;
+      font-family:'JetBrains Mono',monospace;text-align:right;
+      line-height:1.1;transition:font-size .15s;
+    }
+    .cp-resultado.small{font-size:30px}
+    .cp-resultado.xsmall{font-size:22px}
+
+    /* Grid de botões */
+    .cp-grid{
+      display:grid;gap:1px;background:#3a3a3c;
+      flex:1;overflow:hidden;
+    }
+    .cp-grid.basico{grid-template-columns:repeat(4,1fr)}
+    .cp-grid.cient{grid-template-columns:repeat(5,1fr)}
+    .cp-grid.prog{grid-template-columns:repeat(4,1fr)}
+
+    /* Botão */
+    .cp-btn{
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Syne',sans-serif;font-size:18px;font-weight:500;
+      cursor:pointer;border:none;transition:opacity .1s;
+      user-select:none;-webkit-user-select:none;
+      position:relative;overflow:hidden;
+    }
+    .cp-btn:active{opacity:.6}
+    .cp-btn.sub{font-size:13px;font-weight:600}
+    .cp-btn.small{font-size:13px}
+
+    /* Cores estilo iOS Calculator */
+    .cp-btn.dark{background:#2c2c2e;color:#ffffff}
+    .cp-btn.med{background:#3a3a3c;color:#ffffff}
+    .cp-btn.op{background:#ff9f0a;color:#ffffff}
+    .cp-btn.op.ativo{background:#ffffff;color:#ff9f0a}
+    .cp-btn.func{background:#505053;color:#ffffff}
+    .cp-btn.func2{background:#3d3d3f;color:#ff9f0a}
+    .cp-btn.zero{grid-column:span 2}
+    .cp-btn.peri{background:#2c2c2e;color:#ff9f0a}
+    .cp-btn.mem{background:#2a2a2c;color:#7cc8fa}
+    .cp-btn.conv{background:#2a2a2c;color:#a8d8a8}
+    .cp-btn.danger{background:#3d0000;color:#ff6b6b}
+
+    /* Histórico */
+    .cp-hist-panel{
+      flex:1;overflow-y:auto;padding:12px;
+      display:flex;flex-direction:column;gap:8px;
+    }
+    .cp-hist-item{
+      background:#2c2c2e;border-radius:10px;padding:10px 14px;
+      display:flex;flex-direction:column;gap:2px;cursor:pointer;
+    }
+    .cp-hist-item:active{opacity:.7}
+    .cp-hist-expr{font-size:12px;color:#636366;font-family:'JetBrains Mono',monospace}
+    .cp-hist-res{font-size:20px;color:#ffffff;font-family:'JetBrains Mono',monospace;font-weight:300}
+    .cp-hist-empty{
+      flex:1;display:flex;align-items:center;justify-content:center;
+      color:#636366;font-size:14px;font-family:'JetBrains Mono',monospace;
+    }
+
+    /* Conversor */
+    .cp-conv-wrap{
+      flex:1;overflow-y:auto;padding:14px;
+      display:flex;flex-direction:column;gap:12px;
+    }
+    .cp-conv-select{
+      background:#2c2c2e;border:none;color:#fff;
+      border-radius:10px;padding:10px 14px;font-family:'Syne',sans-serif;
+      font-size:14px;width:100%;outline:none;
+    }
+    .cp-conv-row{
+      display:flex;gap:10px;align-items:center;
+    }
+    .cp-conv-inp{
+      flex:1;background:#2c2c2e;border:none;color:#fff;
+      border-radius:10px;padding:12px 14px;font-family:'JetBrains Mono',monospace;
+      font-size:18px;outline:none;text-align:right;
+    }
+    .cp-conv-inp:focus{border:1px solid #ff9f0a}
+    .cp-conv-unit{
+      font-size:12px;color:#636366;font-family:'JetBrains Mono',monospace;
+      width:50px;text-align:center;
+    }
+    .cp-conv-arrow{color:#ff9f0a;font-size:20px;text-align:center}
+  `;
+      document.head.appendChild(s);
+    })();
+
+    // ── ESTADO ──────────────────────────────────────────
+    function _cpEstadoInicial() {
+      return {
+        aba: 'basico',
+        expr: '',
+        resultado: '0',
+        exprAnterior: '',
+        opAtivo: '',
+        acabouDeCalc: false,
+        memoria: 0,
+        hist: [],
+        shift: false,
+        graus: true,
+        convTipo: 'comprimento',
+        convUA: null,
+        convUB: null,
+        convA: 0,
+      };
+    }
+    if (!S._cp || !S._cp.aba) S._cp = _cpEstadoInicial();
+
+    function _calcproInit() {
+      if (!document.getElementById('calcproScreen')) {
+        const s = document.createElement('div');
+        s.id = 'calcproScreen'; s.className = 'cp-screen';
+        s.style.display = 'none';
+        document.querySelector('.body').appendChild(s);
+      }
+      if (!document.getElementById('calcproBtn')) {
+        const b = document.createElement('button');
+        b.id = 'calcproBtn'; b.title = 'Calculadora'; b.textContent = '🧮';
+        b.className = 'ibtn'; b.onclick = openCalcPro;
+        document.querySelector('.hright').prepend(b);
+      }
+    }
+
+    function openCalcPro() {
+      const s = document.getElementById('calcproScreen');
+      const m = document.querySelector('.main');
+      const b = document.getElementById('calcproBtn');
+      const fab = document.getElementById('fab');
+      if (!s || !m) return;
+      const isOpen = s.style.display === 'flex';
+      if (isOpen) {
+        s.style.display = 'none'; m.style.display = 'flex';
+        b.style.background = ''; b.style.color = '';
+        fab.style.display = getL() ? 'flex' : 'none';
+      } else {
+        m.style.display = 'none'; s.style.display = 'flex';
+        b.style.background = 'var(--accent)'; b.style.color = 'white';
+        fab.style.display = 'none';
+        _cpRender();
+      }
+    }
+
+    // ── LÓGICA DA CALCULADORA ───────────────────────────
+    function _cpNum(n) {
+      const g = S._cp;
+      if (g.acabouDeCalc) { g.expr = ''; g.acabouDeCalc = false; }
+      if (n === '.' && g.expr.split(/[\+\-\×\÷\(]/).pop().includes('.')) return;
+      g.expr += n;
+      g.opAtivo = '';
+      _cpAtualizarDisplay();
+    }
+
+    function _cpOp(op) {
+      const g = S._cp;
+      if (g.expr === '' && g.resultado !== '0' && g.resultado !== '') g.expr = g.resultado;
+      // Remove operador no final se houver
+      g.expr = g.expr.replace(/[\+\-\×\÷]$/, '');
+      g.expr += op;
+      g.opAtivo = op;
+      g.acabouDeCalc = false;
+      _cpAtualizarDisplay();
+    }
+
+    function _cpIgual() {
+      const g = S._cp;
+      if (!g.expr) return;
+      const exprOrig = g.expr;
+      try {
+        const res = _cpEval(g.expr);
+        const resStr = _cpFmt(res);
+        g.hist.unshift({ expr: exprOrig, res: resStr, ts: Date.now() });
+        if (g.hist.length > 50) g.hist.pop();
+        g.exprAnterior = exprOrig + '=';
+        g.resultado = resStr;
+        g.expr = '';
+        g.opAtivo = '';
+        g.acabouDeCalc = true;
+        save();
+      } catch (e) {
+        g.resultado = 'Erro';
+        g.expr = '';
+      }
+      _cpAtualizarDisplay();
+    }
+
+    function _cpEval(expr) {
+      const g = S._cp;
+      let e = expr
+        .replace(/×/g, '*').replace(/÷/g, '/')
+        .replace(/π/g, 'Math.PI').replace(/e/g, 'Math.E')
+        .replace(/\^/g, '**')
+        .replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
+
+      // Funções trig em graus
+      if (g.graus) {
+        e = e.replace(/sin\(/g, 'Math.sin(Math.PI/180*')
+          .replace(/cos\(/g, 'Math.cos(Math.PI/180*')
+          .replace(/tan\(/g, 'Math.tan(Math.PI/180*')
+          .replace(/asin\(/g, '(180/Math.PI)*Math.asin(')
+          .replace(/acos\(/g, '(180/Math.PI)*Math.acos(')
+          .replace(/atan\(/g, '(180/Math.PI)*Math.atan(');
+      } else {
+        e = e.replace(/sin\(/g, 'Math.sin(')
+          .replace(/cos\(/g, 'Math.cos(')
+          .replace(/tan\(/g, 'Math.tan(')
+          .replace(/asin\(/g, 'Math.asin(')
+          .replace(/acos\(/g, 'Math.acos(')
+          .replace(/atan\(/g, 'Math.atan(');
+      }
+      e = e.replace(/log\(/g, 'Math.log10(')
+        .replace(/ln\(/g, 'Math.log(')
+        .replace(/sqrt\(/g, 'Math.sqrt(')
+        .replace(/cbrt\(/g, 'Math.cbrt(')
+        .replace(/abs\(/g, 'Math.abs(')
+        .replace(/floor\(/g, 'Math.floor(')
+        .replace(/ceil\(/g, 'Math.ceil(')
+        .replace(/round\(/g, 'Math.round(')
+        .replace(/fact\((\d+)\)/g, '_cpFat($1)');
+
+      return Function('"use strict";return (' + e + ')')();
+    }
+
+    function _cpFat(n) { if (n <= 1) return 1; return n * _cpFat(n - 1); }
+
+    function _cpFmt(n) {
+      if (!isFinite(n)) return n > 0 ? '∞' : '-∞';
+      if (isNaN(n)) return 'Erro';
+      if (Number.isInteger(n) && Math.abs(n) < 1e15) return String(n);
+      if (Math.abs(n) >= 1e10 || Math.abs(n) < 1e-6 && n !== 0) return n.toExponential(6).replace(/\.?0+e/, 'e');
+      return parseFloat(n.toPrecision(10)).toString();
+    }
+
+    function _cpDel() {
+      const g = S._cp;
+      if (g.acabouDeCalc) { g.expr = ''; g.resultado = '0'; g.acabouDeCalc = false; }
+      else g.expr = g.expr.slice(0, -1);
+      _cpAtualizarDisplay();
+    }
+
+    function _cpAC() {
+      const g = S._cp;
+      g.expr = ''; g.resultado = '0'; g.exprAnterior = '';
+      g.opAtivo = ''; g.acabouDeCalc = false;
+      _cpAtualizarDisplay();
+    }
+
+    function _cpSinal() {
+      const g = S._cp;
+      if (g.expr) {
+        if (g.expr.startsWith('-')) g.expr = g.expr.slice(1);
+        else g.expr = '-' + g.expr;
+      } else if (g.resultado !== '0') {
+        if (g.resultado.startsWith('-')) g.resultado = g.resultado.slice(1);
+        else g.resultado = '-' + g.resultado;
+      }
+      _cpAtualizarDisplay();
+    }
+
+    function _cpPorcento() {
+      const g = S._cp;
+      if (!g.expr && g.resultado !== '0') g.expr = g.resultado;
+      if (g.expr) g.expr += '%';
+      _cpAtualizarDisplay();
+    }
+
+    function _cpFunc(f) {
+      const g = S._cp;
+      if (g.acabouDeCalc && g.resultado !== '0') { g.expr = g.resultado; g.acabouDeCalc = false; }
+      // Funções de sufixo
+      if (f === 'x²') { g.expr = '(' + (g.expr || g.resultado) + ')**2'; _cpIgual(); return; }
+      if (f === 'x³') { g.expr = '(' + (g.expr || g.resultado) + ')**3'; _cpIgual(); return; }
+      if (f === '1/x') { g.expr = '1/(' + (g.expr || g.resultado) + ')'; _cpIgual(); return; }
+      if (f === 'x!') { g.expr = 'fact(' + (g.expr || g.resultado) + ')'; _cpIgual(); return; }
+      if (f === '10ˣ') { g.expr = '10**(' + (g.expr || g.resultado) + ')'; _cpIgual(); return; }
+      if (f === 'eˣ') { g.expr = 'Math.E**(' + (g.expr || g.resultado) + ')'; _cpIgual(); return; }
+      if (f === '2ˣ') { g.expr = '2**(' + (g.expr || g.resultado) + ')'; _cpIgual(); return; }
+      // Funções de prefixo (abrem parêntese)
+      g.expr += f + '(';
+      _cpAtualizarDisplay();
+    }
+
+    function _cpMem(op) {
+      const g = S._cp;
+      const val = parseFloat(g.resultado) || 0;
+      if (op === 'MC') { g.memoria = 0; }
+      else if (op === 'M+') { g.memoria += val; }
+      else if (op === 'M-') { g.memoria -= val; }
+      else if (op === 'MR') { g.expr = String(g.memoria); g.acabouDeCalc = false; }
+      save(); _cpAtualizarDisplay();
+    }
+
+    function _cpParentese() {
+      const g = S._cp;
+      const abertos = (g.expr.match(/\(/g) || []).length;
+      const fechados = (g.expr.match(/\)/g) || []).length;
+      if (abertos > fechados && g.expr.slice(-1) !== '(') g.expr += ')';
+      else g.expr += '(';
+      _cpAtualizarDisplay();
+    }
+
+    function _cpToggleShift() {
+      S._cp.shift = !S._cp.shift;
+      _cpRender();
+    }
+
+    function _cpToggleGraus() {
+      S._cp.graus = !S._cp.graus;
+      save(); _cpRender();
+    }
+
+    function _cpAtualizarDisplay() {
+      const g = S._cp;
+      // Preview ao vivo
+      if (g.expr) {
+        try {
+          const r = _cpEval(g.expr);
+          if (isFinite(r)) g.resultado = _cpFmt(r);
+        } catch (e) { }
+      }
+
+      const exprEl = document.getElementById('cpExpr');
+      const resEl = document.getElementById('cpRes');
+      const histEl = document.getElementById('cpHist');
+      if (exprEl) {
+        exprEl.textContent = g.expr || '';
+        exprEl.className = 'cp-expr' + (g.expr.length > 20 ? ' small' : g.expr.length > 30 ? ' xsmall' : '');
+      }
+      if (resEl) {
+        resEl.textContent = g.resultado;
+        resEl.className = 'cp-resultado' + (g.resultado.length > 12 ? ' small' : g.resultado.length > 16 ? ' xsmall' : '');
+      }
+      if (histEl) histEl.textContent = g.exprAnterior || '';
+
+      // Destaca operador ativo
+      document.querySelectorAll('.cp-btn.op').forEach(b => {
+        b.classList.toggle('ativo', b.dataset.op === g.opAtivo && !g.expr.match(/[\d\)]$/));
+      });
+    }
+
+    // ── RENDER ───────────────────────────────────────────
+    function _cpRender() {
+      const s = document.getElementById('calcproScreen');
+      if (!s || s.style.display !== 'flex') return;
+      if (!S._cp || !S._cp.aba) S._cp = _cpEstadoInicial();
+      const g = S._cp;
+
+      const tabs = ['basico', 'cient', 'hist', 'conv'];
+      const tabNomes = ['Básica', 'Cient.', 'Histórico', 'Conversor'];
+
+      const tabsHtml = tabs.map((t, i) =>
+        `<div class="cp-tab${g.aba === t ? ' on' : ''}" onclick="_cpSetAba('${t}')">${tabNomes[i]}</div>`
+      ).join('');
+
+      const displayHtml = `
+    <div class="cp-display">
+      <div class="cp-hist" id="cpHist">${g.exprAnterior || ''}</div>
+      <div class="cp-expr${g.expr.length > 20 ? ' small' : g.expr.length > 30 ? ' xsmall' : ''}" id="cpExpr">${g.expr || ''}</div>
+      <div class="cp-resultado${g.resultado.length > 12 ? ' small' : g.resultado.length > 16 ? ' xsmall' : ''}" id="cpRes">${g.resultado}</div>
+    </div>`;
+
+      let conteudo = '';
+
+      if (g.aba === 'basico') {
+        conteudo = `<div class="cp-grid basico">
+      ${_cpBtnRow([
+          { t: 'AC', c: 'func', a: "_cpAC()" },
+          { t: '+/-', c: 'func', a: "_cpSinal()" },
+          { t: '%', c: 'func', a: "_cpPorcento()" },
+          { t: '÷', c: 'op', a: "_cpOp('÷')", op: '÷' },
+        ])}
+      ${_cpBtnRow([
+          { t: '7', c: 'dark', a: "_cpNum('7')" },
+          { t: '8', c: 'dark', a: "_cpNum('8')" },
+          { t: '9', c: 'dark', a: "_cpNum('9')" },
+          { t: '×', c: 'op', a: "_cpOp('×')", op: '×' },
+        ])}
+      ${_cpBtnRow([
+          { t: '4', c: 'dark', a: "_cpNum('4')" },
+          { t: '5', c: 'dark', a: "_cpNum('5')" },
+          { t: '6', c: 'dark', a: "_cpNum('6')" },
+          { t: '-', c: 'op', a: "_cpOp('-')", op: '-' },
+        ])}
+      ${_cpBtnRow([
+          { t: '1', c: 'dark', a: "_cpNum('1')" },
+          { t: '2', c: 'dark', a: "_cpNum('2')" },
+          { t: '3', c: 'dark', a: "_cpNum('3')" },
+          { t: '+', c: 'op', a: "_cpOp('+')", op: '+' },
+        ])}
+      ${_cpBtnRow([
+          { t: '0', c: 'dark zero', a: "_cpNum('0')" },
+          { t: '.', c: 'dark', a: "_cpNum('.')" },
+          { t: '=', c: 'op', a: "_cpIgual()" },
+        ])}
+    </div>`;
+
+      } else if (g.aba === 'cient') {
+        const sh = g.shift;
+        conteudo = `
+    <div style="display:flex;gap:0;background:#1c1c1e;flex-shrink:0">
+      <button class="cp-btn func2" style="flex:1;height:36px;font-size:12px" onclick="_cpToggleShift()">
+        ${sh ? '<b style="color:#ff9f0a">2nd</b>' : '2nd'}
+      </button>
+      <button class="cp-btn func2" style="flex:1;height:36px;font-size:12px" onclick="_cpToggleGraus()">
+        ${g.graus ? 'DEG' : 'RAD'}
+      </button>
+      <button class="cp-btn mem" style="flex:1;height:36px;font-size:11px" onclick="_cpMem('MC')">MC</button>
+      <button class="cp-btn mem" style="flex:1;height:36px;font-size:11px" onclick="_cpMem('M+')">M+</button>
+      <button class="cp-btn mem" style="flex:1;height:36px;font-size:11px" onclick="_cpMem('M-')">M-</button>
+      <button class="cp-btn mem" style="flex:1;height:36px;font-size:11px" onclick="_cpMem('MR')">MR${S._cp.memoria !== 0 ? '●' : ''}</button>
+    </div>
+    <div class="cp-grid cient">
+      ${_cpBtnRow([
+          { t: sh ? 'asin' : 'sin', c: 'func sub', a: `_cpFunc('${sh ? 'asin' : 'sin'}')` },
+          { t: sh ? 'acos' : 'cos', c: 'func sub', a: `_cpFunc('${sh ? 'acos' : 'cos'}')` },
+          { t: sh ? 'atan' : 'tan', c: 'func sub', a: `_cpFunc('${sh ? 'atan' : 'tan'}')` },
+          { t: sh ? 'eˣ' : 'ln', c: 'func sub', a: `${sh ? "_cpFunc('eˣ')" : "_cpFunc('ln')"}` },
+          { t: sh ? '10ˣ' : 'log', c: 'func sub', a: `${sh ? "_cpFunc('10ˣ')" : "_cpFunc('log')"}` },
+        ])}
+      ${_cpBtnRow([
+          { t: sh ? 'x³' : 'x²', c: 'func sub', a: `_cpFunc('${sh ? 'x³' : 'x²'}')` },
+          { t: sh ? '∛' : '√', c: 'func sub', a: `_cpFunc('${sh ? 'cbrt' : 'sqrt'}')` },
+          { t: sh ? '2ˣ' : 'xʸ', c: 'func sub', a: `${sh ? "_cpFunc('2ˣ')" : "_cpOp('^')"}` },
+          { t: '1/x', c: 'func sub', a: "_cpFunc('1/x')" },
+          { t: 'x!', c: 'func sub', a: "_cpFunc('x!')" },
+        ])}
+      ${_cpBtnRow([
+          { t: '(', c: 'func sub', a: "_cpParentese()" },
+          { t: ')', c: 'func sub', a: "_cpParentese()" },
+          { t: 'π', c: 'func sub', a: "_cpNum('π')" },
+          { t: 'e', c: 'func sub', a: "_cpNum('e')" },
+          { t: '⌫', c: 'peri', a: "_cpDel()" },
+        ])}
+      ${_cpBtnRow([
+          { t: 'AC', c: 'func', a: "_cpAC()" },
+          { t: '+/-', c: 'func', a: "_cpSinal()" },
+          { t: '%', c: 'func', a: "_cpPorcento()" },
+          { t: '÷', c: 'op', a: "_cpOp('÷')", op: '÷' },
+          { t: '×', c: 'op', a: "_cpOp('×')", op: '×' },
+        ])}
+      ${_cpBtnRow([
+          { t: '7', c: 'dark', a: "_cpNum('7')" },
+          { t: '8', c: 'dark', a: "_cpNum('8')" },
+          { t: '9', c: 'dark', a: "_cpNum('9')" },
+          { t: '-', c: 'op', a: "_cpOp('-')", op: '-' },
+          { t: '+', c: 'op', a: "_cpOp('+')", op: '+' },
+        ])}
+      ${_cpBtnRow([
+          { t: '4', c: 'dark', a: "_cpNum('4')" },
+          { t: '5', c: 'dark', a: "_cpNum('5')" },
+          { t: '6', c: 'dark', a: "_cpNum('6')" },
+          { t: '1', c: 'dark', a: "_cpNum('1')" },
+          { t: '2', c: 'dark', a: "_cpNum('2')" },
+        ])}
+      ${_cpBtnRow([
+          { t: '3', c: 'dark', a: "_cpNum('3')" },
+          { t: '0', c: 'dark', a: "_cpNum('0')" },
+          { t: '.', c: 'dark', a: "_cpNum('.')" },
+          { t: '=', c: 'op', a: "_cpIgual()", span: 2 },
+        ])}
+    </div>`;
+
+      } else if (g.aba === 'hist') {
+        if (!g.hist.length) {
+          conteudo = `<div class="cp-hist-panel"><div class="cp-hist-empty">Nenhum cálculo ainda</div></div>`;
+        } else {
+          conteudo = `
+        <div style="display:flex;justify-content:flex-end;padding:8px 12px;flex-shrink:0">
+          <button onclick="S._cp.hist=[];save();_cpRender()"
+            style="background:none;border:none;color:#636366;font-size:12px;cursor:pointer;font-family:'Syne',sans-serif">
+            Limpar histórico
+          </button>
+        </div>
+        <div class="cp-hist-panel">
+          ${g.hist.map((h, i) => `
+            <div class="cp-hist-item" onclick="_cpUsarHist(${i})">
+              <div class="cp-hist-expr">${h.expr} =</div>
+              <div class="cp-hist-res">${h.res}</div>
+            </div>`).join('')}
+        </div>`;
+        }
+
+      } else if (g.aba === 'conv') {
+        conteudo = _cpConvHtml();
+      }
+
+      s.innerHTML = `
+    <div class="cp-tabs">${tabsHtml}</div>
+    ${g.aba !== 'hist' && g.aba !== 'conv' ? displayHtml : ''}
+    ${conteudo}
+  `;
+
+      _cpAtualizarDisplay();
+    }
+
+    function _cpBtnRow(btns) {
+      return btns.map(b => `
+    <button class="cp-btn ${b.c || 'dark'}${b.span ? ' zero' : ''}"
+      onclick="${b.a}"
+      ${b.op ? `data-op="${b.op}"` : ''}
+    >${b.t}</button>`).join('');
+    }
+
+    function _cpSetAba(aba) {
+      S._cp.aba = aba; save(); _cpRender();
+    }
+
+    function _cpUsarHist(i) {
+      const h = S._cp.hist[i];
+      if (!h) return;
+      S._cp.resultado = h.res;
+      S._cp.expr = '';
+      S._cp.exprAnterior = h.expr + '=';
+      S._cp.acabouDeCalc = true;
+      S._cp.aba = 'basico';
+      save(); _cpRender();
+    }
+
+    // ── CONVERSOR ────────────────────────────────────────
+    const _CP_CONV = {
+      comprimento: {
+        nome: 'Comprimento',
+        unidades: { m: 1, km: 1e-3, cm: 100, mm: 1000, mi: 0.000621371, yd: 1.09361, ft: 3.28084, in: 39.3701, nm: 1e-9 },
+        nomes: { m: 'metro', km: 'quilômetro', cm: 'centímetro', mm: 'milímetro', mi: 'milha', yd: 'jarda', ft: 'pé', in: 'polegada', nm: 'nanômetro' },
+      },
+      massa: {
+        nome: 'Massa',
+        unidades: { kg: 1, g: 1000, mg: 1e6, lb: 2.20462, oz: 35.274, t: 0.001, st: 0.157473 },
+        nomes: { kg: 'quilograma', g: 'grama', mg: 'miligrama', lb: 'libra', oz: 'onça', t: 'tonelada', st: 'stone' },
+      },
+      temperatura: {
+        nome: 'Temperatura',
+        especial: true,
+        unidades: ['°C', '°F', 'K'],
+        converter(val, de, para) {
+          let c = val;
+          if (de === '°F') c = (val - 32) * 5 / 9;
+          else if (de === 'K') c = val - 273.15;
+          if (para === '°C') return c;
+          if (para === '°F') return c * 9 / 5 + 32;
+          return c + 273.15;
+        }
+      },
+      area: {
+        nome: 'Área',
+        unidades: { 'm²': 1, 'km²': 1e-6, 'cm²': 1e4, 'mm²': 1e6, ha: 1e-4, ac: 0.000247105, 'ft²': 10.7639, 'in²': 1550 },
+        nomes: { 'm²': 'metro²', 'km²': 'km²', 'cm²': 'cm²', 'mm²': 'mm²', ha: 'hectare', ac: 'acre', 'ft²': 'pé²', 'in²': 'pol²' },
+      },
+      volume: {
+        nome: 'Volume',
+        unidades: { L: 1, mL: 1000, 'm³': 0.001, 'cm³': 1000, 'ft³': 0.0353147, gal: 0.264172, fl_oz: 33.814, tsp: 202.884, tbsp: 67.628 },
+        nomes: { L: 'litro', mL: 'mililitro', 'm³': 'metro³', 'cm³': 'cm³', 'ft³': 'pé³', gal: 'galão', fl_oz: 'fl oz', tsp: 'colher chá', tbsp: 'colher sopa' },
+      },
+      tempo: {
+        nome: 'Tempo',
+        unidades: { s: 1, ms: 1000, min: 1 / 60, h: 1 / 3600, d: 1 / 86400, sem: 1 / 604800, mes: 1 / 2628000, ano: 1 / 31536000 },
+        nomes: { s: 'segundo', ms: 'milissegundo', min: 'minuto', h: 'hora', d: 'dia', sem: 'semana', mes: 'mês', ano: 'ano' },
+      },
+      velocidade: {
+        nome: 'Velocidade',
+        unidades: { 'm/s': 1, 'km/h': 3.6, 'mph': 2.23694, 'nó': 1.94384, 'ft/s': 3.28084 },
+        nomes: { 'm/s': 'metro/s', 'km/h': 'km/h', 'mph': 'milha/h', 'nó': 'nó', 'ft/s': 'pé/s' },
+      },
+      digital: {
+        nome: 'Digital',
+        unidades: { B: 1, KB: 1 / 1024, MB: 1 / 1048576, GB: 1 / 1073741824, TB: 1 / 1099511627776, bit: 8 },
+        nomes: { B: 'byte', KB: 'kilobyte', MB: 'megabyte', GB: 'gigabyte', TB: 'terabyte', bit: 'bit' },
+      },
+    };
+
+    function _cpConvHtml() {
+      const g = S._cp;
+      const tipo = g.convTipo || 'comprimento';
+      const conv = _CP_CONV[tipo];
+      const unids = conv.especial ? conv.unidades : Object.keys(conv.unidades);
+      const uA = g.convUA || unids[0];
+      const uB = g.convUB || unids[1];
+      const valA = g.convA || 0;
+
+      // Converte
+      let valB = 0;
+      try {
+        if (conv.especial) valB = conv.converter(parseFloat(valA) || 0, uA, uB);
+        else {
+          const base = (parseFloat(valA) || 0) / conv.unidades[uA];
+          valB = base * conv.unidades[uB];
+        }
+      } catch (e) { valB = 0; }
+
+      const fmtB = parseFloat(valB.toPrecision(8)).toString();
+
+      const tiposHtml = Object.entries(_CP_CONV).map(([k, v]) =>
+        `<option value="${k}"${k === tipo ? ' selected' : ''}>${v.nome}</option>`
+      ).join('');
+
+      const unidOpts = (us) => us.map(u =>
+        `<option value="${u}">${u}${_CP_CONV[tipo].nomes?.[u] ? ' — ' + _CP_CONV[tipo].nomes[u] : ''}</option>`
+      ).join('');
+
+      return `<div class="cp-conv-wrap">
+    <select class="cp-conv-select" onchange="S._cp.convTipo=this.value;S._cp.convUA=null;S._cp.convUB=null;save();_cpRender()">
+      ${tiposHtml}
+    </select>
+
+    <div class="cp-conv-row">
+      <input type="number" class="cp-conv-inp" value="${valA}"
+        oninput="S._cp.convA=this.value;save();_cpRender()" placeholder="0">
+      <select class="cp-conv-select" style="width:auto;flex:0;min-width:120px"
+        onchange="S._cp.convUA=this.value;save();_cpRender()">
+        ${unidOpts(unids).replace(`value="${uA}"`, `value="${uA}" selected`)}
+      </select>
+    </div>
+
+    <div class="cp-conv-arrow">⬇</div>
+
+    <div class="cp-conv-row">
+      <input type="number" class="cp-conv-inp" value="${fmtB}" readonly
+        style="color:#ff9f0a">
+      <select class="cp-conv-select" style="width:auto;flex:0;min-width:120px"
+        onchange="S._cp.convUB=this.value;save();_cpRender()">
+        ${unidOpts(unids).replace(`value="${uB}"`, `value="${uB}" selected`)}
+      </select>
+    </div>
+
+    <div style="font-size:12px;color:#636366;font-family:'JetBrains Mono',monospace;text-align:center;margin-top:4px">
+      1 ${uA} = ${conv.especial ? conv.converter(1, uA, uB).toPrecision(6) : parseFloat((conv.unidades[uB] / conv.unidades[uA]).toPrecision(6))} ${uB}
+    </div>
+
+    <!-- Tabela de conversão rápida -->
+    <div style="background:#2c2c2e;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;margin-top:4px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#636366;margin-bottom:4px">
+        Tabela rápida
+      </div>
+      ${[1, 5, 10, 25, 50, 100].map(n => {
+        let r = 0;
+        try {
+          if (conv.especial) r = conv.converter(n, uA, uB);
+          else r = (n / conv.unidades[uA]) * conv.unidades[uB];
+        } catch (e) { }
+        return `<div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:13px">
+          <span style="color:#8e8e93">${n} ${uA}</span>
+          <span style="color:#ffffff">${parseFloat(r.toPrecision(6))} ${uB}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+    }
     // ── FRASES INSPIRADORAS ───────────────────────────────
     reg('frases', {
       name: 'Frases Inspiradoras', icon: '💬',
@@ -8596,27 +9300,27 @@ Cogito ergo sum | René Descartes'></textarea>
   `;
     }
     // ── DESENHO (Paint) ────────────────────────────────────
-reg('desenho', {
-  name:'Desenho', icon:'🎨',
-  desc:'Canvas para desenhar livremente', def:false,
-  tb(){ return pon('desenho')?`<button class="tbbtn" onclick="openDesenhoScreen()">🎨 Desenhar</button>`:''; },
-  onToggle(on){
-    if(!on){
-      const s=document.getElementById('desenhoScreen');
-      const m=document.querySelector('.main');
-      if(s) s.style.display='none';
-      if(m) m.style.display='flex';
-      const b=document.getElementById('desenhoBtn');
-      if(b) b.remove();
-      document.getElementById('fab').style.display=getL()?'flex':'none';
-    } else { _desenhoInit(); }
-  }
-});
+    reg('desenho', {
+      name: 'Desenho', icon: '🎨',
+      desc: 'Canvas para desenhar livremente', def: false,
+      tb() { return pon('desenho') ? `<button class="tbbtn" onclick="openDesenhoScreen()">🎨 Desenhar</button>` : ''; },
+      onToggle(on) {
+        if (!on) {
+          const s = document.getElementById('desenhoScreen');
+          const m = document.querySelector('.main');
+          if (s) s.style.display = 'none';
+          if (m) m.style.display = 'flex';
+          const b = document.getElementById('desenhoBtn');
+          if (b) b.remove();
+          document.getElementById('fab').style.display = getL() ? 'flex' : 'none';
+        } else { _desenhoInit(); }
+      }
+    });
 
-// ── CSS ──────────────────────────────────────────────
-(()=>{
-  const s=document.createElement('style');
-  s.textContent=`
+    // ── CSS ──────────────────────────────────────────────
+    (() => {
+      const s = document.createElement('style');
+      s.textContent = `
     .dsh-screen{
       flex:1;overflow:hidden;flex-direction:column;gap:0;
       background:var(--bg);box-sizing:border-box;
@@ -8725,90 +9429,90 @@ reg('desenho', {
       padding:2px 4px;border-radius:3px;z-index:10;
     }
   `;
-  document.head.appendChild(s);
-})();
+      document.head.appendChild(s);
+    })();
 
-// ── ESTADO ──────────────────────────────────────────
-if(!S._dsh) S._dsh={
-  saves:[],      // array de dataURL
-  saveAtual:0,   // índice do save atual
-};
+    // ── ESTADO ──────────────────────────────────────────
+    if (!S._dsh) S._dsh = {
+      saves: [],      // array de dataURL
+      saveAtual: 0,   // índice do save atual
+    };
 
-let _DSH={
-  canvas:null, ctx:null,
-  desenhando:false,
-  ferramenta:'caneta', // caneta|borracha|linha|rect|circulo|fill|texto
-  cor:'#000000',
-  espessura:4,
-  undo:[], redo:[],
-  ultX:0, ultY:0,
-  inicioX:0, inicioY:0,
-  snapShot:null, // para formas
-  textInput:null,
-};
+    let _DSH = {
+      canvas: null, ctx: null,
+      desenhando: false,
+      ferramenta: 'caneta', // caneta|borracha|linha|rect|circulo|fill|texto
+      cor: '#000000',
+      espessura: 4,
+      undo: [], redo: [],
+      ultX: 0, ultY: 0,
+      inicioX: 0, inicioY: 0,
+      snapShot: null, // para formas
+      textInput: null,
+    };
 
-const _DSH_PALETA=[
-  '#000000','#ffffff','#e8565e','#f0804b','#e8c84a',
-  '#3ecf8e','#4fa7e8','#7c6af7','#e87ac8','#8B4513',
-  '#555555','#aaaaaa',
-];
+    const _DSH_PALETA = [
+      '#000000', '#ffffff', '#e8565e', '#f0804b', '#e8c84a',
+      '#3ecf8e', '#4fa7e8', '#7c6af7', '#e87ac8', '#8B4513',
+      '#555555', '#aaaaaa',
+    ];
 
-function _desenhoInit(){
-  if(!document.getElementById('desenhoScreen')){
-    const s=document.createElement('div');
-    s.id='desenhoScreen'; s.className='dsh-screen';
-    s.style.display='none';
-    document.querySelector('.body').appendChild(s);
-  }
-  if(!document.getElementById('desenhoBtn')){
-    const b=document.createElement('button');
-    b.id='desenhoBtn'; b.title='Desenhar'; b.textContent='🎨';
-    b.className='ibtn'; b.onclick=openDesenhoScreen;
-    document.querySelector('.hright').prepend(b);
-  }
-}
+    function _desenhoInit() {
+      if (!document.getElementById('desenhoScreen')) {
+        const s = document.createElement('div');
+        s.id = 'desenhoScreen'; s.className = 'dsh-screen';
+        s.style.display = 'none';
+        document.querySelector('.body').appendChild(s);
+      }
+      if (!document.getElementById('desenhoBtn')) {
+        const b = document.createElement('button');
+        b.id = 'desenhoBtn'; b.title = 'Desenhar'; b.textContent = '🎨';
+        b.className = 'ibtn'; b.onclick = openDesenhoScreen;
+        document.querySelector('.hright').prepend(b);
+      }
+    }
 
-function openDesenhoScreen(){
-  const s=document.getElementById('desenhoScreen');
-  const m=document.querySelector('.main');
-  const b=document.getElementById('desenhoBtn');
-  const fab=document.getElementById('fab');
-  if(!s||!m) return;
-  const isOpen=s.style.display==='flex';
-  if(isOpen){
-    s.style.display='none'; m.style.display='flex';
-    b.style.background=''; b.style.color='';
-    fab.style.display=getL()?'flex':'none';
-  } else {
-    m.style.display='none'; s.style.display='flex';
-    b.style.background='var(--accent)'; b.style.color='white';
-    fab.style.display='none';
-    _dshMontarUI();
-  }
-}
+    function openDesenhoScreen() {
+      const s = document.getElementById('desenhoScreen');
+      const m = document.querySelector('.main');
+      const b = document.getElementById('desenhoBtn');
+      const fab = document.getElementById('fab');
+      if (!s || !m) return;
+      const isOpen = s.style.display === 'flex';
+      if (isOpen) {
+        s.style.display = 'none'; m.style.display = 'flex';
+        b.style.background = ''; b.style.color = '';
+        fab.style.display = getL() ? 'flex' : 'none';
+      } else {
+        m.style.display = 'none'; s.style.display = 'flex';
+        b.style.background = 'var(--accent)'; b.style.color = 'white';
+        fab.style.display = 'none';
+        _dshMontarUI();
+      }
+    }
 
-function _dshMontarUI(){
-  const s=document.getElementById('desenhoScreen');
-  if(!s) return;
+    function _dshMontarUI() {
+      const s = document.getElementById('desenhoScreen');
+      if (!s) return;
 
-  const palHtml=_DSH_PALETA.map(c=>
-    `<div class="dsh-paleta-cor${_DSH.cor===c?' sel':''}"
+      const palHtml = _DSH_PALETA.map(c =>
+        `<div class="dsh-paleta-cor${_DSH.cor === c ? ' sel' : ''}"
       style="background:${c}"
       onclick="_dshSetCor('${c}')"></div>`
-  ).join('');
+      ).join('');
 
-  s.innerHTML=`
+      s.innerHTML = `
     <!-- Toolbar -->
     <div class="dsh-toolbar">
 
       <!-- Ferramentas -->
-      <button class="dsh-btn ${_DSH.ferramenta==='caneta'?'on':''}" title="Caneta" onclick="_dshSetFerr('caneta')">✏️</button>
-      <button class="dsh-btn ${_DSH.ferramenta==='borracha'?'on':''}" title="Borracha" onclick="_dshSetFerr('borracha')">🧹</button>
-      <button class="dsh-btn ${_DSH.ferramenta==='linha'?'on':''}" title="Linha" onclick="_dshSetFerr('linha')">╱</button>
-      <button class="dsh-btn ${_DSH.ferramenta==='rect'?'on':''}" title="Retângulo" onclick="_dshSetFerr('rect')">▭</button>
-      <button class="dsh-btn ${_DSH.ferramenta==='circulo'?'on':''}" title="Círculo" onclick="_dshSetFerr('circulo')">○</button>
-      <button class="dsh-btn ${_DSH.ferramenta==='fill'?'on':''}" title="Balde" onclick="_dshSetFerr('fill')">🪣</button>
-      <button class="dsh-btn ${_DSH.ferramenta==='texto'?'on':''}" title="Texto" onclick="_dshSetFerr('texto')">T</button>
+      <button class="dsh-btn ${_DSH.ferramenta === 'caneta' ? 'on' : ''}" title="Caneta" onclick="_dshSetFerr('caneta')">✏️</button>
+      <button class="dsh-btn ${_DSH.ferramenta === 'borracha' ? 'on' : ''}" title="Borracha" onclick="_dshSetFerr('borracha')">🧹</button>
+      <button class="dsh-btn ${_DSH.ferramenta === 'linha' ? 'on' : ''}" title="Linha" onclick="_dshSetFerr('linha')">╱</button>
+      <button class="dsh-btn ${_DSH.ferramenta === 'rect' ? 'on' : ''}" title="Retângulo" onclick="_dshSetFerr('rect')">▭</button>
+      <button class="dsh-btn ${_DSH.ferramenta === 'circulo' ? 'on' : ''}" title="Círculo" onclick="_dshSetFerr('circulo')">○</button>
+      <button class="dsh-btn ${_DSH.ferramenta === 'fill' ? 'on' : ''}" title="Balde" onclick="_dshSetFerr('fill')">🪣</button>
+      <button class="dsh-btn ${_DSH.ferramenta === 'texto' ? 'on' : ''}" title="Texto" onclick="_dshSetFerr('texto')">T</button>
 
       <div class="dsh-sep"></div>
 
@@ -8837,8 +9541,8 @@ function _dshMontarUI(){
       <div class="dsh-sep"></div>
 
       <!-- Undo/Redo/Limpar -->
-      <button class="dsh-btn" title="Desfazer" onclick="_dshUndo()" id="dshUndoBtn" ${_DSH.undo.length?'':'disabled'}>↩</button>
-      <button class="dsh-btn" title="Refazer" onclick="_dshRedo()" id="dshRedoBtn" ${_DSH.redo.length?'':'disabled'}>↪</button>
+      <button class="dsh-btn" title="Desfazer" onclick="_dshUndo()" id="dshUndoBtn" ${_DSH.undo.length ? '' : 'disabled'}>↩</button>
+      <button class="dsh-btn" title="Refazer" onclick="_dshRedo()" id="dshRedoBtn" ${_DSH.redo.length ? '' : 'disabled'}>↪</button>
       <button class="dsh-btn" title="Limpar tudo" onclick="_dshLimpar()" style="color:var(--red)">🗑</button>
 
       <div class="dsh-sep"></div>
@@ -8860,409 +9564,409 @@ function _dshMontarUI(){
     </div>
   `;
 
-  // Monta canvas
-  _dshIniciarCanvas();
-  _dshRenderSaves();
-}
-
-function _dshIniciarCanvas(){
-  const wrap=document.getElementById('dshWrap');
-  const canvas=document.getElementById('dshCanvas');
-  if(!wrap||!canvas) return;
-
-  // Tamanho do canvas = tamanho do wrap
-  const W=wrap.clientWidth||320;
-  const H=wrap.clientHeight||400;
-  canvas.width=W; canvas.height=H;
-  canvas.style.width=W+'px'; canvas.style.height=H+'px';
-
-  _DSH.canvas=canvas;
-  _DSH.ctx=canvas.getContext('2d');
-
-  // Fundo branco
-  _DSH.ctx.fillStyle='#ffffff';
-  _DSH.ctx.fillRect(0,0,W,H);
-
-  // Carrega save atual se existir
-  const saves=S._dsh?.saves||[];
-  if(saves.length>0&&saves[S._dsh.saveAtual]){
-    const img=new Image();
-    img.onload=()=>{
-      _DSH.ctx.drawImage(img,0,0,W,H);
-    };
-    img.src=saves[S._dsh.saveAtual];
-  }
-
-  // Eventos touch e mouse
-  canvas.addEventListener('mousedown', _dshPointerDown);
-  canvas.addEventListener('mousemove', _dshPointerMove);
-  canvas.addEventListener('mouseup',   _dshPointerUp);
-  canvas.addEventListener('mouseleave',_dshPointerUp);
-  canvas.addEventListener('touchstart',_dshTouchStart,{passive:false});
-  canvas.addEventListener('touchmove', _dshTouchMove, {passive:false});
-  canvas.addEventListener('touchend',  _dshPointerUp);
-}
-
-// ── CONFIGURAÇÕES ────────────────────────────────────
-function _dshSetFerr(f){
-  _DSH.ferramenta=f;
-  // Remove input de texto se mudar ferramenta
-  document.querySelector('.dsh-text-input')?.remove();
-  _dshMontarUI();
-}
-
-function _dshSetCor(c){
-  _DSH.cor=c;
-  // Atualiza preview de espessura
-  const prev=document.getElementById('dshSizePreview');
-  if(prev) prev.style.background=c;
-  // Atualiza paleta
-  document.querySelectorAll('.dsh-paleta-cor').forEach(el=>{
-    el.classList.toggle('sel',el.style.background===c||el.style.backgroundColor===c);
-  });
-  // Atualiza preview de cor
-  document.querySelector('.dsh-cor-preview')&&(document.querySelector('.dsh-cor-preview').style.background=c);
-}
-
-function _dshSetEsp(v){
-  _DSH.espessura=parseInt(v);
-  const prev=document.getElementById('dshSizePreview');
-  if(prev){
-    const sz=Math.min(parseInt(v),30);
-    prev.style.width=sz+'px'; prev.style.height=sz+'px';
-  }
-}
-
-// ── COORDENADAS ──────────────────────────────────────
-function _dshPos(e){
-  const canvas=_DSH.canvas;
-  if(!canvas) return {x:0,y:0};
-  const rect=canvas.getBoundingClientRect();
-  const scaleX=canvas.width/rect.width;
-  const scaleY=canvas.height/rect.height;
-  return {
-    x:(e.clientX-rect.left)*scaleX,
-    y:(e.clientY-rect.top)*scaleY,
-  };
-}
-
-function _dshTouchStart(e){
-  e.preventDefault();
-  _dshPointerDown(e.touches[0]);
-}
-function _dshTouchMove(e){
-  e.preventDefault();
-  _dshPointerMove(e.touches[0]);
-}
-
-// ── EVENTOS DE DESENHO ───────────────────────────────
-function _dshPointerDown(e){
-  const {x,y}=_dshPos(e);
-  const g=_DSH;
-  const ctx=g.ctx; if(!ctx) return;
-
-  // Ferramenta texto
-  if(g.ferramenta==='texto'){
-    _dshIniciarTexto(x,y); return;
-  }
-
-  // Balde
-  if(g.ferramenta==='fill'){
-    _dshSalvarUndo();
-    _dshFloodFill(Math.round(x),Math.round(y),g.cor);
-    _dshAutoSave(); return;
-  }
-
-  g.desenhando=true;
-  g.ultX=x; g.ultY=y;
-  g.inicioX=x; g.inicioY=y;
-
-  // Salva snapshot para formas
-  if(['linha','rect','circulo'].includes(g.ferramenta)){
-    g.snapShot=ctx.getImageData(0,0,g.canvas.width,g.canvas.height);
-  }
-
-  _dshSalvarUndo();
-
-  if(g.ferramenta==='caneta'||g.ferramenta==='borracha'){
-    ctx.beginPath();
-    ctx.moveTo(x,y);
-    // Ponto único
-    ctx.arc(x,y,g.espessura/2,0,Math.PI*2);
-    ctx.fillStyle=g.ferramenta==='borracha'?'#ffffff':g.cor;
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(x,y);
-  }
-}
-
-function _dshPointerMove(e){
-  const g=_DSH; if(!g.desenhando) return;
-  const {x,y}=_dshPos(e);
-  const ctx=g.ctx; if(!ctx) return;
-
-  if(g.ferramenta==='caneta'||g.ferramenta==='borracha'){
-    ctx.beginPath();
-    ctx.moveTo(g.ultX,g.ultY);
-    ctx.lineTo(x,y);
-    ctx.strokeStyle=g.ferramenta==='borracha'?'#ffffff':g.cor;
-    ctx.lineWidth=g.espessura;
-    ctx.lineCap='round';
-    ctx.lineJoin='round';
-    ctx.stroke();
-    g.ultX=x; g.ultY=y;
-
-  } else if(['linha','rect','circulo'].includes(g.ferramenta)){
-    // Restaura snapshot e redesenha a forma
-    ctx.putImageData(g.snapShot,0,0);
-    ctx.strokeStyle=g.cor;
-    ctx.fillStyle=g.cor;
-    ctx.lineWidth=g.espessura;
-    ctx.lineCap='round';
-
-    if(g.ferramenta==='linha'){
-      ctx.beginPath();
-      ctx.moveTo(g.inicioX,g.inicioY);
-      ctx.lineTo(x,y);
-      ctx.stroke();
-    } else if(g.ferramenta==='rect'){
-      ctx.beginPath();
-      ctx.strokeRect(g.inicioX,g.inicioY,x-g.inicioX,y-g.inicioY);
-    } else if(g.ferramenta==='circulo'){
-      const rx=Math.abs(x-g.inicioX)/2;
-      const ry=Math.abs(y-g.inicioY)/2;
-      const cx=g.inicioX+(x-g.inicioX)/2;
-      const cy=g.inicioY+(y-g.inicioY)/2;
-      ctx.beginPath();
-      ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
-      ctx.stroke();
+      // Monta canvas
+      _dshIniciarCanvas();
+      _dshRenderSaves();
     }
-  }
-}
 
-function _dshPointerUp(){
-  if(!_DSH.desenhando) return;
-  _DSH.desenhando=false;
-  _DSH.snapShot=null;
-  _dshAutoSave();
-  // Atualiza botões undo/redo
-  const ub=document.getElementById('dshUndoBtn');
-  const rb=document.getElementById('dshRedoBtn');
-  if(ub) ub.disabled=_DSH.undo.length===0;
-  if(rb) rb.disabled=_DSH.redo.length===0;
-}
+    function _dshIniciarCanvas() {
+      const wrap = document.getElementById('dshWrap');
+      const canvas = document.getElementById('dshCanvas');
+      if (!wrap || !canvas) return;
 
-// ── TEXTO ────────────────────────────────────────────
-function _dshIniciarTexto(x,y){
-  const canvas=_DSH.canvas; if(!canvas) return;
-  const wrap=document.getElementById('dshWrap'); if(!wrap) return;
-  const rect=canvas.getBoundingClientRect();
+      // Tamanho do canvas = tamanho do wrap
+      const W = wrap.clientWidth || 320;
+      const H = wrap.clientHeight || 400;
+      canvas.width = W; canvas.height = H;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
 
-  // Remove input anterior
-  document.querySelector('.dsh-text-input')?.remove();
+      _DSH.canvas = canvas;
+      _DSH.ctx = canvas.getContext('2d');
 
-  const inp=document.createElement('textarea');
-  inp.className='dsh-text-input';
-  inp.style.left=(x*(rect.width/canvas.width)+rect.left-wrap.getBoundingClientRect().left)+'px';
-  inp.style.top=(y*(rect.height/canvas.height)+rect.top-wrap.getBoundingClientRect().top)+'px';
-  inp.style.fontSize=Math.max(12,_DSH.espessura*2)+'px';
-  inp.style.color=_DSH.cor;
-  inp.rows=1;
-  wrap.appendChild(inp);
-  inp.focus();
+      // Fundo branco
+      _DSH.ctx.fillStyle = '#ffffff';
+      _DSH.ctx.fillRect(0, 0, W, H);
 
-  inp.addEventListener('blur',()=>{
-    if(!inp.value.trim()){ inp.remove(); return; }
-    _dshSalvarUndo();
-    const ctx=_DSH.ctx;
-    ctx.font=`${Math.max(12,_DSH.espessura*2)}px Syne, sans-serif`;
-    ctx.fillStyle=_DSH.cor;
-    ctx.fillText(inp.value,x,y);
-    inp.remove();
-    _dshAutoSave();
-  });
+      // Carrega save atual se existir
+      const saves = S._dsh?.saves || [];
+      if (saves.length > 0 && saves[S._dsh.saveAtual]) {
+        const img = new Image();
+        img.onload = () => {
+          _DSH.ctx.drawImage(img, 0, 0, W, H);
+        };
+        img.src = saves[S._dsh.saveAtual];
+      }
 
-  inp.addEventListener('keydown',e=>{
-    if(e.key==='Escape') inp.remove();
-  });
-}
+      // Eventos touch e mouse
+      canvas.addEventListener('mousedown', _dshPointerDown);
+      canvas.addEventListener('mousemove', _dshPointerMove);
+      canvas.addEventListener('mouseup', _dshPointerUp);
+      canvas.addEventListener('mouseleave', _dshPointerUp);
+      canvas.addEventListener('touchstart', _dshTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', _dshTouchMove, { passive: false });
+      canvas.addEventListener('touchend', _dshPointerUp);
+    }
 
-// ── FLOOD FILL ───────────────────────────────────────
-function _dshFloodFill(x,y,corHex){
-  const ctx=_DSH.ctx; const canvas=_DSH.canvas;
-  const W=canvas.width,H=canvas.height;
-  const img=ctx.getImageData(0,0,W,H);
-  const data=img.data;
+    // ── CONFIGURAÇÕES ────────────────────────────────────
+    function _dshSetFerr(f) {
+      _DSH.ferramenta = f;
+      // Remove input de texto se mudar ferramenta
+      document.querySelector('.dsh-text-input')?.remove();
+      _dshMontarUI();
+    }
 
-  const idx=(r,c)=>(r*W+c)*4;
-  const alvo=idx(y,x);
-  const tR=data[alvo],tG=data[alvo+1],tB=data[alvo+2];
+    function _dshSetCor(c) {
+      _DSH.cor = c;
+      // Atualiza preview de espessura
+      const prev = document.getElementById('dshSizePreview');
+      if (prev) prev.style.background = c;
+      // Atualiza paleta
+      document.querySelectorAll('.dsh-paleta-cor').forEach(el => {
+        el.classList.toggle('sel', el.style.background === c || el.style.backgroundColor === c);
+      });
+      // Atualiza preview de cor
+      document.querySelector('.dsh-cor-preview') && (document.querySelector('.dsh-cor-preview').style.background = c);
+    }
 
-  // Cor de destino
-  const nova=parseInt(corHex.slice(1),16);
-  const nR=(nova>>16)&255,nG=(nova>>8)&255,nB=nova&255;
-  if(tR===nR&&tG===nG&&tB===nB) return;
+    function _dshSetEsp(v) {
+      _DSH.espessura = parseInt(v);
+      const prev = document.getElementById('dshSizePreview');
+      if (prev) {
+        const sz = Math.min(parseInt(v), 30);
+        prev.style.width = sz + 'px'; prev.style.height = sz + 'px';
+      }
+    }
 
-  const igual=(r,c)=>{
-    const i=idx(r,c);
-    return data[i]===tR&&data[i+1]===tG&&data[i+2]===tB;
-  };
+    // ── COORDENADAS ──────────────────────────────────────
+    function _dshPos(e) {
+      const canvas = _DSH.canvas;
+      if (!canvas) return { x: 0, y: 0 };
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY,
+      };
+    }
 
-  const fila=[[x,y]]; const vis=new Set();
-  while(fila.length){
-    const [cx,cy]=fila.pop();
-    if(cx<0||cx>=W||cy<0||cy>=H) continue;
-    const k=cy*W+cx;
-    if(vis.has(k)) continue;
-    if(!igual(cy,cx)) continue;
-    vis.add(k);
-    const i=idx(cy,cx);
-    data[i]=nR; data[i+1]=nG; data[i+2]=nB; data[i+3]=255;
-    fila.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
-  }
-  ctx.putImageData(img,0,0);
-}
+    function _dshTouchStart(e) {
+      e.preventDefault();
+      _dshPointerDown(e.touches[0]);
+    }
+    function _dshTouchMove(e) {
+      e.preventDefault();
+      _dshPointerMove(e.touches[0]);
+    }
 
-// ── UNDO / REDO ──────────────────────────────────────
-function _dshSalvarUndo(){
-  const g=_DSH; if(!g.canvas) return;
-  g.undo.push(g.ctx.getImageData(0,0,g.canvas.width,g.canvas.height));
-  if(g.undo.length>30) g.undo.shift();
-  g.redo=[];
-}
+    // ── EVENTOS DE DESENHO ───────────────────────────────
+    function _dshPointerDown(e) {
+      const { x, y } = _dshPos(e);
+      const g = _DSH;
+      const ctx = g.ctx; if (!ctx) return;
 
-function _dshUndo(){
-  const g=_DSH; if(!g.undo.length) return;
-  g.redo.push(g.ctx.getImageData(0,0,g.canvas.width,g.canvas.height));
-  g.ctx.putImageData(g.undo.pop(),0,0);
-  _dshAutoSave();
-  const ub=document.getElementById('dshUndoBtn');
-  const rb=document.getElementById('dshRedoBtn');
-  if(ub) ub.disabled=g.undo.length===0;
-  if(rb) rb.disabled=g.redo.length===0;
-}
+      // Ferramenta texto
+      if (g.ferramenta === 'texto') {
+        _dshIniciarTexto(x, y); return;
+      }
 
-function _dshRedo(){
-  const g=_DSH; if(!g.redo.length) return;
-  g.undo.push(g.ctx.getImageData(0,0,g.canvas.width,g.canvas.height));
-  g.ctx.putImageData(g.redo.pop(),0,0);
-  _dshAutoSave();
-  const ub=document.getElementById('dshUndoBtn');
-  const rb=document.getElementById('dshRedoBtn');
-  if(ub) ub.disabled=g.undo.length===0;
-  if(rb) rb.disabled=g.redo.length===0;
-}
+      // Balde
+      if (g.ferramenta === 'fill') {
+        _dshSalvarUndo();
+        _dshFloodFill(Math.round(x), Math.round(y), g.cor);
+        _dshAutoSave(); return;
+      }
 
-// ── LIMPAR ───────────────────────────────────────────
-function _dshLimpar(){
-  const g=_DSH; if(!g.canvas) return;
-  _dshSalvarUndo();
-  g.ctx.fillStyle='#ffffff';
-  g.ctx.fillRect(0,0,g.canvas.width,g.canvas.height);
-  _dshAutoSave();
-}
+      g.desenhando = true;
+      g.ultX = x; g.ultY = y;
+      g.inicioX = x; g.inicioY = y;
 
-function _dshNovo(){
-  const g=_DSH; if(!g.canvas) return;
-  // Salva atual e cria novo
-  _dshSalvar();
-  g.undo=[]; g.redo=[];
-  g.ctx.fillStyle='#ffffff';
-  g.ctx.fillRect(0,0,g.canvas.width,g.canvas.height);
-  if(!S._dsh) S._dsh={saves:[],saveAtual:0};
-  S._dsh.saveAtual=S._dsh.saves.length; // aponta para novo (ainda não salvo)
-  _dshRenderSaves();
-}
+      // Salva snapshot para formas
+      if (['linha', 'rect', 'circulo'].includes(g.ferramenta)) {
+        g.snapShot = ctx.getImageData(0, 0, g.canvas.width, g.canvas.height);
+      }
 
-// ── SAVES ────────────────────────────────────────────
-function _dshAutoSave(){
-  // Salva automaticamente no save atual
-  const g=_DSH; if(!g.canvas) return;
-  if(!S._dsh) S._dsh={saves:[],saveAtual:0};
-  const url=g.canvas.toDataURL('image/png',0.8);
-  if(S._dsh.saveAtual<S._dsh.saves.length){
-    S._dsh.saves[S._dsh.saveAtual]=url;
-  } else {
-    S._dsh.saves.push(url);
-    S._dsh.saveAtual=S._dsh.saves.length-1;
-  }
-  save();
-  _dshRenderSaves();
-}
+      _dshSalvarUndo();
 
-function _dshSalvar(){
-  const g=_DSH; if(!g.canvas) return;
-  if(!S._dsh) S._dsh={saves:[],saveAtual:0};
-  const url=g.canvas.toDataURL('image/png',0.8);
-  // Sempre cria novo slot
-  S._dsh.saves.push(url);
-  S._dsh.saveAtual=S._dsh.saves.length-1;
-  save();
-  _dshRenderSaves();
-}
+      if (g.ferramenta === 'caneta' || g.ferramenta === 'borracha') {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        // Ponto único
+        ctx.arc(x, y, g.espessura / 2, 0, Math.PI * 2);
+        ctx.fillStyle = g.ferramenta === 'borracha' ? '#ffffff' : g.cor;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+      }
+    }
 
-function _dshCarregar(idx){
-  const g=_DSH; if(!g.canvas) return;
-  if(!S._dsh?.saves[idx]) return;
-  S._dsh.saveAtual=idx;
-  save();
-  const img=new Image();
-  img.onload=()=>{
-    g.ctx.fillStyle='#ffffff';
-    g.ctx.fillRect(0,0,g.canvas.width,g.canvas.height);
-    g.ctx.drawImage(img,0,0,g.canvas.width,g.canvas.height);
-    g.undo=[]; g.redo=[];
-    _dshRenderSaves();
-  };
-  img.src=S._dsh.saves[idx];
-}
+    function _dshPointerMove(e) {
+      const g = _DSH; if (!g.desenhando) return;
+      const { x, y } = _dshPos(e);
+      const ctx = g.ctx; if (!ctx) return;
 
-function _dshDeletarSave(idx){
-  if(!S._dsh?.saves) return;
-  S._dsh.saves.splice(idx,1);
-  if(S._dsh.saveAtual>=S._dsh.saves.length)
-    S._dsh.saveAtual=Math.max(0,S._dsh.saves.length-1);
-  save(); _dshRenderSaves();
-}
+      if (g.ferramenta === 'caneta' || g.ferramenta === 'borracha') {
+        ctx.beginPath();
+        ctx.moveTo(g.ultX, g.ultY);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = g.ferramenta === 'borracha' ? '#ffffff' : g.cor;
+        ctx.lineWidth = g.espessura;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+        g.ultX = x; g.ultY = y;
 
-function _dshRenderSaves(){
-  const el=document.getElementById('dshSaves'); if(!el) return;
-  const saves=S._dsh?.saves||[];
-  const atual=S._dsh?.saveAtual||0;
+      } else if (['linha', 'rect', 'circulo'].includes(g.ferramenta)) {
+        // Restaura snapshot e redesenha a forma
+        ctx.putImageData(g.snapShot, 0, 0);
+        ctx.strokeStyle = g.cor;
+        ctx.fillStyle = g.cor;
+        ctx.lineWidth = g.espessura;
+        ctx.lineCap = 'round';
 
-  let html=`<span class="dsh-label">Slots (${saves.length}):</span>`;
+        if (g.ferramenta === 'linha') {
+          ctx.beginPath();
+          ctx.moveTo(g.inicioX, g.inicioY);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        } else if (g.ferramenta === 'rect') {
+          ctx.beginPath();
+          ctx.strokeRect(g.inicioX, g.inicioY, x - g.inicioX, y - g.inicioY);
+        } else if (g.ferramenta === 'circulo') {
+          const rx = Math.abs(x - g.inicioX) / 2;
+          const ry = Math.abs(y - g.inicioY) / 2;
+          const cx = g.inicioX + (x - g.inicioX) / 2;
+          const cy = g.inicioY + (y - g.inicioY) / 2;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+    }
 
-  for(let i=0;i<saves.length;i++){
-    html+=`<div style="position:relative;flex-shrink:0">
-      <img class="dsh-save-thumb${i===atual?' sel':''}"
+    function _dshPointerUp() {
+      if (!_DSH.desenhando) return;
+      _DSH.desenhando = false;
+      _DSH.snapShot = null;
+      _dshAutoSave();
+      // Atualiza botões undo/redo
+      const ub = document.getElementById('dshUndoBtn');
+      const rb = document.getElementById('dshRedoBtn');
+      if (ub) ub.disabled = _DSH.undo.length === 0;
+      if (rb) rb.disabled = _DSH.redo.length === 0;
+    }
+
+    // ── TEXTO ────────────────────────────────────────────
+    function _dshIniciarTexto(x, y) {
+      const canvas = _DSH.canvas; if (!canvas) return;
+      const wrap = document.getElementById('dshWrap'); if (!wrap) return;
+      const rect = canvas.getBoundingClientRect();
+
+      // Remove input anterior
+      document.querySelector('.dsh-text-input')?.remove();
+
+      const inp = document.createElement('textarea');
+      inp.className = 'dsh-text-input';
+      inp.style.left = (x * (rect.width / canvas.width) + rect.left - wrap.getBoundingClientRect().left) + 'px';
+      inp.style.top = (y * (rect.height / canvas.height) + rect.top - wrap.getBoundingClientRect().top) + 'px';
+      inp.style.fontSize = Math.max(12, _DSH.espessura * 2) + 'px';
+      inp.style.color = _DSH.cor;
+      inp.rows = 1;
+      wrap.appendChild(inp);
+      inp.focus();
+
+      inp.addEventListener('blur', () => {
+        if (!inp.value.trim()) { inp.remove(); return; }
+        _dshSalvarUndo();
+        const ctx = _DSH.ctx;
+        ctx.font = `${Math.max(12, _DSH.espessura * 2)}px Syne, sans-serif`;
+        ctx.fillStyle = _DSH.cor;
+        ctx.fillText(inp.value, x, y);
+        inp.remove();
+        _dshAutoSave();
+      });
+
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Escape') inp.remove();
+      });
+    }
+
+    // ── FLOOD FILL ───────────────────────────────────────
+    function _dshFloodFill(x, y, corHex) {
+      const ctx = _DSH.ctx; const canvas = _DSH.canvas;
+      const W = canvas.width, H = canvas.height;
+      const img = ctx.getImageData(0, 0, W, H);
+      const data = img.data;
+
+      const idx = (r, c) => (r * W + c) * 4;
+      const alvo = idx(y, x);
+      const tR = data[alvo], tG = data[alvo + 1], tB = data[alvo + 2];
+
+      // Cor de destino
+      const nova = parseInt(corHex.slice(1), 16);
+      const nR = (nova >> 16) & 255, nG = (nova >> 8) & 255, nB = nova & 255;
+      if (tR === nR && tG === nG && tB === nB) return;
+
+      const igual = (r, c) => {
+        const i = idx(r, c);
+        return data[i] === tR && data[i + 1] === tG && data[i + 2] === tB;
+      };
+
+      const fila = [[x, y]]; const vis = new Set();
+      while (fila.length) {
+        const [cx, cy] = fila.pop();
+        if (cx < 0 || cx >= W || cy < 0 || cy >= H) continue;
+        const k = cy * W + cx;
+        if (vis.has(k)) continue;
+        if (!igual(cy, cx)) continue;
+        vis.add(k);
+        const i = idx(cy, cx);
+        data[i] = nR; data[i + 1] = nG; data[i + 2] = nB; data[i + 3] = 255;
+        fila.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+
+    // ── UNDO / REDO ──────────────────────────────────────
+    function _dshSalvarUndo() {
+      const g = _DSH; if (!g.canvas) return;
+      g.undo.push(g.ctx.getImageData(0, 0, g.canvas.width, g.canvas.height));
+      if (g.undo.length > 30) g.undo.shift();
+      g.redo = [];
+    }
+
+    function _dshUndo() {
+      const g = _DSH; if (!g.undo.length) return;
+      g.redo.push(g.ctx.getImageData(0, 0, g.canvas.width, g.canvas.height));
+      g.ctx.putImageData(g.undo.pop(), 0, 0);
+      _dshAutoSave();
+      const ub = document.getElementById('dshUndoBtn');
+      const rb = document.getElementById('dshRedoBtn');
+      if (ub) ub.disabled = g.undo.length === 0;
+      if (rb) rb.disabled = g.redo.length === 0;
+    }
+
+    function _dshRedo() {
+      const g = _DSH; if (!g.redo.length) return;
+      g.undo.push(g.ctx.getImageData(0, 0, g.canvas.width, g.canvas.height));
+      g.ctx.putImageData(g.redo.pop(), 0, 0);
+      _dshAutoSave();
+      const ub = document.getElementById('dshUndoBtn');
+      const rb = document.getElementById('dshRedoBtn');
+      if (ub) ub.disabled = g.undo.length === 0;
+      if (rb) rb.disabled = g.redo.length === 0;
+    }
+
+    // ── LIMPAR ───────────────────────────────────────────
+    function _dshLimpar() {
+      const g = _DSH; if (!g.canvas) return;
+      _dshSalvarUndo();
+      g.ctx.fillStyle = '#ffffff';
+      g.ctx.fillRect(0, 0, g.canvas.width, g.canvas.height);
+      _dshAutoSave();
+    }
+
+    function _dshNovo() {
+      const g = _DSH; if (!g.canvas) return;
+      // Salva atual e cria novo
+      _dshSalvar();
+      g.undo = []; g.redo = [];
+      g.ctx.fillStyle = '#ffffff';
+      g.ctx.fillRect(0, 0, g.canvas.width, g.canvas.height);
+      if (!S._dsh) S._dsh = { saves: [], saveAtual: 0 };
+      S._dsh.saveAtual = S._dsh.saves.length; // aponta para novo (ainda não salvo)
+      _dshRenderSaves();
+    }
+
+    // ── SAVES ────────────────────────────────────────────
+    function _dshAutoSave() {
+      // Salva automaticamente no save atual
+      const g = _DSH; if (!g.canvas) return;
+      if (!S._dsh) S._dsh = { saves: [], saveAtual: 0 };
+      const url = g.canvas.toDataURL('image/png', 0.8);
+      if (S._dsh.saveAtual < S._dsh.saves.length) {
+        S._dsh.saves[S._dsh.saveAtual] = url;
+      } else {
+        S._dsh.saves.push(url);
+        S._dsh.saveAtual = S._dsh.saves.length - 1;
+      }
+      save();
+      _dshRenderSaves();
+    }
+
+    function _dshSalvar() {
+      const g = _DSH; if (!g.canvas) return;
+      if (!S._dsh) S._dsh = { saves: [], saveAtual: 0 };
+      const url = g.canvas.toDataURL('image/png', 0.8);
+      // Sempre cria novo slot
+      S._dsh.saves.push(url);
+      S._dsh.saveAtual = S._dsh.saves.length - 1;
+      save();
+      _dshRenderSaves();
+    }
+
+    function _dshCarregar(idx) {
+      const g = _DSH; if (!g.canvas) return;
+      if (!S._dsh?.saves[idx]) return;
+      S._dsh.saveAtual = idx;
+      save();
+      const img = new Image();
+      img.onload = () => {
+        g.ctx.fillStyle = '#ffffff';
+        g.ctx.fillRect(0, 0, g.canvas.width, g.canvas.height);
+        g.ctx.drawImage(img, 0, 0, g.canvas.width, g.canvas.height);
+        g.undo = []; g.redo = [];
+        _dshRenderSaves();
+      };
+      img.src = S._dsh.saves[idx];
+    }
+
+    function _dshDeletarSave(idx) {
+      if (!S._dsh?.saves) return;
+      S._dsh.saves.splice(idx, 1);
+      if (S._dsh.saveAtual >= S._dsh.saves.length)
+        S._dsh.saveAtual = Math.max(0, S._dsh.saves.length - 1);
+      save(); _dshRenderSaves();
+    }
+
+    function _dshRenderSaves() {
+      const el = document.getElementById('dshSaves'); if (!el) return;
+      const saves = S._dsh?.saves || [];
+      const atual = S._dsh?.saveAtual || 0;
+
+      let html = `<span class="dsh-label">Slots (${saves.length}):</span>`;
+
+      for (let i = 0; i < saves.length; i++) {
+        html += `<div style="position:relative;flex-shrink:0">
+      <img class="dsh-save-thumb${i === atual ? ' sel' : ''}"
         src="${saves[i]}" onclick="_dshCarregar(${i})"
-        title="Desenho ${i+1}">
+        title="Desenho ${i + 1}">
       <button onclick="_dshDeletarSave(${i})"
         style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;
                border-radius:50%;background:var(--red);border:none;color:white;
                font-size:9px;cursor:pointer;display:flex;align-items:center;
                justify-content:center;line-height:1">✕</button>
     </div>`;
-  }
+      }
 
-  html+=`<button onclick="_dshSalvar()"
+      html += `<button onclick="_dshSalvar()"
     style="width:48px;height:36px;border-radius:6px;border:1px dashed var(--accent);
            background:rgba(124,106,247,.1);color:var(--accent);font-size:20px;
            cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">
     ＋
   </button>`;
 
-  el.innerHTML=html;
-}
+      el.innerHTML = html;
+    }
 
-// ── EXPORTAR ─────────────────────────────────────────
-function _dshBaixar(){
-  const g=_DSH; if(!g.canvas) return;
-  const a=document.createElement('a');
-  a.href=g.canvas.toDataURL('image/png');
-  a.download='desenho_'+Date.now()+'.png';
-  a.click();
-}
+    // ── EXPORTAR ─────────────────────────────────────────
+    function _dshBaixar() {
+      const g = _DSH; if (!g.canvas) return;
+      const a = document.createElement('a');
+      a.href = g.canvas.toDataURL('image/png');
+      a.download = 'desenho_' + Date.now() + '.png';
+      a.click();
+    }
     // ══════════════════════════════════════════════════════
     //  BOOT
     // ══════════════════════════════════════════════════════
