@@ -8595,6 +8595,674 @@ Cogito ergo sum | René Descartes'></textarea>
     </div>`: ''}
   `;
     }
+    // ── DESENHO (Paint) ────────────────────────────────────
+reg('desenho', {
+  name:'Desenho', icon:'🎨',
+  desc:'Canvas para desenhar livremente', def:false,
+  tb(){ return pon('desenho')?`<button class="tbbtn" onclick="openDesenhoScreen()">🎨 Desenhar</button>`:''; },
+  onToggle(on){
+    if(!on){
+      const s=document.getElementById('desenhoScreen');
+      const m=document.querySelector('.main');
+      if(s) s.style.display='none';
+      if(m) m.style.display='flex';
+      const b=document.getElementById('desenhoBtn');
+      if(b) b.remove();
+      document.getElementById('fab').style.display=getL()?'flex':'none';
+    } else { _desenhoInit(); }
+  }
+});
+
+// ── CSS ──────────────────────────────────────────────
+(()=>{
+  const s=document.createElement('style');
+  s.textContent=`
+    .dsh-screen{
+      flex:1;overflow:hidden;flex-direction:column;gap:0;
+      background:var(--bg);box-sizing:border-box;
+    }
+
+    /* Toolbar de cima */
+    .dsh-toolbar{
+      background:var(--surface);border-bottom:1px solid var(--border);
+      padding:8px 10px;display:flex;align-items:center;
+      gap:6px;flex-wrap:wrap;flex-shrink:0;overflow-x:auto;
+      scrollbar-width:none;
+    }
+    .dsh-toolbar::-webkit-scrollbar{display:none}
+
+    /* Botões da toolbar */
+    .dsh-btn{
+      width:34px;height:34px;border-radius:8px;border:1px solid var(--border);
+      background:var(--surface2);color:var(--text2);font-size:16px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      transition:all .15s;flex-shrink:0;
+    }
+    .dsh-btn:active{transform:scale(.9);opacity:.7}
+    .dsh-btn.on{background:var(--accent);border-color:var(--accent);color:white}
+    .dsh-btn:disabled{opacity:.3;pointer-events:none}
+
+    .dsh-sep{width:1px;height:24px;background:var(--border);flex-shrink:0;margin:0 2px}
+
+    /* Seletor de cor */
+    .dsh-cor-wrap{position:relative;flex-shrink:0}
+    .dsh-cor-preview{
+      width:34px;height:34px;border-radius:8px;
+      border:2px solid var(--border);cursor:pointer;
+      transition:transform .15s;flex-shrink:0;
+    }
+    .dsh-cor-preview:active{transform:scale(.9)}
+    .dsh-cor-input{
+      position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;
+    }
+
+    /* Slider de espessura */
+    .dsh-size-wrap{
+      display:flex;align-items:center;gap:6px;flex-shrink:0;
+    }
+    .dsh-size-slider{
+      width:80px;height:4px;accent-color:var(--accent);cursor:pointer;
+    }
+    .dsh-size-preview{
+      border-radius:50%;background:var(--text);flex-shrink:0;
+      transition:all .15s;
+    }
+
+    /* Label pequeno */
+    .dsh-label{
+      font-size:10px;font-family:'JetBrains Mono',monospace;
+      color:var(--text3);white-space:nowrap;
+    }
+
+    /* Canvas */
+    .dsh-canvas-wrap{
+      flex:1;overflow:hidden;position:relative;
+      touch-action:none;background:#ffffff;
+      cursor:crosshair;
+    }
+    .dsh-canvas{
+      display:block;touch-action:none;
+      image-rendering:pixelated;
+    }
+
+    /* Paleta de cores rápidas */
+    .dsh-paleta{
+      display:flex;gap:4px;align-items:center;flex-shrink:0;
+    }
+    .dsh-paleta-cor{
+      width:22px;height:22px;border-radius:50%;cursor:pointer;
+      border:2px solid transparent;transition:all .15s;flex-shrink:0;
+    }
+    .dsh-paleta-cor:active{transform:scale(.85)}
+    .dsh-paleta-cor.sel{border-color:white;transform:scale(1.2)}
+
+    /* Ferramentas texto */
+    .dsh-ferr-label{
+      font-size:10px;font-family:'JetBrains Mono',monospace;
+      color:var(--text3);padding:0 4px;
+    }
+
+    /* Painel de camadas/saves */
+    .dsh-saves{
+      background:var(--surface);border-top:1px solid var(--border);
+      padding:8px 10px;display:flex;gap:8px;align-items:center;
+      flex-shrink:0;overflow-x:auto;scrollbar-width:none;
+    }
+    .dsh-saves::-webkit-scrollbar{display:none}
+    .dsh-save-thumb{
+      width:48px;height:36px;border-radius:6px;
+      border:2px solid var(--border);cursor:pointer;
+      object-fit:cover;flex-shrink:0;transition:all .15s;
+    }
+    .dsh-save-thumb.sel{border-color:var(--accent)}
+    .dsh-save-thumb:active{transform:scale(.93)}
+
+    /* Input de texto no canvas */
+    .dsh-text-input{
+      position:absolute;background:transparent;border:1px dashed rgba(124,106,247,.6);
+      outline:none;color:inherit;font-family:'Syne',sans-serif;
+      min-width:40px;min-height:24px;resize:none;overflow:hidden;
+      padding:2px 4px;border-radius:3px;z-index:10;
+    }
+  `;
+  document.head.appendChild(s);
+})();
+
+// ── ESTADO ──────────────────────────────────────────
+if(!S._dsh) S._dsh={
+  saves:[],      // array de dataURL
+  saveAtual:0,   // índice do save atual
+};
+
+let _DSH={
+  canvas:null, ctx:null,
+  desenhando:false,
+  ferramenta:'caneta', // caneta|borracha|linha|rect|circulo|fill|texto
+  cor:'#000000',
+  espessura:4,
+  undo:[], redo:[],
+  ultX:0, ultY:0,
+  inicioX:0, inicioY:0,
+  snapShot:null, // para formas
+  textInput:null,
+};
+
+const _DSH_PALETA=[
+  '#000000','#ffffff','#e8565e','#f0804b','#e8c84a',
+  '#3ecf8e','#4fa7e8','#7c6af7','#e87ac8','#8B4513',
+  '#555555','#aaaaaa',
+];
+
+function _desenhoInit(){
+  if(!document.getElementById('desenhoScreen')){
+    const s=document.createElement('div');
+    s.id='desenhoScreen'; s.className='dsh-screen';
+    s.style.display='none';
+    document.querySelector('.body').appendChild(s);
+  }
+  if(!document.getElementById('desenhoBtn')){
+    const b=document.createElement('button');
+    b.id='desenhoBtn'; b.title='Desenhar'; b.textContent='🎨';
+    b.className='ibtn'; b.onclick=openDesenhoScreen;
+    document.querySelector('.hright').prepend(b);
+  }
+}
+
+function openDesenhoScreen(){
+  const s=document.getElementById('desenhoScreen');
+  const m=document.querySelector('.main');
+  const b=document.getElementById('desenhoBtn');
+  const fab=document.getElementById('fab');
+  if(!s||!m) return;
+  const isOpen=s.style.display==='flex';
+  if(isOpen){
+    s.style.display='none'; m.style.display='flex';
+    b.style.background=''; b.style.color='';
+    fab.style.display=getL()?'flex':'none';
+  } else {
+    m.style.display='none'; s.style.display='flex';
+    b.style.background='var(--accent)'; b.style.color='white';
+    fab.style.display='none';
+    _dshMontarUI();
+  }
+}
+
+function _dshMontarUI(){
+  const s=document.getElementById('desenhoScreen');
+  if(!s) return;
+
+  const palHtml=_DSH_PALETA.map(c=>
+    `<div class="dsh-paleta-cor${_DSH.cor===c?' sel':''}"
+      style="background:${c}"
+      onclick="_dshSetCor('${c}')"></div>`
+  ).join('');
+
+  s.innerHTML=`
+    <!-- Toolbar -->
+    <div class="dsh-toolbar">
+
+      <!-- Ferramentas -->
+      <button class="dsh-btn ${_DSH.ferramenta==='caneta'?'on':''}" title="Caneta" onclick="_dshSetFerr('caneta')">✏️</button>
+      <button class="dsh-btn ${_DSH.ferramenta==='borracha'?'on':''}" title="Borracha" onclick="_dshSetFerr('borracha')">🧹</button>
+      <button class="dsh-btn ${_DSH.ferramenta==='linha'?'on':''}" title="Linha" onclick="_dshSetFerr('linha')">╱</button>
+      <button class="dsh-btn ${_DSH.ferramenta==='rect'?'on':''}" title="Retângulo" onclick="_dshSetFerr('rect')">▭</button>
+      <button class="dsh-btn ${_DSH.ferramenta==='circulo'?'on':''}" title="Círculo" onclick="_dshSetFerr('circulo')">○</button>
+      <button class="dsh-btn ${_DSH.ferramenta==='fill'?'on':''}" title="Balde" onclick="_dshSetFerr('fill')">🪣</button>
+      <button class="dsh-btn ${_DSH.ferramenta==='texto'?'on':''}" title="Texto" onclick="_dshSetFerr('texto')">T</button>
+
+      <div class="dsh-sep"></div>
+
+      <!-- Espessura -->
+      <div class="dsh-size-wrap">
+        <input type="range" class="dsh-size-slider" id="dshSize"
+          min="1" max="40" value="${_DSH.espessura}"
+          oninput="_dshSetEsp(this.value)">
+        <div class="dsh-size-preview" id="dshSizePreview"
+          style="width:${_DSH.espessura}px;height:${_DSH.espessura}px;max-width:30px;max-height:30px;background:${_DSH.cor}"></div>
+      </div>
+
+      <div class="dsh-sep"></div>
+
+      <!-- Paleta rápida -->
+      <div class="dsh-paleta" id="dshPaleta">${palHtml}</div>
+
+      <!-- Seletor cor custom -->
+      <div class="dsh-cor-wrap">
+        <div class="dsh-cor-preview" style="background:${_DSH.cor}">
+          <input type="color" class="dsh-cor-input" value="${_DSH.cor}"
+            oninput="_dshSetCor(this.value)">
+        </div>
+      </div>
+
+      <div class="dsh-sep"></div>
+
+      <!-- Undo/Redo/Limpar -->
+      <button class="dsh-btn" title="Desfazer" onclick="_dshUndo()" id="dshUndoBtn" ${_DSH.undo.length?'':'disabled'}>↩</button>
+      <button class="dsh-btn" title="Refazer" onclick="_dshRedo()" id="dshRedoBtn" ${_DSH.redo.length?'':'disabled'}>↪</button>
+      <button class="dsh-btn" title="Limpar tudo" onclick="_dshLimpar()" style="color:var(--red)">🗑</button>
+
+      <div class="dsh-sep"></div>
+
+      <!-- Salvar / Exportar -->
+      <button class="dsh-btn" title="Salvar" onclick="_dshSalvar()" style="color:var(--green)">💾</button>
+      <button class="dsh-btn" title="Baixar PNG" onclick="_dshBaixar()">⬇</button>
+      <button class="dsh-btn" title="Novo desenho" onclick="_dshNovo()">📄</button>
+    </div>
+
+    <!-- Canvas -->
+    <div class="dsh-canvas-wrap" id="dshWrap">
+      <canvas class="dsh-canvas" id="dshCanvas"></canvas>
+    </div>
+
+    <!-- Saves -->
+    <div class="dsh-saves" id="dshSaves">
+      <span class="dsh-label">Saves:</span>
+    </div>
+  `;
+
+  // Monta canvas
+  _dshIniciarCanvas();
+  _dshRenderSaves();
+}
+
+function _dshIniciarCanvas(){
+  const wrap=document.getElementById('dshWrap');
+  const canvas=document.getElementById('dshCanvas');
+  if(!wrap||!canvas) return;
+
+  // Tamanho do canvas = tamanho do wrap
+  const W=wrap.clientWidth||320;
+  const H=wrap.clientHeight||400;
+  canvas.width=W; canvas.height=H;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+
+  _DSH.canvas=canvas;
+  _DSH.ctx=canvas.getContext('2d');
+
+  // Fundo branco
+  _DSH.ctx.fillStyle='#ffffff';
+  _DSH.ctx.fillRect(0,0,W,H);
+
+  // Carrega save atual se existir
+  const saves=S._dsh?.saves||[];
+  if(saves.length>0&&saves[S._dsh.saveAtual]){
+    const img=new Image();
+    img.onload=()=>{
+      _DSH.ctx.drawImage(img,0,0,W,H);
+    };
+    img.src=saves[S._dsh.saveAtual];
+  }
+
+  // Eventos touch e mouse
+  canvas.addEventListener('mousedown', _dshPointerDown);
+  canvas.addEventListener('mousemove', _dshPointerMove);
+  canvas.addEventListener('mouseup',   _dshPointerUp);
+  canvas.addEventListener('mouseleave',_dshPointerUp);
+  canvas.addEventListener('touchstart',_dshTouchStart,{passive:false});
+  canvas.addEventListener('touchmove', _dshTouchMove, {passive:false});
+  canvas.addEventListener('touchend',  _dshPointerUp);
+}
+
+// ── CONFIGURAÇÕES ────────────────────────────────────
+function _dshSetFerr(f){
+  _DSH.ferramenta=f;
+  // Remove input de texto se mudar ferramenta
+  document.querySelector('.dsh-text-input')?.remove();
+  _dshMontarUI();
+}
+
+function _dshSetCor(c){
+  _DSH.cor=c;
+  // Atualiza preview de espessura
+  const prev=document.getElementById('dshSizePreview');
+  if(prev) prev.style.background=c;
+  // Atualiza paleta
+  document.querySelectorAll('.dsh-paleta-cor').forEach(el=>{
+    el.classList.toggle('sel',el.style.background===c||el.style.backgroundColor===c);
+  });
+  // Atualiza preview de cor
+  document.querySelector('.dsh-cor-preview')&&(document.querySelector('.dsh-cor-preview').style.background=c);
+}
+
+function _dshSetEsp(v){
+  _DSH.espessura=parseInt(v);
+  const prev=document.getElementById('dshSizePreview');
+  if(prev){
+    const sz=Math.min(parseInt(v),30);
+    prev.style.width=sz+'px'; prev.style.height=sz+'px';
+  }
+}
+
+// ── COORDENADAS ──────────────────────────────────────
+function _dshPos(e){
+  const canvas=_DSH.canvas;
+  if(!canvas) return {x:0,y:0};
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/rect.width;
+  const scaleY=canvas.height/rect.height;
+  return {
+    x:(e.clientX-rect.left)*scaleX,
+    y:(e.clientY-rect.top)*scaleY,
+  };
+}
+
+function _dshTouchStart(e){
+  e.preventDefault();
+  _dshPointerDown(e.touches[0]);
+}
+function _dshTouchMove(e){
+  e.preventDefault();
+  _dshPointerMove(e.touches[0]);
+}
+
+// ── EVENTOS DE DESENHO ───────────────────────────────
+function _dshPointerDown(e){
+  const {x,y}=_dshPos(e);
+  const g=_DSH;
+  const ctx=g.ctx; if(!ctx) return;
+
+  // Ferramenta texto
+  if(g.ferramenta==='texto'){
+    _dshIniciarTexto(x,y); return;
+  }
+
+  // Balde
+  if(g.ferramenta==='fill'){
+    _dshSalvarUndo();
+    _dshFloodFill(Math.round(x),Math.round(y),g.cor);
+    _dshAutoSave(); return;
+  }
+
+  g.desenhando=true;
+  g.ultX=x; g.ultY=y;
+  g.inicioX=x; g.inicioY=y;
+
+  // Salva snapshot para formas
+  if(['linha','rect','circulo'].includes(g.ferramenta)){
+    g.snapShot=ctx.getImageData(0,0,g.canvas.width,g.canvas.height);
+  }
+
+  _dshSalvarUndo();
+
+  if(g.ferramenta==='caneta'||g.ferramenta==='borracha'){
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    // Ponto único
+    ctx.arc(x,y,g.espessura/2,0,Math.PI*2);
+    ctx.fillStyle=g.ferramenta==='borracha'?'#ffffff':g.cor;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+  }
+}
+
+function _dshPointerMove(e){
+  const g=_DSH; if(!g.desenhando) return;
+  const {x,y}=_dshPos(e);
+  const ctx=g.ctx; if(!ctx) return;
+
+  if(g.ferramenta==='caneta'||g.ferramenta==='borracha'){
+    ctx.beginPath();
+    ctx.moveTo(g.ultX,g.ultY);
+    ctx.lineTo(x,y);
+    ctx.strokeStyle=g.ferramenta==='borracha'?'#ffffff':g.cor;
+    ctx.lineWidth=g.espessura;
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    ctx.stroke();
+    g.ultX=x; g.ultY=y;
+
+  } else if(['linha','rect','circulo'].includes(g.ferramenta)){
+    // Restaura snapshot e redesenha a forma
+    ctx.putImageData(g.snapShot,0,0);
+    ctx.strokeStyle=g.cor;
+    ctx.fillStyle=g.cor;
+    ctx.lineWidth=g.espessura;
+    ctx.lineCap='round';
+
+    if(g.ferramenta==='linha'){
+      ctx.beginPath();
+      ctx.moveTo(g.inicioX,g.inicioY);
+      ctx.lineTo(x,y);
+      ctx.stroke();
+    } else if(g.ferramenta==='rect'){
+      ctx.beginPath();
+      ctx.strokeRect(g.inicioX,g.inicioY,x-g.inicioX,y-g.inicioY);
+    } else if(g.ferramenta==='circulo'){
+      const rx=Math.abs(x-g.inicioX)/2;
+      const ry=Math.abs(y-g.inicioY)/2;
+      const cx=g.inicioX+(x-g.inicioX)/2;
+      const cy=g.inicioY+(y-g.inicioY)/2;
+      ctx.beginPath();
+      ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+      ctx.stroke();
+    }
+  }
+}
+
+function _dshPointerUp(){
+  if(!_DSH.desenhando) return;
+  _DSH.desenhando=false;
+  _DSH.snapShot=null;
+  _dshAutoSave();
+  // Atualiza botões undo/redo
+  const ub=document.getElementById('dshUndoBtn');
+  const rb=document.getElementById('dshRedoBtn');
+  if(ub) ub.disabled=_DSH.undo.length===0;
+  if(rb) rb.disabled=_DSH.redo.length===0;
+}
+
+// ── TEXTO ────────────────────────────────────────────
+function _dshIniciarTexto(x,y){
+  const canvas=_DSH.canvas; if(!canvas) return;
+  const wrap=document.getElementById('dshWrap'); if(!wrap) return;
+  const rect=canvas.getBoundingClientRect();
+
+  // Remove input anterior
+  document.querySelector('.dsh-text-input')?.remove();
+
+  const inp=document.createElement('textarea');
+  inp.className='dsh-text-input';
+  inp.style.left=(x*(rect.width/canvas.width)+rect.left-wrap.getBoundingClientRect().left)+'px';
+  inp.style.top=(y*(rect.height/canvas.height)+rect.top-wrap.getBoundingClientRect().top)+'px';
+  inp.style.fontSize=Math.max(12,_DSH.espessura*2)+'px';
+  inp.style.color=_DSH.cor;
+  inp.rows=1;
+  wrap.appendChild(inp);
+  inp.focus();
+
+  inp.addEventListener('blur',()=>{
+    if(!inp.value.trim()){ inp.remove(); return; }
+    _dshSalvarUndo();
+    const ctx=_DSH.ctx;
+    ctx.font=`${Math.max(12,_DSH.espessura*2)}px Syne, sans-serif`;
+    ctx.fillStyle=_DSH.cor;
+    ctx.fillText(inp.value,x,y);
+    inp.remove();
+    _dshAutoSave();
+  });
+
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Escape') inp.remove();
+  });
+}
+
+// ── FLOOD FILL ───────────────────────────────────────
+function _dshFloodFill(x,y,corHex){
+  const ctx=_DSH.ctx; const canvas=_DSH.canvas;
+  const W=canvas.width,H=canvas.height;
+  const img=ctx.getImageData(0,0,W,H);
+  const data=img.data;
+
+  const idx=(r,c)=>(r*W+c)*4;
+  const alvo=idx(y,x);
+  const tR=data[alvo],tG=data[alvo+1],tB=data[alvo+2];
+
+  // Cor de destino
+  const nova=parseInt(corHex.slice(1),16);
+  const nR=(nova>>16)&255,nG=(nova>>8)&255,nB=nova&255;
+  if(tR===nR&&tG===nG&&tB===nB) return;
+
+  const igual=(r,c)=>{
+    const i=idx(r,c);
+    return data[i]===tR&&data[i+1]===tG&&data[i+2]===tB;
+  };
+
+  const fila=[[x,y]]; const vis=new Set();
+  while(fila.length){
+    const [cx,cy]=fila.pop();
+    if(cx<0||cx>=W||cy<0||cy>=H) continue;
+    const k=cy*W+cx;
+    if(vis.has(k)) continue;
+    if(!igual(cy,cx)) continue;
+    vis.add(k);
+    const i=idx(cy,cx);
+    data[i]=nR; data[i+1]=nG; data[i+2]=nB; data[i+3]=255;
+    fila.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+  }
+  ctx.putImageData(img,0,0);
+}
+
+// ── UNDO / REDO ──────────────────────────────────────
+function _dshSalvarUndo(){
+  const g=_DSH; if(!g.canvas) return;
+  g.undo.push(g.ctx.getImageData(0,0,g.canvas.width,g.canvas.height));
+  if(g.undo.length>30) g.undo.shift();
+  g.redo=[];
+}
+
+function _dshUndo(){
+  const g=_DSH; if(!g.undo.length) return;
+  g.redo.push(g.ctx.getImageData(0,0,g.canvas.width,g.canvas.height));
+  g.ctx.putImageData(g.undo.pop(),0,0);
+  _dshAutoSave();
+  const ub=document.getElementById('dshUndoBtn');
+  const rb=document.getElementById('dshRedoBtn');
+  if(ub) ub.disabled=g.undo.length===0;
+  if(rb) rb.disabled=g.redo.length===0;
+}
+
+function _dshRedo(){
+  const g=_DSH; if(!g.redo.length) return;
+  g.undo.push(g.ctx.getImageData(0,0,g.canvas.width,g.canvas.height));
+  g.ctx.putImageData(g.redo.pop(),0,0);
+  _dshAutoSave();
+  const ub=document.getElementById('dshUndoBtn');
+  const rb=document.getElementById('dshRedoBtn');
+  if(ub) ub.disabled=g.undo.length===0;
+  if(rb) rb.disabled=g.redo.length===0;
+}
+
+// ── LIMPAR ───────────────────────────────────────────
+function _dshLimpar(){
+  const g=_DSH; if(!g.canvas) return;
+  _dshSalvarUndo();
+  g.ctx.fillStyle='#ffffff';
+  g.ctx.fillRect(0,0,g.canvas.width,g.canvas.height);
+  _dshAutoSave();
+}
+
+function _dshNovo(){
+  const g=_DSH; if(!g.canvas) return;
+  // Salva atual e cria novo
+  _dshSalvar();
+  g.undo=[]; g.redo=[];
+  g.ctx.fillStyle='#ffffff';
+  g.ctx.fillRect(0,0,g.canvas.width,g.canvas.height);
+  if(!S._dsh) S._dsh={saves:[],saveAtual:0};
+  S._dsh.saveAtual=S._dsh.saves.length; // aponta para novo (ainda não salvo)
+  _dshRenderSaves();
+}
+
+// ── SAVES ────────────────────────────────────────────
+function _dshAutoSave(){
+  // Salva automaticamente no save atual
+  const g=_DSH; if(!g.canvas) return;
+  if(!S._dsh) S._dsh={saves:[],saveAtual:0};
+  const url=g.canvas.toDataURL('image/png',0.8);
+  if(S._dsh.saveAtual<S._dsh.saves.length){
+    S._dsh.saves[S._dsh.saveAtual]=url;
+  } else {
+    S._dsh.saves.push(url);
+    S._dsh.saveAtual=S._dsh.saves.length-1;
+  }
+  save();
+  _dshRenderSaves();
+}
+
+function _dshSalvar(){
+  const g=_DSH; if(!g.canvas) return;
+  if(!S._dsh) S._dsh={saves:[],saveAtual:0};
+  const url=g.canvas.toDataURL('image/png',0.8);
+  // Sempre cria novo slot
+  S._dsh.saves.push(url);
+  S._dsh.saveAtual=S._dsh.saves.length-1;
+  save();
+  _dshRenderSaves();
+}
+
+function _dshCarregar(idx){
+  const g=_DSH; if(!g.canvas) return;
+  if(!S._dsh?.saves[idx]) return;
+  S._dsh.saveAtual=idx;
+  save();
+  const img=new Image();
+  img.onload=()=>{
+    g.ctx.fillStyle='#ffffff';
+    g.ctx.fillRect(0,0,g.canvas.width,g.canvas.height);
+    g.ctx.drawImage(img,0,0,g.canvas.width,g.canvas.height);
+    g.undo=[]; g.redo=[];
+    _dshRenderSaves();
+  };
+  img.src=S._dsh.saves[idx];
+}
+
+function _dshDeletarSave(idx){
+  if(!S._dsh?.saves) return;
+  S._dsh.saves.splice(idx,1);
+  if(S._dsh.saveAtual>=S._dsh.saves.length)
+    S._dsh.saveAtual=Math.max(0,S._dsh.saves.length-1);
+  save(); _dshRenderSaves();
+}
+
+function _dshRenderSaves(){
+  const el=document.getElementById('dshSaves'); if(!el) return;
+  const saves=S._dsh?.saves||[];
+  const atual=S._dsh?.saveAtual||0;
+
+  let html=`<span class="dsh-label">Slots (${saves.length}):</span>`;
+
+  for(let i=0;i<saves.length;i++){
+    html+=`<div style="position:relative;flex-shrink:0">
+      <img class="dsh-save-thumb${i===atual?' sel':''}"
+        src="${saves[i]}" onclick="_dshCarregar(${i})"
+        title="Desenho ${i+1}">
+      <button onclick="_dshDeletarSave(${i})"
+        style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;
+               border-radius:50%;background:var(--red);border:none;color:white;
+               font-size:9px;cursor:pointer;display:flex;align-items:center;
+               justify-content:center;line-height:1">✕</button>
+    </div>`;
+  }
+
+  html+=`<button onclick="_dshSalvar()"
+    style="width:48px;height:36px;border-radius:6px;border:1px dashed var(--accent);
+           background:rgba(124,106,247,.1);color:var(--accent);font-size:20px;
+           cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+    ＋
+  </button>`;
+
+  el.innerHTML=html;
+}
+
+// ── EXPORTAR ─────────────────────────────────────────
+function _dshBaixar(){
+  const g=_DSH; if(!g.canvas) return;
+  const a=document.createElement('a');
+  a.href=g.canvas.toDataURL('image/png');
+  a.download='desenho_'+Date.now()+'.png';
+  a.click();
+}
     // ══════════════════════════════════════════════════════
     //  BOOT
     // ══════════════════════════════════════════════════════
