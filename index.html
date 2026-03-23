@@ -6649,6 +6649,43 @@ function setStars(id) {
         nomes: { B: 'byte', KB: 'kilobyte', MB: 'megabyte', GB: 'gigabyte', TB: 'terabyte', bit: 'bit' },
       },
     };
+    function _cpAtualizarConv() {
+      const g = S._cp;
+      const tipo = g.convTipo || 'comprimento';
+      const conv = _CP_CONV[tipo];
+      const unids = conv.especial ? conv.unidades : Object.keys(conv.unidades);
+      const uA = g.convUA || unids[0];
+      const uB = g.convUB || unids[1];
+      const valA = parseFloat(g.convA) || 0;
+
+      let valB = 0;
+      try {
+        if (conv.especial) valB = conv.converter(valA, uA, uB);
+        else valB = (valA / conv.unidades[uA]) * conv.unidades[uB];
+      } catch (e) { }
+
+      const fmtB = parseFloat(valB.toPrecision(8)).toString();
+
+      // Atualiza só o resultado sem reconstruir o HTML
+      const resEl = document.getElementById('cpConvB');
+      if (resEl) resEl.value = fmtB;
+
+      // Atualiza tabela rápida
+      const tabEl = document.getElementById('cpConvTabela');
+      if (tabEl) {
+        tabEl.innerHTML = [1, 5, 10, 25, 50, 100].map(n => {
+          let r = 0;
+          try {
+            if (conv.especial) r = conv.converter(n, uA, uB);
+            else r = (n / conv.unidades[uA]) * conv.unidades[uB];
+          } catch (e) { }
+          return `<div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:13px">
+        <span style="color:#8e8e93">${n} ${uA}</span>
+        <span style="color:#ffffff">${parseFloat(r.toPrecision(6))} ${uB}</span>
+      </div>`;
+        }).join('');
+      }
+    }
 
     function _cpConvHtml() {
       const g = S._cp;
@@ -6685,8 +6722,8 @@ function setStars(id) {
     </select>
 
     <div class="cp-conv-row">
-      <input type="number" class="cp-conv-inp" value="${valA}"
-        oninput="S._cp.convA=this.value;save();_cpRender()" placeholder="0">
+      <input type="number" class="cp-conv-inp" id="cpConvA" value="${valA}"
+  oninput="S._cp.convA=this.value;save();_cpAtualizarConv()" placeholder="0">
       <select class="cp-conv-select" style="width:auto;flex:0;min-width:120px"
         onchange="S._cp.convUA=this.value;save();_cpRender()">
         ${unidOpts(unids).replace(`value="${uA}"`, `value="${uA}" selected`)}
@@ -6696,7 +6733,7 @@ function setStars(id) {
     <div class="cp-conv-arrow">⬇</div>
 
     <div class="cp-conv-row">
-      <input type="number" class="cp-conv-inp" value="${fmtB}" readonly
+      <input type="number" class="cp-conv-inp" id="cpConvB" value="${fmtB}" readonly
         style="color:#ff9f0a">
       <select class="cp-conv-select" style="width:auto;flex:0;min-width:120px"
         onchange="S._cp.convUB=this.value;save();_cpRender()">
@@ -6712,8 +6749,8 @@ function setStars(id) {
     <div style="background:#2c2c2e;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;margin-top:4px">
       <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#636366;margin-bottom:4px">
         Tabela rápida
-      </div>
-      ${[1, 5, 10, 25, 50, 100].map(n => {
+        </div>
+        <div id="cpConvTabela">${[1, 5, 10, 25, 50, 100].map(n => {
         let r = 0;
         try {
           if (conv.especial) r = conv.converter(n, uA, uB);
@@ -6722,10 +6759,11 @@ function setStars(id) {
         return `<div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:13px">
           <span style="color:#8e8e93">${n} ${uA}</span>
           <span style="color:#ffffff">${parseFloat(r.toPrecision(6))} ${uB}</span>
-        </div>`;
+            </div>`;
       }).join('')}
-    </div>
-  </div>`;
+        </div>
+      </div>
+    </div>`;
     }
     // ── FRASES INSPIRADORAS ───────────────────────────────
     reg('frases', {
