@@ -5232,7 +5232,7 @@ function setStars(id) {
 
     // ── CALCULADORAS PERSONALIZADAS ───────────────────────
     reg('calcbox', {
-      name: 'Calculadoras', icon: '📊',
+      name: 'Calculadoras', icon: '📟',
       desc: 'Calculadoras personalizadas sempre à mão', def: false,
       onToggle(on) {
         if (!on) {
@@ -5752,7 +5752,7 @@ function setStars(id) {
       }
       if (!document.getElementById('calcBtn')) {
         const b = document.createElement('button');
-        b.id = 'calcBtn'; b.title = 'Calculadoras'; b.textContent = '🧮';
+        b.id = 'calcBtn'; b.title = 'Calculadoras'; b.textContent = '📟';
         b.className = 'ibtn'; b.onclick = openCalcScreen;
         document.querySelector('.hright').prepend(b);
       }
