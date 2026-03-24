@@ -3109,15 +3109,36 @@ function setStars(id) {
 
       // Imagem
       let img = null;
-      if (item.imgs && item.imgs.length > 0) img = item.imgs[0];
+      if (item.imgs?.length) img = item.imgs[0];
 
-      // Áudio — vai direto no objeto sem regex
+      // Áudio — aceita src base64 OU idb=true
       let aud = null;
       if (item.audios && typeof item.audios === 'object') {
         const keys = Object.keys(item.audios);
         for (const k of keys) {
           const a = item.audios[k];
-          if (a && a.src && a.src.length > 10) {
+          if (!a) continue;
+
+          // Caso 1: salvo no IndexedDB
+          if (a.idb) {
+            const pid = 'qp_' + item.id + '_' + k;
+            // Carrega blob do IndexedDB e guarda a URL no mapa
+            if (!window._qAudSrc) window._qAudSrc = {};
+            if (!window._qAudSrc[pid]) {
+              // Inicia carregamento assíncrono
+              _AudInlineDB.carregar(k).then(blob => {
+                if (blob) {
+                  const url = URL.createObjectURL(blob);
+                  window._qAudSrc[pid] = url;
+                }
+              }).catch(e => console.error('Quiz: erro ao carregar áudio IDB', e));
+            }
+            aud = { src: window._qAudSrc[pid] || null, nome: a.nome || textoLimpo || 'Áudio', pid, idb: true, markId: k };
+            break;
+          }
+
+          // Caso 2: salvo como base64
+          if (a.src && a.src.length > 10) {
             const pid = 'qp_' + item.id + '_' + k;
             window._qAudSrc = window._qAudSrc || {};
             window._qAudSrc[pid] = a.src;
@@ -3271,24 +3292,45 @@ function setStars(id) {
 
     function _qTocar(pid) {
       // Para todos os outros
-      Object.entries(window._qAudPlayers).forEach(([id, a]) => {
+      Object.entries(window._qAudPlayers || {}).forEach(([id, a]) => {
         if (id !== pid) {
           a.pause(); a.currentTime = 0;
           const b = document.getElementById('qbtn_' + id); if (b) b.textContent = '▶';
         }
       });
 
+      const btn = document.getElementById('qbtn_' + pid);
+
       // Cria player se não existe
       if (!window._qAudPlayers[pid]) {
-        const src = window._qAudSrc[pid];
-        if (!src) { console.warn('src não encontrado:', pid); return; }
+        const src = window._qAudSrc?.[pid];
+
+        if (!src) {
+          // src ainda não carregou do IndexedDB — aguarda
+          if (btn) btn.textContent = '⌛';
+          const esperar = setInterval(() => {
+            const s = window._qAudSrc?.[pid];
+            if (s) {
+              clearInterval(esperar);
+              if (btn) btn.textContent = '▶';
+              _qTocar(pid); // tenta de novo
+            }
+          }, 200);
+          // Timeout de 5s
+          setTimeout(() => clearInterval(esperar), 5000);
+          return;
+        }
+
         const a = new Audio(src);
-        a.onended = () => { const b = document.getElementById('qbtn_' + pid); if (b) b.textContent = '▶'; };
+        a.onended = () => {
+          const b = document.getElementById('qbtn_' + pid);
+          if (b) b.textContent = '▶';
+          a.currentTime = 0;
+        };
         window._qAudPlayers[pid] = a;
       }
 
       const a = window._qAudPlayers[pid];
-      const btn = document.getElementById('qbtn_' + pid);
       if (a.paused) { a.play(); if (btn) btn.textContent = '⏸'; }
       else { a.pause(); if (btn) btn.textContent = '▶'; }
     }
@@ -3776,6 +3818,45 @@ function setStars(id) {
     </div>`;
     }
     // ── 18. ÁUDIO INLINE ──────────────────────────────────
+    const _AudInlineDB = {
+      db: null,
+      async init() {
+        return new Promise((res, rej) => {
+          const req = indexedDB.open('listflow_audio_inline', 1);
+          req.onupgradeneeded = e => {
+            if (!e.target.result.objectStoreNames.contains('blobs'))
+              e.target.result.createObjectStore('blobs', { keyPath: 'id' });
+          };
+          req.onsuccess = e => { this.db = e.target.result; res(); };
+          req.onerror = e => rej(e);
+        });
+      },
+      async salvar(id, blob) {
+        await this.init();
+        return new Promise((res, rej) => {
+          const tx = this.db.transaction('blobs', 'readwrite');
+          tx.objectStore('blobs').put({ id, blob });
+          tx.oncomplete = res; tx.onerror = rej;
+        });
+      },
+      async carregar(id) {
+        await this.init();
+        return new Promise((res, rej) => {
+          const tx = this.db.transaction('blobs', 'readonly');
+          const req = tx.objectStore('blobs').get(id);
+          req.onsuccess = e => res(e.target.result?.blob || null);
+          req.onerror = rej;
+        });
+      },
+      async deletar(id) {
+        await this.init();
+        return new Promise((res, rej) => {
+          const tx = this.db.transaction('blobs', 'readwrite');
+          tx.objectStore('blobs').delete(id);
+          tx.oncomplete = res; tx.onerror = rej;
+        });
+      }
+    };
     reg('audio', {
       name: 'Áudio Inline', icon: '🎙️', desc: 'Áudios embutidos dentro do texto', def: false,
       abtn(item) {
@@ -3885,8 +3966,6 @@ function setStars(id) {
     function renderRichText(item) {
       if (!item.text) return '';
       const audios = item.audios || {};
-
-      // Divide nos marcadores ⟨🎙id⟩
       const parts = item.text.split(/(⟨🎙[a-z0-9]+⟩)/g);
 
       return parts.map(part => {
@@ -3896,8 +3975,8 @@ function setStars(id) {
         const markId = m[1];
         const aud = audios[markId];
 
-        if (aud && aud.src) {
-          // Player customizado
+        // ← única mudança: aceita src OU idb
+        if (aud && (aud.src || aud.idb)) {
           return `<span class="aud-chip" id="chip-${markId}">
         <button class="aud-play" id="play-${markId}"
           onclick="audioPlayPause('${markId}','${item.id}')">▶</button>
@@ -3909,37 +3988,31 @@ function setStars(id) {
         <button class="aud-del-btn" onclick="audioDel('${item.id}','${markId}')">✕</button>
       </span>`;
         } else {
-          // Ainda sem áudio — mostra botões gravar/importar
           const isRec = _audItemId === item.id && _audMarkId === markId && _audRec && !_audPaused;
           const isPaused = _audItemId === item.id && _audMarkId === markId && _audRec && _audPaused;
           const isActive = isRec || isPaused;
-
           return `<span class="aud-chip pending ${isRec ? 'recording' : ''}">
-          ${!isActive ? `
-            <button class="aud-rec-btn" id="arec-${markId}"
-              onclick="audioToggleRec('${item.id}','${markId}')">
-              🎙 Gravar
-            </button>
-            <button class="aud-rec-btn" onclick="audioImport('${item.id}','${markId}')">📎</button>
-          ` : `
-            <button class="aud-rec-btn ${isRec ? 'on' : ''}" id="arec-${markId}"
-              onclick="audioToggleRec('${item.id}','${markId}')">
-              ${isRec ? '⏸ Pausar' : '▶ Continuar'}
-            </button>
-            <button class="aud-rec-btn" style="background:rgba(232,86,94,.15);border-color:var(--red);color:var(--red)"
-              onclick="audioStopRec('${item.id}','${markId}')">
-              ⏹ Parar
-            </button>
-          `}
-          <button class="aud-del-btn" onclick="audioDel('${item.id}','${markId}')">✕</button>
-        </span>`;
+        ${!isActive ? `
+          <button class="aud-rec-btn" id="arec-${markId}"
+            onclick="audioToggleRec('${item.id}','${markId}')">🎙 Gravar</button>
+          <button class="aud-rec-btn" onclick="audioImport('${item.id}','${markId}')">📎</button>
+        `: `
+          <button class="aud-rec-btn ${isRec ? 'on' : ''}" id="arec-${markId}"
+            onclick="audioToggleRec('${item.id}','${markId}')">
+            ${isRec ? '⏸ Pausar' : '▶ Continuar'}
+          </button>
+          <button class="aud-rec-btn" style="background:rgba(232,86,94,.15);border-color:var(--red);color:var(--red)"
+            onclick="audioStopRec('${item.id}','${markId}')">⏹ Parar</button>
+        `}
+        <button class="aud-del-btn" onclick="audioDel('${item.id}','${markId}')">✕</button>
+      </span>`;
         }
       }).join('');
     }
 
     // ── Player customizado ──
     function audioPlayPause(markId, itemId) {
-      // Para todos os outros players
+      // Para todos os outros
       Object.entries(_audPlayers).forEach(([id, a]) => {
         if (id !== markId) {
           a.pause();
@@ -3950,16 +4023,29 @@ function setStars(id) {
         }
       });
 
-      // Cria o player se não existir
-      if (!_audPlayers[markId]) {
-        const list = getL(); if (!list) return;
-        const item = find(list.items, itemId); if (!item) return;
-        const src = item.audios?.[markId]?.src; if (!src) return;
+      // Se player já existe, alterna
+      if (_audPlayers[markId]) {
+        const a = _audPlayers[markId];
+        const btn = document.getElementById(`play-${markId}`);
+        const chip = document.getElementById(`chip-${markId}`);
+        if (a.paused) { a.play(); if (btn) btn.textContent = '⏸'; if (chip) chip.classList.add('aud-playing'); }
+        else { a.pause(); if (btn) btn.textContent = '▶'; if (chip) chip.classList.remove('aud-playing'); }
+        return;
+      }
 
+      // Busca item em todas as listas
+      let targetItem = null;
+      for (const lista of S.lists) {
+        const f = find(lista.items, itemId);
+        if (f) { targetItem = f; break; }
+      }
+      if (!targetItem) return;
+      const aud = targetItem.audios?.[markId];
+      if (!aud) return;
+
+      const _criarPlayer = (src) => {
         const a = new Audio(src);
         _audPlayers[markId] = a;
-
-        // Atualiza barra e tempo
         a.ontimeupdate = () => {
           const pct = a.duration ? (a.currentTime / a.duration * 100) : 0;
           const bar = document.getElementById(`bar-${markId}`);
@@ -3974,21 +4060,24 @@ function setStars(id) {
           if (b) b.textContent = '▶';
           if (c) c.classList.remove('aud-playing');
           if (bar) bar.style.width = '0%';
+          a.currentTime = 0; // ← reseta para poder tocar de novo
         };
-      }
-
-      const a = _audPlayers[markId];
-      const btn = document.getElementById(`play-${markId}`);
-      const chip = document.getElementById(`chip-${markId}`);
-
-      if (a.paused) {
+        const btn = document.getElementById(`play-${markId}`);
+        const chip = document.getElementById(`chip-${markId}`);
         a.play();
         if (btn) btn.textContent = '⏸';
         if (chip) chip.classList.add('aud-playing');
-      } else {
-        a.pause();
-        if (btn) btn.textContent = '▶';
-        if (chip) chip.classList.remove('aud-playing');
+      };
+
+      if (aud.idb) {
+        const btn = document.getElementById(`play-${markId}`);
+        if (btn) btn.textContent = '⌛';
+        _AudInlineDB.carregar(markId).then(blob => {
+          if (!blob) { alert('Áudio não encontrado.'); if (btn) btn.textContent = '▶'; return; }
+          _criarPlayer(URL.createObjectURL(blob));
+        }).catch(e => { console.error(e); if (btn) btn.textContent = '▶'; });
+      } else if (aud.src) {
+        _criarPlayer(aud.src);
       }
     }
 
@@ -4034,35 +4123,58 @@ function setStars(id) {
         const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(t => MediaRecorder.isTypeSupported(t)) || '';
         _audRec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
         _audRec.ondataavailable = e => { if (e.data.size > 0) _audChunks.push(e.data); };
+
         _audRec.onstop = () => {
           stream.getTracks().forEach(t => t.stop());
           const blob = new Blob(_audChunks, { type: _audRec.mimeType || 'audio/webm' });
-          const reader = new FileReader();
-          reader.onload = ev => {
-            // Pede nome antes de salvar
-            openM('🎙️ Nomear Áudio', `
-          <div class="fg">
-            <div class="fl">Nome do áudio</div>
-            <input type="text" id="audNome" placeholder="Ex: Lembrete, Ideia, Nota..." autofocus>
-          </div>
-          <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:4px">
-            Deixe em branco para usar "Áudio"
-          </div>
-        `, () => {
-              const nome = document.getElementById('audNome')?.value.trim() || 'Áudio';
-              const list = getL(); if (!list) return;
-              const item = find(list.items, itemId); if (!item) return;
-              if (!item.audios) item.audios = {};
-              if (!item.audios[markId]) item.audios[markId] = {};
-              item.audios[markId].src = ev.target.result;
-              item.audios[markId].nome = nome;
-              _audRec = null; _audItemId = null; _audMarkId = null; _audPaused = false;
+
+          // Guarda referências locais para não perder no callback
+          const _iid = itemId;
+          const _mid = markId;
+          const _blob = blob;
+
+          openM('🎙️ Nomear Áudio', `
+        <div class="fg">
+          <div class="fl">Nome do áudio</div>
+          <input type="text" id="audNome" placeholder="Ex: Lembrete, Ideia, Nota...">
+        </div>
+        <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:4px">
+          Deixe em branco para usar "Áudio"
+        </div>
+      `, () => {
+            const nome = document.getElementById('audNome')?.value.trim() || 'Áudio';
+
+            // Busca item em TODAS as listas
+            let targetItem = null;
+            for (const lista of S.lists) {
+              const f = find(lista.items, _iid);
+              if (f) { targetItem = f; break; }
+            }
+            if (!targetItem) { alert('Erro: item não encontrado.'); return; }
+            if (!targetItem.audios) targetItem.audios = {};
+            if (!targetItem.audios[_mid]) targetItem.audios[_mid] = {};
+
+            _audRec = null; _audItemId = null; _audMarkId = null; _audPaused = false;
+
+            _AudInlineDB.salvar(_mid, _blob).then(() => {
+              targetItem.audios[_mid].src = null;
+              targetItem.audios[_mid].nome = nome;
+              targetItem.audios[_mid].idb = true;
               save(); renderCnt();
+            }).catch(() => {
+              // Fallback: base64 se IndexedDB falhar
+              const reader = new FileReader();
+              reader.onload = ev => {
+                targetItem.audios[_mid].src = ev.target.result;
+                targetItem.audios[_mid].nome = nome;
+                save(); renderCnt();
+              };
+              reader.readAsDataURL(_blob);
             });
-          };
-          reader.readAsDataURL(blob);
+          });
         };
-        _audRec.start(100); // coleta chunks a cada 100ms para suportar pause/resume
+
+        _audRec.start(100);
         renderCnt();
       } catch (e) { alert('Microfone inacessível:\n' + e.message); }
     }
@@ -4077,27 +4189,44 @@ function setStars(id) {
       const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'audio/*';
       inp.onchange = e => {
         const file = e.target.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => {
-          const list = getL(); if (!list) return;
-          const item = find(list.items, itemId); if (!item) return;
-          if (!item.audios) item.audios = {};
-          if (!item.audios[markId]) item.audios[markId] = {};
-          item.audios[markId].src = ev.target.result;
+        let targetItem = null;
+        for (const lista of S.lists) {
+          const f = find(lista.items, itemId);
+          if (f) { targetItem = f; break; }
+        }
+        if (!targetItem) return;
+        if (!targetItem.audios) targetItem.audios = {};
+        if (!targetItem.audios[markId]) targetItem.audios[markId] = {};
+        _AudInlineDB.salvar(markId, file).then(() => {
+          targetItem.audios[markId].src = null;
+          targetItem.audios[markId].nome = file.name.replace(/\.[^.]+$/, '');
+          targetItem.audios[markId].idb = true;
           save(); renderCnt();
-        };
-        reader.readAsDataURL(file);
+        }).catch(() => {
+          // Fallback base64
+          const reader = new FileReader();
+          reader.onload = ev => {
+            targetItem.audios[markId].src = ev.target.result;
+            save(); renderCnt();
+          };
+          reader.readAsDataURL(file);
+        });
       };
       inp.click();
     }
 
     function audioDel(itemId, markId) {
-      const list = getL(); if (!list) return;
-      const item = find(list.items, itemId); if (!item) return;
-      // Remove marcador do texto e o dado
-      item.text = (item.text || '').replace(`⟨🎙${markId}⟩`, '').trim();
-      if (item.audios) delete item.audios[markId];
+      let targetItem = null;
+      for (const lista of S.lists) {
+        const f = find(lista.items, itemId);
+        if (f) { targetItem = f; break; }
+      }
+      if (!targetItem) return;
+      const aud = targetItem.audios?.[markId];
+      targetItem.text = (targetItem.text || '').replace(`⟨🎙${markId}⟩`, '').trim();
+      if (targetItem.audios) delete targetItem.audios[markId];
       if (_audPlayers[markId]) { _audPlayers[markId].pause(); delete _audPlayers[markId]; }
+      if (aud?.idb) _AudInlineDB.deletar(markId).catch(e => console.error(e));
       save(); renderCnt();
     }
 
@@ -10454,15 +10583,15 @@ Cogito ergo sum | René Descartes'></textarea>
       animar();
     }
 
-function _gravFmtTempo(secs){
-  if(!secs||!isFinite(secs)||isNaN(secs)) return '--:--';
-  secs=Math.floor(secs);
-  const h=Math.floor(secs/3600);
-  const m=Math.floor((secs%3600)/60);
-  const s=secs%60;
-  if(h>0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-}
+    function _gravFmtTempo(secs) {
+      if (!secs || !isFinite(secs) || isNaN(secs)) return '--:--';
+      secs = Math.floor(secs);
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = secs % 60;
+      if (h > 0) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
 
     // ── PLAYER ───────────────────────────────────────────
     function gravTocar(id) {
@@ -10782,7 +10911,7 @@ function _gravFmtTempo(secs){
             <div class="grav-progress-fill" id="gravProg_${a.id}" style="width:0%"></div>
           </div>
           <span class="grav-time" id="gravTempo_${a.id}">
-            ${a.dur&&a.dur>0?_gravFmtTempo(a.dur):'--:--'}
+            ${a.dur && a.dur > 0 ? _gravFmtTempo(a.dur) : '--:--'}
           </span>
         </div>
         <div class="grav-card-acoes">
@@ -10818,15 +10947,15 @@ function _gravFmtTempo(secs){
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
         <div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text3);white-space:nowrap">
-          ${g.audios.length} áudio${g.audios.length!==1?'s':''}
+          ${g.audios.length} áudio${g.audios.length !== 1 ? 's' : ''}
         </div>
-        ${g.audios.length>0?`
+        ${g.audios.length > 0 ? `
         <button onclick="gravExportarTodos()"
           style="padding:4px 10px;border-radius:8px;border:1px solid rgba(62,207,142,.3);
                  background:rgba(62,207,142,.1);color:var(--green);font-size:11px;
                  font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap">
           ⬇ Exportar tudo
-        </button>`:''}
+        </button>`: ''}
       </div>
     </div>
 
@@ -10852,100 +10981,101 @@ function _gravFmtTempo(secs){
       _gravRenderPainel();
       _gravRenderLista();
     }
-    async function gravExportarTodos(){
-  const audios=S._grav?.audios;
-  if(!audios?.length){ alert('Nenhum áudio para exportar.'); return; }
+    async function gravExportarTodos() {
+      const audios = S._grav?.audios;
+      if (!audios?.length) { alert('Nenhum áudio para exportar.'); return; }
 
-  // Tenta usar JSZip se disponível, senão exporta um por um
-  try{
-    // Carrega JSZip dinamicamente
-    await new Promise((res,rej)=>{
-      if(window.JSZip){ res(); return; }
-      const s=document.createElement('script');
-      s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-      s.onload=res; s.onerror=rej;
-      document.head.appendChild(s);
-    });
+      // Tenta usar JSZip se disponível, senão exporta um por um
+      try {
+        // Carrega JSZip dinamicamente
+        await new Promise((res, rej) => {
+          if (window.JSZip) { res(); return; }
+          const s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+          s.onload = res; s.onerror = rej;
+          document.head.appendChild(s);
+        });
 
-    const zip=new JSZip();
-    const pasta=zip.folder('audios_listflow');
+        const zip = new JSZip();
+        const pasta = zip.folder('audios_listflow');
 
-    let ok=0;
-    const total=audios.length;
+        let ok = 0;
+        const total = audios.length;
 
-    // Toast de progresso
-    const toast=document.createElement('div');
-    toast.style.cssText=`position:fixed;top:70px;left:50%;transform:translateX(-50%);
+        // Toast de progresso
+        const toast = document.createElement('div');
+        toast.style.cssText = `position:fixed;top:70px;left:50%;transform:translateX(-50%);
       background:var(--surface);border:1px solid var(--accent);color:var(--text);
       padding:10px 20px;border-radius:99px;font-family:'Syne',sans-serif;
       font-size:13px;font-weight:700;z-index:9000;white-space:nowrap;`;
-    toast.textContent=`⬇ Preparando 0/${total}...`;
-    document.body.appendChild(toast);
+        toast.textContent = `⬇ Preparando 0/${total}...`;
+        document.body.appendChild(toast);
 
-    for(const audio of audios){
-      try{
-        const blob=await _GravDB.carregar(audio.id);
-        if(blob){
-          // Nome do arquivo: sanitiza caracteres especiais
-          const nome=(audio.nome||'audio').replace(/[/\\?%*:|"<>]/g,'_');
-          const data=new Date(audio.data).toLocaleDateString('pt-BR').replace(/\//g,'-');
-          pasta.file(`${data}_${nome}.webm`, blob);
-          ok++;
-          toast.textContent=`⬇ Preparando ${ok}/${total}...`;
+        for (const audio of audios) {
+          try {
+            const blob = await _GravDB.carregar(audio.id);
+            if (blob) {
+              // Nome do arquivo: sanitiza caracteres especiais
+              const nome = (audio.nome || 'audio').replace(/[/\\?%*:|"<>]/g, '_');
+              const data = new Date(audio.data).toLocaleDateString('pt-BR').replace(/\//g, '-');
+              pasta.file(`${data}_${nome}.webm`, blob);
+              ok++;
+              toast.textContent = `⬇ Preparando ${ok}/${total}...`;
+            }
+          } catch (e) { console.error('Erro ao carregar', audio.id, e); }
         }
-      } catch(e){ console.error('Erro ao carregar',audio.id,e); }
-    }
 
-    toast.textContent=`📦 Gerando ZIP...`;
+        toast.textContent = `📦 Gerando ZIP...`;
 
-    const zipBlob=await zip.generateAsync({type:'blob',
-      compression:'DEFLATE',compressionOptions:{level:1}
-    });
+        const zipBlob = await zip.generateAsync({
+          type: 'blob',
+          compression: 'DEFLATE', compressionOptions: { level: 1 }
+        });
 
-    const url=URL.createObjectURL(zipBlob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=`audios_listflow_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.zip`;
-    a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),2000);
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `audios_listflow_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.zip`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
 
-    toast.textContent=`✅ ${ok} áudio${ok!==1?'s':''} exportado${ok!==1?'s':''}!`;
-    setTimeout(()=>toast.remove(),3000);
+        toast.textContent = `✅ ${ok} áudio${ok !== 1 ? 's' : ''} exportado${ok !== 1 ? 's' : ''}!`;
+        setTimeout(() => toast.remove(), 3000);
 
-  } catch(e){
-    // JSZip falhou — exporta um por um com delay
-    console.warn('JSZip não disponível, exportando individualmente:', e);
-    const total=audios.length;
-    let i=0;
+      } catch (e) {
+        // JSZip falhou — exporta um por um com delay
+        console.warn('JSZip não disponível, exportando individualmente:', e);
+        const total = audios.length;
+        let i = 0;
 
-    const toast=document.createElement('div');
-    toast.style.cssText=`position:fixed;top:70px;left:50%;transform:translateX(-50%);
+        const toast = document.createElement('div');
+        toast.style.cssText = `position:fixed;top:70px;left:50%;transform:translateX(-50%);
       background:var(--surface);border:1px solid var(--accent);color:var(--text);
       padding:10px 20px;border-radius:99px;font-family:'Syne',sans-serif;
       font-size:13px;font-weight:700;z-index:9000;white-space:nowrap;`;
-    document.body.appendChild(toast);
+        document.body.appendChild(toast);
 
-    for(const audio of audios){
-      try{
-        const blob=await _GravDB.carregar(audio.id);
-        if(blob){
-          i++;
-          toast.textContent=`⬇ Exportando ${i}/${total}...`;
-          const url=URL.createObjectURL(blob);
-          const a=document.createElement('a');
-          a.href=url;
-          a.download=(audio.nome||'audio').replace(/[/\\?%*:|"<>]/g,'_')+'.webm';
-          a.click();
-          await new Promise(r=>setTimeout(r,800)); // delay entre downloads
-          URL.revokeObjectURL(url);
+        for (const audio of audios) {
+          try {
+            const blob = await _GravDB.carregar(audio.id);
+            if (blob) {
+              i++;
+              toast.textContent = `⬇ Exportando ${i}/${total}...`;
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = (audio.nome || 'audio').replace(/[/\\?%*:|"<>]/g, '_') + '.webm';
+              a.click();
+              await new Promise(r => setTimeout(r, 800)); // delay entre downloads
+              URL.revokeObjectURL(url);
+            }
+          } catch (err) { console.error(err); }
         }
-      } catch(err){ console.error(err); }
-    }
 
-    toast.textContent=`✅ ${i} áudio${i!==1?'s':''} exportado${i!==1?'s':''}!`;
-    setTimeout(()=>toast.remove(),3000);
-  }
-}
+        toast.textContent = `✅ ${i} áudio${i !== 1 ? 's' : ''} exportado${i !== 1 ? 's' : ''}!`;
+        setTimeout(() => toast.remove(), 3000);
+      }
+    }
     // ══════════════════════════════════════════════════════
     //  BOOT
     // ══════════════════════════════════════════════════════
