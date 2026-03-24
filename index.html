@@ -10533,24 +10533,36 @@ Cogito ergo sum | René Descartes'></textarea>
     function gravEditarTags(id) {
       const audio = S._grav?.audios.find(a => a.id === id);
       if (!audio) return;
-      let selecionadas = [...audio.tags];
+
+      // Usa window para ficar acessível nos onclicks inline
+      window._gravTagsEdit = [...audio.tags];
+
       openM('🏷️ Tags', `
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      ${_GRAV_TAGS.map(t => `
-        <div id="gtag_${t.replace(/\s/g, '_')}"
-          class="grav-tag-chip${selecionadas.includes(t) ? ' on' : ''}"
-          onclick="
-            const el=this;
-            const tag='${t}';
-            const idx=selecionadas.indexOf(tag);
-            if(idx>-1){selecionadas.splice(idx,1);el.classList.remove('on');}
-            else{selecionadas.push(tag);el.classList.add('on');}
-          ">${t}</div>
-      `).join('')}
+      ${_GRAV_TAGS.map(t => {
+        const tid = 'gtag_' + t.replace(/[^a-z0-9]/gi, '_');
+        const on = window._gravTagsEdit.includes(t);
+        return `<div id="${tid}"
+          class="grav-tag-chip${on ? ' on' : ''}"
+          onclick="_gravToggleTagEdit('${tid}','${t}')"
+        >${t}</div>`;
+      }).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:8px">
+      Toque nas tags para selecionar ou remover
     </div>
   `, () => {
-        audio.tags = selecionadas; save(); _gravRender();
+        audio.tags = [...window._gravTagsEdit];
+        save(); _gravRender();
       });
+    }
+
+    function _gravToggleTagEdit(tid, tag) {
+      const idx = window._gravTagsEdit.indexOf(tag);
+      if (idx > -1) window._gravTagsEdit.splice(idx, 1);
+      else window._gravTagsEdit.push(tag);
+      const el = document.getElementById(tid);
+      if (el) el.classList.toggle('on', window._gravTagsEdit.includes(tag));
     }
 
     function gravExportar(id) {
@@ -10703,35 +10715,37 @@ Cogito ergo sum | René Descartes'></textarea>
     function _gravRenderLista() {
       const el = document.getElementById('gravLista');
       if (!el) return;
-      const g = S._grav;
-      if (!g) return;
+      if (!S._grav) return;
 
-      const busca = (g.busca || '').toLowerCase().trim();
-      const filtroTag = g.filtroTag;
+      const busca = (S._grav.busca || '').toLowerCase().trim();
+      const filtroTag = S._grav.filtroTag || null;
 
-      let audios = [...g.audios];
+      let audios = [...S._grav.audios];
 
-      // Filtra por busca
       if (busca) audios = audios.filter(a =>
         a.nome.toLowerCase().includes(busca) ||
         a.tags.some(t => t.toLowerCase().includes(busca))
       );
-
-      // Filtra por tag
       if (filtroTag) audios = audios.filter(a => a.tags.includes(filtroTag));
+
+      // Atualiza visual dos filtros sem reconstruir tudo
+      document.querySelectorAll('.grav-filtro').forEach(el => {
+        const tag = el.dataset.tag;
+        if (tag === undefined) el.classList.toggle('on', !filtroTag); // botão Todos
+        else el.classList.toggle('on', filtroTag === tag);
+      });
 
       if (!audios.length) {
         el.innerHTML = `<div class="grav-empty">
       <div class="grav-empty-ico">🎙️</div>
       <div style="font-size:16px;font-weight:700;color:var(--text2)">${busca || filtroTag ? 'Nenhum resultado' : 'Nenhum áudio gravado'}</div>
       <div style="font-size:13px;text-align:center;line-height:1.6">
-        ${busca || filtroTag ? 'Tente outros termos de busca' : 'Toque em 🎙️ para começar a gravar'}
+        ${busca || filtroTag ? 'Tente outros termos' : 'Toque em 🎙️ para gravar'}
       </div>
     </div>`;
         return;
       }
 
-      // Agrupa por data
       const grupos = {};
       audios.forEach(a => {
         const d = new Date(a.data);
@@ -10760,11 +10774,8 @@ Cogito ergo sum | René Descartes'></textarea>
             ${a.tags.length ? `<div class="grav-card-tags">${a.tags.map(t => `<span class="grav-card-tag">${t}</span>`).join('')}</div>` : ''}
           </div>
         </div>
-
-        <!-- Player -->
         <div class="grav-player">
-          <button class="grav-play-btn" id="gravPlay_${a.id}"
-            onclick="gravTocar('${a.id}')">▶</button>
+          <button class="grav-play-btn" id="gravPlay_${a.id}" onclick="gravTocar('${a.id}')">▶</button>
           <div class="grav-progress-wrap" onclick="gravSeek('${a.id}',event)">
             <div class="grav-progress-fill" id="gravProg_${a.id}" style="width:0%"></div>
           </div>
@@ -10772,8 +10783,6 @@ Cogito ergo sum | René Descartes'></textarea>
             ${a.dur ? _gravFmtTempo(a.dur) : '--:--'}
           </span>
         </div>
-
-        <!-- Ações -->
         <div class="grav-card-acoes">
           <button class="grav-acao" onclick="gravRenomear('${a.id}')">✏️ Renomear</button>
           <button class="grav-acao" onclick="gravEditarTags('${a.id}')">🏷️ Tags</button>
@@ -10816,9 +10825,10 @@ Cogito ergo sum | René Descartes'></textarea>
     <!-- Filtros por tag -->
     ${tagsUsadas.length ? `
     <div class="grav-filtros">
-      <div class="grav-filtro${!g.filtroTag ? ' on' : ''}" onclick="S._grav.filtroTag=null;save();_gravRenderLista()">Todos</div>
+      <div class="grav-filtro${!S._grav.filtroTag ? ' on' : ''}" data-tag
+        onclick="S._grav.filtroTag=null;save();_gravRenderLista()">Todos</div>
       ${tagsUsadas.map(t => `
-        <div class="grav-filtro${g.filtroTag === t ? ' on' : ''}"
+        <div class="grav-filtro${S._grav.filtroTag === t ? ' on' : ''}" data-tag="${t}"
           onclick="S._grav.filtroTag=S._grav.filtroTag==='${t}'?null:'${t}';save();_gravRenderLista()">
           ${t}
         </div>`).join('')}
