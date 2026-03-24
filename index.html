@@ -10454,15 +10454,15 @@ Cogito ergo sum | René Descartes'></textarea>
       animar();
     }
 
-    function _gravFmtTempo(secs) {
-      if (!secs || !isFinite(secs) || isNaN(secs)) return '--:--';
-      secs = Math.floor(secs);
-      const h = Math.floor(secs / 3600);
-      const m = Math.floor((secs % 3600) / 60);
-      const s = secs % 60;
-      if (h > 0) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }
+function _gravFmtTempo(secs){
+  if(!secs||!isFinite(secs)||isNaN(secs)) return '--:--';
+  secs=Math.floor(secs);
+  const h=Math.floor(secs/3600);
+  const m=Math.floor((secs%3600)/60);
+  const s=secs%60;
+  if(h>0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
 
     // ── PLAYER ───────────────────────────────────────────
     function gravTocar(id) {
@@ -10483,13 +10483,9 @@ Cogito ergo sum | René Descartes'></textarea>
       _GravDB.carregar(id).then(blob => {
         if (!blob) { alert('Áudio não encontrado.'); if (btn) btn.textContent = '▶'; return; }
         const url = URL.createObjectURL(blob);
-        const el = new Audio();
-        el.preload = 'auto';
-        el.src = url;
+        const el = new Audio(url);
         window._gravAudAtual = el;
         window._gravIdAtual = id;
-        // Começa a tocar assim que tiver dados suficientes
-        el.oncanplay = () => { el.oncanplay = null; el.play(); if (btn) { btn.textContent = '⏸'; btn.classList.add('playing'); } if (card) card.classList.add('playing'); };
         const prog = document.getElementById('gravProg_' + id);
         const tempo = document.getElementById('gravTempo_' + id);
         if (btn) { btn.textContent = '⏸'; btn.classList.add('playing'); }
@@ -10508,7 +10504,7 @@ Cogito ergo sum | René Descartes'></textarea>
           window._gravAudAtual = null; window._gravIdAtual = null;
         };
         el.onerror = () => { alert('Erro ao reproduzir.'); if (btn) btn.textContent = '▶'; URL.revokeObjectURL(url); };
-        el.load();
+        el.play();
       }).catch(e => { console.error(e); if (btn) btn.textContent = '▶'; });
     }
 
@@ -10786,7 +10782,7 @@ Cogito ergo sum | René Descartes'></textarea>
             <div class="grav-progress-fill" id="gravProg_${a.id}" style="width:0%"></div>
           </div>
           <span class="grav-time" id="gravTempo_${a.id}">
-            ${a.dur && a.dur > 0 ? _gravFmtTempo(a.dur) : '--:--'}
+            ${a.dur&&a.dur>0?_gravFmtTempo(a.dur):'--:--'}
           </span>
         </div>
         <div class="grav-card-acoes">
@@ -10822,21 +10818,15 @@ Cogito ergo sum | René Descartes'></textarea>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
         <div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text3);white-space:nowrap">
-          ${g.audios.length} áudio${g.audios.length !== 1 ? 's' : ''}
+          ${g.audios.length} áudio${g.audios.length!==1?'s':''}
         </div>
-        ${g.audios.length > 0 ? `
+        ${g.audios.length>0?`
         <button onclick="gravExportarTodos()"
           style="padding:4px 10px;border-radius:8px;border:1px solid rgba(62,207,142,.3);
                  background:rgba(62,207,142,.1);color:var(--green);font-size:11px;
                  font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap">
           ⬇ Exportar tudo
-        </button>
-        <button onclick="gravImportarZip()"
-          style="padding:4px 10px;border-radius:8px;border:1px solid rgba(124,106,247,.3);
-                 background:rgba(124,106,247,.1);color:var(--accent);font-size:11px;
-                 font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap">
-          ⬆ Importar ZIP
-        </button>`: ''}
+        </button>`:''}
       </div>
     </div>
 
@@ -10862,203 +10852,100 @@ Cogito ergo sum | René Descartes'></textarea>
       _gravRenderPainel();
       _gravRenderLista();
     }
-    async function gravExportarTodos() {
-      const audios = S._grav?.audios;
-      if (!audios?.length) { alert('Nenhum áudio para exportar.'); return; }
+    async function gravExportarTodos(){
+  const audios=S._grav?.audios;
+  if(!audios?.length){ alert('Nenhum áudio para exportar.'); return; }
 
-      // Tenta usar JSZip se disponível, senão exporta um por um
-      try {
-        // Carrega JSZip dinamicamente
-        await new Promise((res, rej) => {
-          if (window.JSZip) { res(); return; }
-          const s = document.createElement('script');
-          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-          s.onload = res; s.onerror = rej;
-          document.head.appendChild(s);
-        });
+  // Tenta usar JSZip se disponível, senão exporta um por um
+  try{
+    // Carrega JSZip dinamicamente
+    await new Promise((res,rej)=>{
+      if(window.JSZip){ res(); return; }
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      s.onload=res; s.onerror=rej;
+      document.head.appendChild(s);
+    });
 
-        const zip = new JSZip();
-        const pasta = zip.folder('audios_listflow');
+    const zip=new JSZip();
+    const pasta=zip.folder('audios_listflow');
 
-        let ok = 0;
-        const total = audios.length;
+    let ok=0;
+    const total=audios.length;
 
-        // Toast de progresso
-        const toast = document.createElement('div');
-        toast.style.cssText = `position:fixed;top:70px;left:50%;transform:translateX(-50%);
+    // Toast de progresso
+    const toast=document.createElement('div');
+    toast.style.cssText=`position:fixed;top:70px;left:50%;transform:translateX(-50%);
       background:var(--surface);border:1px solid var(--accent);color:var(--text);
       padding:10px 20px;border-radius:99px;font-family:'Syne',sans-serif;
       font-size:13px;font-weight:700;z-index:9000;white-space:nowrap;`;
-        toast.textContent = `⬇ Preparando 0/${total}...`;
-        document.body.appendChild(toast);
+    toast.textContent=`⬇ Preparando 0/${total}...`;
+    document.body.appendChild(toast);
 
-        for (const audio of audios) {
-          try {
-            const blob = await _GravDB.carregar(audio.id);
-            if (blob) {
-              // Nome do arquivo: sanitiza caracteres especiais
-              const nome = (audio.nome || 'audio').replace(/[/\\?%*:|"<>]/g, '_');
-              const data = new Date(audio.data).toLocaleDateString('pt-BR').replace(/\//g, '-');
-              pasta.file(`${data}_${nome}.webm`, blob);
-              ok++;
-              toast.textContent = `⬇ Preparando ${ok}/${total}...`;
-            }
-          } catch (e) { console.error('Erro ao carregar', audio.id, e); }
+    for(const audio of audios){
+      try{
+        const blob=await _GravDB.carregar(audio.id);
+        if(blob){
+          // Nome do arquivo: sanitiza caracteres especiais
+          const nome=(audio.nome||'audio').replace(/[/\\?%*:|"<>]/g,'_');
+          const data=new Date(audio.data).toLocaleDateString('pt-BR').replace(/\//g,'-');
+          pasta.file(`${data}_${nome}.webm`, blob);
+          ok++;
+          toast.textContent=`⬇ Preparando ${ok}/${total}...`;
         }
-
-        toast.textContent = `📦 Gerando ZIP...`;
-
-        const zipBlob = await zip.generateAsync({
-          type: 'blob',
-          compression: 'DEFLATE', compressionOptions: { level: 1 }
-        });
-
-        const url = URL.createObjectURL(zipBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `audios_listflow_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.zip`;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
-
-        toast.textContent = `✅ ${ok} áudio${ok !== 1 ? 's' : ''} exportado${ok !== 1 ? 's' : ''}!`;
-        setTimeout(() => toast.remove(), 3000);
-
-      } catch (e) {
-        // JSZip falhou — exporta um por um com delay
-        console.warn('JSZip não disponível, exportando individualmente:', e);
-        const total = audios.length;
-        let i = 0;
-
-        const toast = document.createElement('div');
-        toast.style.cssText = `position:fixed;top:70px;left:50%;transform:translateX(-50%);
-      background:var(--surface);border:1px solid var(--accent);color:var(--text);
-      padding:10px 20px;border-radius:99px;font-family:'Syne',sans-serif;
-      font-size:13px;font-weight:700;z-index:9000;white-space:nowrap;`;
-        document.body.appendChild(toast);
-
-        for (const audio of audios) {
-          try {
-            const blob = await _GravDB.carregar(audio.id);
-            if (blob) {
-              i++;
-              toast.textContent = `⬇ Exportando ${i}/${total}...`;
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = (audio.nome || 'audio').replace(/[/\\?%*:|"<>]/g, '_') + '.webm';
-              a.click();
-              await new Promise(r => setTimeout(r, 800)); // delay entre downloads
-              URL.revokeObjectURL(url);
-            }
-          } catch (err) { console.error(err); }
-        }
-
-        toast.textContent = `✅ ${i} áudio${i !== 1 ? 's' : ''} exportado${i !== 1 ? 's' : ''}!`;
-        setTimeout(() => toast.remove(), 3000);
-      }
+      } catch(e){ console.error('Erro ao carregar',audio.id,e); }
     }
-    async function gravImportarZip() {
-      // Carrega JSZip se necessário
-      await new Promise((res, rej) => {
-        if (window.JSZip) { res(); return; }
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-        s.onload = res; s.onerror = rej;
-        document.head.appendChild(s);
-      }).catch(() => { alert('Não foi possível carregar o suporte a ZIP.'); throw new Error(); });
 
-      const inp = document.createElement('input');
-      inp.type = 'file';
-      inp.accept = '.zip,audio/*';
-      inp.multiple = true;
+    toast.textContent=`📦 Gerando ZIP...`;
 
-      inp.onchange = async e => {
-        const files = Array.from(e.target.files);
-        if (!files.length) return;
+    const zipBlob=await zip.generateAsync({type:'blob',
+      compression:'DEFLATE',compressionOptions:{level:1}
+    });
 
-        const toast = document.createElement('div');
-        toast.style.cssText = `position:fixed;top:70px;left:50%;transform:translateX(-50%);
+    const url=URL.createObjectURL(zipBlob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`audios_listflow_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.zip`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+
+    toast.textContent=`✅ ${ok} áudio${ok!==1?'s':''} exportado${ok!==1?'s':''}!`;
+    setTimeout(()=>toast.remove(),3000);
+
+  } catch(e){
+    // JSZip falhou — exporta um por um com delay
+    console.warn('JSZip não disponível, exportando individualmente:', e);
+    const total=audios.length;
+    let i=0;
+
+    const toast=document.createElement('div');
+    toast.style.cssText=`position:fixed;top:70px;left:50%;transform:translateX(-50%);
       background:var(--surface);border:1px solid var(--accent);color:var(--text);
       padding:10px 20px;border-radius:99px;font-family:'Syne',sans-serif;
       font-size:13px;font-weight:700;z-index:9000;white-space:nowrap;`;
-        toast.textContent = '📦 Lendo arquivos...';
-        document.body.appendChild(toast);
+    document.body.appendChild(toast);
 
-        let importados = 0;
-
-        for (const file of files) {
-          if (file.name.endsWith('.zip')) {
-            // Importa ZIP
-            try {
-              const zip = await JSZip.loadAsync(file);
-              const entries = Object.values(zip.files).filter(f =>
-                !f.dir && (f.name.endsWith('.webm') || f.name.endsWith('.mp3') ||
-                  f.name.endsWith('.m4a') || f.name.endsWith('.ogg') ||
-                  f.name.endsWith('.wav'))
-              );
-
-              let i = 0;
-              for (const entry of entries) {
-                try {
-                  toast.textContent = `📦 Importando ${++i}/${entries.length}...`;
-                  const blob = await entry.async('blob');
-                  const id = genId();
-
-                  // Extrai nome do arquivo sem data prefix e extensão
-                  let nome = entry.name.split('/').pop(); // remove pasta
-                  nome = nome.replace(/^\d{2}-\d{2}-\d{4}_/, ''); // remove prefixo data
-                  nome = nome.replace(/\.[^.]+$/, ''); // remove extensão
-
-                  const audio = {
-                    id, nome,
-                    dur: 0, tags: [],
-                    data: new Date().toISOString(),
-                    tamanho: Math.round(blob.size / 1024),
-                  };
-
-                  // Tenta pegar duração
-                  const url = URL.createObjectURL(blob);
-                  const el = new Audio(url);
-                  await new Promise(r => { el.onloadedmetadata = () => { audio.dur = Math.round(el.duration); URL.revokeObjectURL(url); r(); }; el.onerror = r; setTimeout(r, 3000); });
-
-                  await _GravDB.salvar(id, blob);
-                  if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
-                  S._grav.audios.unshift(audio);
-                  importados++;
-                } catch (err) { console.error('Erro ao importar entrada ZIP:', err); }
-              }
-            } catch (err) { console.error('Erro ao ler ZIP:', err); }
-
-          } else {
-            // Arquivo de áudio individual
-            try {
-              const id = genId();
-              const nome = file.name.replace(/\.[^.]+$/, '');
-              const audio = {
-                id, nome, dur: 0, tags: [],
-                data: new Date().toISOString(),
-                tamanho: Math.round(file.size / 1024),
-              };
-
-              const url = URL.createObjectURL(file);
-              const el = new Audio(url);
-              await new Promise(r => { el.onloadedmetadata = () => { audio.dur = Math.round(el.duration); URL.revokeObjectURL(url); r(); }; el.onerror = r; setTimeout(r, 3000); });
-
-              await _GravDB.salvar(id, file);
-              if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
-              S._grav.audios.unshift(audio);
-              importados++;
-            } catch (err) { console.error('Erro ao importar áudio:', err); }
-          }
+    for(const audio of audios){
+      try{
+        const blob=await _GravDB.carregar(audio.id);
+        if(blob){
+          i++;
+          toast.textContent=`⬇ Exportando ${i}/${total}...`;
+          const url=URL.createObjectURL(blob);
+          const a=document.createElement('a');
+          a.href=url;
+          a.download=(audio.nome||'audio').replace(/[/\\?%*:|"<>]/g,'_')+'.webm';
+          a.click();
+          await new Promise(r=>setTimeout(r,800)); // delay entre downloads
+          URL.revokeObjectURL(url);
         }
-
-        save();
-        toast.textContent = `✅ ${importados} áudio${importados !== 1 ? 's' : ''} importado${importados !== 1 ? 's' : ''}!`;
-        setTimeout(() => { toast.remove(); _gravRender(); }, 2000);
-      };
-
-      inp.click();
+      } catch(err){ console.error(err); }
     }
+
+    toast.textContent=`✅ ${i} áudio${i!==1?'s':''} exportado${i!==1?'s':''}!`;
+    setTimeout(()=>toast.remove(),3000);
+  }
+}
     // ══════════════════════════════════════════════════════
     //  BOOT
     // ══════════════════════════════════════════════════════
