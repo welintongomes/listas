@@ -2627,23 +2627,23 @@ function setStars(id) {
       }
 
       openM(`🗑️ Confirmar exclusão`, `
-      <div style="text-align:center;padding:8px 0;display:flex;flex-direction:column;gap:12px;align-items:center">
-        <div style="font-size:40px">⚠️</div>
-        <div style="font-size:15px;color:var(--text);line-height:1.5">
-          Deseja excluir ${nome}?
-        </div>
-        ${tipo === 'lista' ? `<div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
-          Todos os itens dentro da lista serão perdidos.
-        </div>` : ''}
+    <div style="text-align:center;padding:8px 0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="font-size:40px">⚠️</div>
+      <div style="font-size:15px;color:var(--text);line-height:1.5">
+        Deseja excluir ${nome}?
       </div>
-      <div class="macts">
-        <button class="btn" onclick="closeM()">Cancelar</button>
-        <button class="btn" style="background:var(--red);border-color:var(--red);color:white;flex:1;margin-top:11px"
-          onclick="closeM();${tipo === 'item' ? `delItem('${id}')` : `delL('${id}')`}">
-          🗑️ Excluir
-        </button>
-      </div>
-    `, null);
+      ${tipo === 'lista' ? `<div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
+        Todos os itens dentro da lista serão perdidos.
+      </div>` : ''}
+    </div>
+    <div class="macts">
+      <button class="btn" onclick="closeM()">Cancelar</button>
+      <button class="btn" style="background:var(--red);border-color:var(--red);color:white;flex:1;margin-top:11px"
+        onclick="closeM();${tipo === 'item' ? `delItem('${id}')` : `delL('${id}')`}">
+        🗑️ Excluir
+      </button>
+    </div>
+  `, null);
     }
 
     // ── MOVER E INDENTAR ITENS ────────────────────────────
@@ -10005,47 +10005,6 @@ Cogito ergo sum | René Descartes'></textarea>
       a.download = 'desenho_' + Date.now() + '.png';
       a.click();
     }
-    //gravar em indexedb
-    const _GravDB = {
-      db: null,
-      async init() {
-        return new Promise((res, rej) => {
-          const req = indexedDB.open('listflow_audios', 1);
-          req.onupgradeneeded = e => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains('audios'))
-              db.createObjectStore('audios', { keyPath: 'id' });
-          };
-          req.onsuccess = e => { this.db = e.target.result; res(); };
-          req.onerror = e => rej(e);
-        });
-      },
-      async salvar(id, blob) {
-        await this.init();
-        return new Promise((res, rej) => {
-          const tx = this.db.transaction('audios', 'readwrite');
-          tx.objectStore('audios').put({ id, blob });
-          tx.oncomplete = res; tx.onerror = rej;
-        });
-      },
-      async carregar(id) {
-        await this.init();
-        return new Promise((res, rej) => {
-          const tx = this.db.transaction('audios', 'readonly');
-          const req = tx.objectStore('audios').get(id);
-          req.onsuccess = e => res(e.target.result?.blob || null);
-          req.onerror = rej;
-        });
-      },
-      async deletar(id) {
-        await this.init();
-        return new Promise((res, rej) => {
-          const tx = this.db.transaction('audios', 'readwrite');
-          tx.objectStore('audios').delete(id);
-          tx.oncomplete = res; tx.onerror = rej;
-        });
-      }
-    };
     // ── GRAVADOR DE ÁUDIOS ────────────────────────────────
     reg('gravador', {
       name: 'Gravador de Áudios', icon: '🎙️',
@@ -10398,28 +10357,36 @@ Cogito ergo sum | René Descartes'></textarea>
 
     function _gravProcessar() {
       const blob = new Blob(window._gravChunks, { type: 'audio/webm' });
-      const secs = window._gravSecs;
-      const nomeEl = document.getElementById('gravNomeInp');
-      const nome = nomeEl?.value.trim() || _gravNomeAuto();
-      const id = genId();
-      const audio = {
-        id, nome, dur: secs,
-        tags: [...window._gravTagsSel],
-        data: new Date().toISOString(),
-        tamanho: Math.round(blob.size / 1024),
-      };
-      if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
-      S._grav.audios.unshift(audio);
-      _GravDB.salvar(id, blob).then(() => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const src = ev.target.result;
+        const secs = window._gravSecs;
+
+        // Pega nome do input
+        const nomeEl = document.getElementById('gravNomeInp');
+        const nome = nomeEl?.value.trim() || _gravNomeAuto();
+
+        const audio = {
+          id: genId(),
+          nome,
+          src,
+          dur: secs,
+          tags: [...window._gravTagsSel],
+          data: new Date().toISOString(),
+          tamanho: Math.round(blob.size / 1024), // KB
+        };
+
+        if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
+        S._grav.audios.unshift(audio);
         save();
+
+        // Reset
         window._gravSecs = 0;
         window._gravTagsSel = [];
         window._gravChunks = [];
         _gravRender();
-      }).catch(e => {
-        console.error('Erro ao salvar áudio:', e);
-        alert('Erro ao salvar o áudio. Tente novamente.');
-      });
+      };
+      reader.readAsDataURL(blob);
     }
 
     function _gravNomeAuto() {
@@ -10464,46 +10431,50 @@ Cogito ergo sum | René Descartes'></textarea>
 
     // ── PLAYER ───────────────────────────────────────────
     function gravTocar(id) {
+      // Para o atual se houver
       if (window._gravAudAtual) {
         window._gravAudAtual.pause();
         window._gravAudAtual.currentTime = 0;
+        // Atualiza visual do card anterior
         const oldBtn = document.getElementById('gravPlay_' + window._gravIdAtual);
-        const oldCard = document.getElementById('gravCard_' + window._gravIdAtual);
         if (oldBtn) { oldBtn.textContent = '▶'; oldBtn.classList.remove('playing'); }
+        const oldCard = document.getElementById('gravCard_' + window._gravIdAtual);
         if (oldCard) oldCard.classList.remove('playing');
-        if (window._gravIdAtual === id) { window._gravAudAtual = null; window._gravIdAtual = null; return; }
+        if (window._gravIdAtual === id) {
+          window._gravAudAtual = null; window._gravIdAtual = null; return;
+        }
       }
-      const meta = S._grav?.audios.find(a => a.id === id);
-      if (!meta) return;
+
+      const audio = S._grav?.audios.find(a => a.id === id);
+      if (!audio) return;
+
+      const el = new Audio(audio.src);
+      window._gravAudAtual = el;
+      window._gravIdAtual = id;
+
       const btn = document.getElementById('gravPlay_' + id);
       const card = document.getElementById('gravCard_' + id);
-      if (btn) btn.textContent = '⌛';
-      _GravDB.carregar(id).then(blob => {
-        if (!blob) { alert('Áudio não encontrado.'); if (btn) btn.textContent = '▶'; return; }
-        const url = URL.createObjectURL(blob);
-        const el = new Audio(url);
-        window._gravAudAtual = el;
-        window._gravIdAtual = id;
-        const prog = document.getElementById('gravProg_' + id);
-        const tempo = document.getElementById('gravTempo_' + id);
-        if (btn) { btn.textContent = '⏸'; btn.classList.add('playing'); }
-        if (card) card.classList.add('playing');
-        el.ontimeupdate = () => {
-          if (!el.duration) return;
-          const pct = (el.currentTime / el.duration) * 100;
-          if (prog) prog.style.width = pct + '%';
-          if (tempo) tempo.textContent = _gravFmtTempo(Math.floor(el.currentTime)) + ' / ' + _gravFmtTempo(Math.floor(el.duration));
-        };
-        el.onended = () => {
-          if (btn) { btn.textContent = '▶'; btn.classList.remove('playing'); }
-          if (card) card.classList.remove('playing');
-          if (prog) prog.style.width = '0%';
-          URL.revokeObjectURL(url);
-          window._gravAudAtual = null; window._gravIdAtual = null;
-        };
-        el.onerror = () => { alert('Erro ao reproduzir.'); if (btn) btn.textContent = '▶'; URL.revokeObjectURL(url); };
-        el.play();
-      }).catch(e => { console.error(e); if (btn) btn.textContent = '▶'; });
+      const prog = document.getElementById('gravProg_' + id);
+      const tempo = document.getElementById('gravTempo_' + id);
+
+      if (btn) { btn.textContent = '⏸'; btn.classList.add('playing'); }
+      if (card) card.classList.add('playing');
+
+      el.ontimeupdate = () => {
+        if (!el.duration) return;
+        const pct = (el.currentTime / el.duration) * 100;
+        if (prog) prog.style.width = pct + '%';
+        if (tempo) tempo.textContent = _gravFmtTempo(Math.floor(el.currentTime)) + ' / ' + _gravFmtTempo(Math.floor(el.duration));
+      };
+
+      el.onended = () => {
+        if (btn) { btn.textContent = '▶'; btn.classList.remove('playing'); }
+        if (card) card.classList.remove('playing');
+        if (prog) prog.style.width = '0%';
+        window._gravAudAtual = null; window._gravIdAtual = null;
+      };
+
+      el.play();
     }
 
     function gravSeek(id, e) {
@@ -10533,49 +10504,33 @@ Cogito ergo sum | René Descartes'></textarea>
     function gravEditarTags(id) {
       const audio = S._grav?.audios.find(a => a.id === id);
       if (!audio) return;
-
-      // Usa window para ficar acessível nos onclicks inline
-      window._gravTagsEdit = [...audio.tags];
-
+      let selecionadas = [...audio.tags];
       openM('🏷️ Tags', `
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      ${_GRAV_TAGS.map(t => {
-        const tid = 'gtag_' + t.replace(/[^a-z0-9]/gi, '_');
-        const on = window._gravTagsEdit.includes(t);
-        return `<div id="${tid}"
-          class="grav-tag-chip${on ? ' on' : ''}"
-          onclick="_gravToggleTagEdit('${tid}','${t}')"
-        >${t}</div>`;
-      }).join('')}
-    </div>
-    <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:8px">
-      Toque nas tags para selecionar ou remover
+      ${_GRAV_TAGS.map(t => `
+        <div id="gtag_${t.replace(/\s/g, '_')}"
+          class="grav-tag-chip${selecionadas.includes(t) ? ' on' : ''}"
+          onclick="
+            const el=this;
+            const tag='${t}';
+            const idx=selecionadas.indexOf(tag);
+            if(idx>-1){selecionadas.splice(idx,1);el.classList.remove('on');}
+            else{selecionadas.push(tag);el.classList.add('on');}
+          ">${t}</div>
+      `).join('')}
     </div>
   `, () => {
-        audio.tags = [...window._gravTagsEdit];
-        save(); _gravRender();
+        audio.tags = selecionadas; save(); _gravRender();
       });
-    }
-
-    function _gravToggleTagEdit(tid, tag) {
-      const idx = window._gravTagsEdit.indexOf(tag);
-      if (idx > -1) window._gravTagsEdit.splice(idx, 1);
-      else window._gravTagsEdit.push(tag);
-      const el = document.getElementById(tid);
-      if (el) el.classList.toggle('on', window._gravTagsEdit.includes(tag));
     }
 
     function gravExportar(id) {
-      const meta = S._grav?.audios.find(a => a.id === id);
-      if (!meta) return;
-      _GravDB.carregar(id).then(blob => {
-        if (!blob) { alert('Áudio não encontrado.'); return; }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = (meta.nome || 'audio') + '.webm';
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      });
+      const audio = S._grav?.audios.find(a => a.id === id);
+      if (!audio) return;
+      const a = document.createElement('a');
+      a.href = audio.src;
+      a.download = (audio.nome || 'audio') + '.webm';
+      a.click();
     }
 
     function gravDeletar(id) {
@@ -10596,7 +10551,6 @@ Cogito ergo sum | René Descartes'></textarea>
       </div>
     `, () => {
           if (window._gravIdAtual === id) { window._gravAudAtual?.pause(); window._gravAudAtual = null; window._gravIdAtual = null; }
-          _GravDB.deletar(id).catch(e => console.error('Erro ao deletar blob:', e));
           S._grav.audios = S._grav.audios.filter(a => a.id !== id);
           save(); _gravRender();
         });
@@ -10612,21 +10566,24 @@ Cogito ergo sum | René Descartes'></textarea>
         const files = Array.from(e.target.files);
         let done = 0;
         files.forEach(f => {
-          const id = genId();
-          const audio = {
-            id, nome: f.name.replace(/\.[^.]+$/, ''),
-            dur: 0, tags: [], data: new Date().toISOString(),
-            tamanho: Math.round(f.size / 1024),
-          };
-          const url = URL.createObjectURL(f);
-          const el = new Audio(url);
-          el.onloadedmetadata = () => { audio.dur = Math.round(el.duration); URL.revokeObjectURL(url); };
-          _GravDB.salvar(id, f).then(() => {
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const audio = {
+              id: genId(),
+              nome: f.name.replace(/\.[^.]+$/, ''),
+              src: ev.target.result,
+              dur: 0, tags: [], data: new Date().toISOString(),
+              tamanho: Math.round(f.size / 1024),
+            };
+            // Tenta pegar duração
+            const el = new Audio(ev.target.result);
+            el.onloadedmetadata = () => { audio.dur = Math.round(el.duration); };
             if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
             S._grav.audios.unshift(audio);
             done++;
             if (done === files.length) { save(); _gravRender(); }
-          }).catch(err => { console.error('Erro ao importar:', err); done++; if (done === files.length) { save(); _gravRender(); } });
+          };
+          reader.readAsDataURL(f);
         });
       };
       inp.click();
@@ -10715,37 +10672,35 @@ Cogito ergo sum | René Descartes'></textarea>
     function _gravRenderLista() {
       const el = document.getElementById('gravLista');
       if (!el) return;
-      if (!S._grav) return;
+      const g = S._grav;
+      if (!g) return;
 
-      const busca = (S._grav.busca || '').toLowerCase().trim();
-      const filtroTag = S._grav.filtroTag || null;
+      const busca = (g.busca || '').toLowerCase().trim();
+      const filtroTag = g.filtroTag;
 
-      let audios = [...S._grav.audios];
+      let audios = [...g.audios];
 
+      // Filtra por busca
       if (busca) audios = audios.filter(a =>
         a.nome.toLowerCase().includes(busca) ||
         a.tags.some(t => t.toLowerCase().includes(busca))
       );
-      if (filtroTag) audios = audios.filter(a => a.tags.includes(filtroTag));
 
-      // Atualiza visual dos filtros sem reconstruir tudo
-      document.querySelectorAll('.grav-filtro').forEach(el => {
-        const tag = el.dataset.tag;
-        if (tag === undefined) el.classList.toggle('on', !filtroTag); // botão Todos
-        else el.classList.toggle('on', filtroTag === tag);
-      });
+      // Filtra por tag
+      if (filtroTag) audios = audios.filter(a => a.tags.includes(filtroTag));
 
       if (!audios.length) {
         el.innerHTML = `<div class="grav-empty">
       <div class="grav-empty-ico">🎙️</div>
       <div style="font-size:16px;font-weight:700;color:var(--text2)">${busca || filtroTag ? 'Nenhum resultado' : 'Nenhum áudio gravado'}</div>
       <div style="font-size:13px;text-align:center;line-height:1.6">
-        ${busca || filtroTag ? 'Tente outros termos' : 'Toque em 🎙️ para gravar'}
+        ${busca || filtroTag ? 'Tente outros termos de busca' : 'Toque em 🎙️ para começar a gravar'}
       </div>
     </div>`;
         return;
       }
 
+      // Agrupa por data
       const grupos = {};
       audios.forEach(a => {
         const d = new Date(a.data);
@@ -10774,8 +10729,11 @@ Cogito ergo sum | René Descartes'></textarea>
             ${a.tags.length ? `<div class="grav-card-tags">${a.tags.map(t => `<span class="grav-card-tag">${t}</span>`).join('')}</div>` : ''}
           </div>
         </div>
+
+        <!-- Player -->
         <div class="grav-player">
-          <button class="grav-play-btn" id="gravPlay_${a.id}" onclick="gravTocar('${a.id}')">▶</button>
+          <button class="grav-play-btn" id="gravPlay_${a.id}"
+            onclick="gravTocar('${a.id}')">▶</button>
           <div class="grav-progress-wrap" onclick="gravSeek('${a.id}',event)">
             <div class="grav-progress-fill" id="gravProg_${a.id}" style="width:0%"></div>
           </div>
@@ -10783,6 +10741,8 @@ Cogito ergo sum | René Descartes'></textarea>
             ${a.dur ? _gravFmtTempo(a.dur) : '--:--'}
           </span>
         </div>
+
+        <!-- Ações -->
         <div class="grav-card-acoes">
           <button class="grav-acao" onclick="gravRenomear('${a.id}')">✏️ Renomear</button>
           <button class="grav-acao" onclick="gravEditarTags('${a.id}')">🏷️ Tags</button>
@@ -10825,10 +10785,9 @@ Cogito ergo sum | René Descartes'></textarea>
     <!-- Filtros por tag -->
     ${tagsUsadas.length ? `
     <div class="grav-filtros">
-      <div class="grav-filtro${!S._grav.filtroTag ? ' on' : ''}" data-tag
-        onclick="S._grav.filtroTag=null;save();_gravRenderLista()">Todos</div>
+      <div class="grav-filtro${!g.filtroTag ? ' on' : ''}" onclick="S._grav.filtroTag=null;save();_gravRenderLista()">Todos</div>
       ${tagsUsadas.map(t => `
-        <div class="grav-filtro${S._grav.filtroTag === t ? ' on' : ''}" data-tag="${t}"
+        <div class="grav-filtro${g.filtroTag === t ? ' on' : ''}"
           onclick="S._grav.filtroTag=S._grav.filtroTag==='${t}'?null:'${t}';save();_gravRenderLista()">
           ${t}
         </div>`).join('')}
