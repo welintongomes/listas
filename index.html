@@ -2627,23 +2627,23 @@ function setStars(id) {
       }
 
       openM(`🗑️ Confirmar exclusão`, `
-    <div style="text-align:center;padding:8px 0;display:flex;flex-direction:column;gap:12px;align-items:center">
-      <div style="font-size:40px">⚠️</div>
-      <div style="font-size:15px;color:var(--text);line-height:1.5">
-        Deseja excluir ${nome}?
+      <div style="text-align:center;padding:8px 0;display:flex;flex-direction:column;gap:12px;align-items:center">
+        <div style="font-size:40px">⚠️</div>
+        <div style="font-size:15px;color:var(--text);line-height:1.5">
+          Deseja excluir ${nome}?
+        </div>
+        ${tipo === 'lista' ? `<div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
+          Todos os itens dentro da lista serão perdidos.
+        </div>` : ''}
       </div>
-      ${tipo === 'lista' ? `<div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">
-        Todos os itens dentro da lista serão perdidos.
-      </div>` : ''}
-    </div>
-    <div class="macts">
-      <button class="btn" onclick="closeM()">Cancelar</button>
-      <button class="btn" style="background:var(--red);border-color:var(--red);color:white;flex:1;margin-top:11px"
-        onclick="closeM();${tipo === 'item' ? `delItem('${id}')` : `delL('${id}')`}">
-        🗑️ Excluir
-      </button>
-    </div>
-  `, null);
+      <div class="macts">
+        <button class="btn" onclick="closeM()">Cancelar</button>
+        <button class="btn" style="background:var(--red);border-color:var(--red);color:white;flex:1;margin-top:11px"
+          onclick="closeM();${tipo === 'item' ? `delItem('${id}')` : `delL('${id}')`}">
+          🗑️ Excluir
+        </button>
+      </div>
+    `, null);
     }
 
     // ── MOVER E INDENTAR ITENS ────────────────────────────
@@ -10005,30 +10005,71 @@ Cogito ergo sum | René Descartes'></textarea>
       a.download = 'desenho_' + Date.now() + '.png';
       a.click();
     }
+    //gravar em indexedb
+    const _GravDB = {
+      db: null,
+      async init() {
+        return new Promise((res, rej) => {
+          const req = indexedDB.open('listflow_audios', 1);
+          req.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('audios'))
+              db.createObjectStore('audios', { keyPath: 'id' });
+          };
+          req.onsuccess = e => { this.db = e.target.result; res(); };
+          req.onerror = e => rej(e);
+        });
+      },
+      async salvar(id, blob) {
+        await this.init();
+        return new Promise((res, rej) => {
+          const tx = this.db.transaction('audios', 'readwrite');
+          tx.objectStore('audios').put({ id, blob });
+          tx.oncomplete = res; tx.onerror = rej;
+        });
+      },
+      async carregar(id) {
+        await this.init();
+        return new Promise((res, rej) => {
+          const tx = this.db.transaction('audios', 'readonly');
+          const req = tx.objectStore('audios').get(id);
+          req.onsuccess = e => res(e.target.result?.blob || null);
+          req.onerror = rej;
+        });
+      },
+      async deletar(id) {
+        await this.init();
+        return new Promise((res, rej) => {
+          const tx = this.db.transaction('audios', 'readwrite');
+          tx.objectStore('audios').delete(id);
+          tx.oncomplete = res; tx.onerror = rej;
+        });
+      }
+    };
     // ── GRAVADOR DE ÁUDIOS ────────────────────────────────
-reg('gravador', {
-  name:'Gravador de Áudios', icon:'🎙️',
-  desc:'Grave, organize e pesquise anotações em áudio', def:false,
-  tb(){ return pon('gravador')?`<button class="tbbtn" onclick="openGravadorScreen()">🎙️ Áudios</button>`:''; },
-  onToggle(on){
-    if(!on){
-      const s=document.getElementById('gravadorScreen');
-      const m=document.querySelector('.main');
-      if(s) s.style.display='none';
-      if(m) m.style.display='flex';
-      const b=document.getElementById('gravadorBtn');
-      if(b) b.remove();
-      document.getElementById('fab').style.display=getL()?'flex':'none';
-      // Para gravação se estiver ativa
-      if(window._gravRec&&window._gravRec.state!=='inactive') window._gravRec.stop();
-    } else { _gravInit(); }
-  }
-});
+    reg('gravador', {
+      name: 'Gravador de Áudios', icon: '🎙️',
+      desc: 'Grave, organize e pesquise anotações em áudio', def: false,
+      tb() { return pon('gravador') ? `<button class="tbbtn" onclick="openGravadorScreen()">🎙️ Áudios</button>` : ''; },
+      onToggle(on) {
+        if (!on) {
+          const s = document.getElementById('gravadorScreen');
+          const m = document.querySelector('.main');
+          if (s) s.style.display = 'none';
+          if (m) m.style.display = 'flex';
+          const b = document.getElementById('gravadorBtn');
+          if (b) b.remove();
+          document.getElementById('fab').style.display = getL() ? 'flex' : 'none';
+          // Para gravação se estiver ativa
+          if (window._gravRec && window._gravRec.state !== 'inactive') window._gravRec.stop();
+        } else { _gravInit(); }
+      }
+    });
 
-// ── CSS ──────────────────────────────────────────────
-(()=>{
-  const s=document.createElement('style');
-  s.textContent=`
+    // ── CSS ──────────────────────────────────────────────
+    (() => {
+      const s = document.createElement('style');
+      s.textContent = `
     .grav-screen{
       flex:1;overflow:hidden;flex-direction:column;gap:0;
       background:var(--bg);box-sizing:border-box;
@@ -10238,278 +10279,266 @@ reg('gravador', {
     .grav-filtro.on{background:var(--accent);border-color:var(--accent);color:white}
     .grav-filtro:active{opacity:.7}
   `;
-  document.head.appendChild(s);
-})();
+      document.head.appendChild(s);
+    })();
 
-// ── ESTADO ──────────────────────────────────────────
-if(!S._grav) S._grav={
-  audios:[],    // [{id,nome,src,dur,tags,data,tamanho}]
-  filtroTag:null,
-  busca:'',
-};
-
-// Estado em memória (não persistido)
-window._gravRec      = null;  // MediaRecorder
-window._gravChunks   = [];    // chunks gravados
-window._gravTimer    = null;  // setInterval do timer
-window._gravSecs     = 0;     // segundos gravados
-window._gravEstado   = 'idle';// idle|gravando|pausado
-window._gravTagsSel  = [];    // tags selecionadas
-window._gravAudAtual = null;  // audio element tocando
-window._gravIdAtual  = null;  // id do card tocando
-window._gravAnimRAF  = null;  // requestAnimationFrame
-window._gravAnalyser = null;  // AnalyserNode
-window._gravAudioCtx = null;  // AudioContext
-
-const _GRAV_TAGS=['💼 Trabalho','🏠 Pessoal','💡 Ideia','📋 Tarefa','🎯 Meta','💊 Saúde','💰 Finanças','📖 Estudo'];
-
-function _gravInit(){
-  if(!document.getElementById('gravadorScreen')){
-    const s=document.createElement('div');
-    s.id='gravadorScreen'; s.className='grav-screen';
-    s.style.display='none';
-    document.querySelector('.body').appendChild(s);
-  }
-  if(!document.getElementById('gravadorBtn')){
-    const b=document.createElement('button');
-    b.id='gravadorBtn'; b.title='Gravador'; b.textContent='🎙️';
-    b.className='ibtn'; b.onclick=openGravadorScreen;
-    document.querySelector('.hright').prepend(b);
-  }
-}
-
-function openGravadorScreen(){
-  const s=document.getElementById('gravadorScreen');
-  const m=document.querySelector('.main');
-  const b=document.getElementById('gravadorBtn');
-  const fab=document.getElementById('fab');
-  if(!s||!m) return;
-  const isOpen=s.style.display==='flex';
-  if(isOpen){
-    s.style.display='none'; m.style.display='flex';
-    b.style.background=''; b.style.color='';
-    fab.style.display=getL()?'flex':'none';
-  } else {
-    m.style.display='none'; s.style.display='flex';
-    b.style.background='var(--accent)'; b.style.color='white';
-    fab.style.display='none';
-    _gravRender();
-  }
-}
-
-// ── GRAVAÇÃO ─────────────────────────────────────────
-async function gravIniciar(){
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-
-    // Setup AudioContext para visualização
-    window._gravAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    window._gravAnalyser=window._gravAudioCtx.createAnalyser();
-    window._gravAnalyser.fftSize=64;
-    const src=window._gravAudioCtx.createMediaStreamSource(stream);
-    src.connect(window._gravAnalyser);
-
-    window._gravChunks=[];
-    window._gravRec=new MediaRecorder(stream);
-    window._gravRec.ondataavailable=e=>{ if(e.data.size>0) window._gravChunks.push(e.data); };
-    window._gravRec.onstop=_gravProcessar;
-    window._gravRec.start(100);
-
-    window._gravEstado='gravando';
-    _gravIniciarTimer();
-    _gravIniciarOndas();
-    _gravRenderPainel();
-
-  } catch(e){
-    alert('Não foi possível acessar o microfone. Verifique as permissões.');
-  }
-}
-
-function gravPausar(){
-  if(window._gravRec?.state==='recording'){
-    window._gravRec.pause();
-    window._gravEstado='pausado';
-    clearInterval(window._gravTimer);
-    cancelAnimationFrame(window._gravAnimRAF);
-    _gravRenderPainel();
-  }
-}
-
-function gravRetomar(){
-  if(window._gravRec?.state==='paused'){
-    window._gravRec.resume();
-    window._gravEstado='gravando';
-    _gravIniciarTimer();
-    _gravIniciarOndas();
-    _gravRenderPainel();
-  }
-}
-
-function gravParar(){
-  if(window._gravRec&&window._gravRec.state!=='inactive'){
-    window._gravRec.stop();
-    window._gravRec.stream.getTracks().forEach(t=>t.stop());
-    clearInterval(window._gravTimer);
-    cancelAnimationFrame(window._gravAnimRAF);
-    window._gravEstado='idle';
-  }
-}
-
-function _gravProcessar(){
-  const blob=new Blob(window._gravChunks,{type:'audio/webm'});
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    const src=ev.target.result;
-    const secs=window._gravSecs;
-
-    // Pega nome do input
-    const nomeEl=document.getElementById('gravNomeInp');
-    const nome=nomeEl?.value.trim()||_gravNomeAuto();
-
-    const audio={
-      id:genId(),
-      nome,
-      src,
-      dur:secs,
-      tags:[...window._gravTagsSel],
-      data:new Date().toISOString(),
-      tamanho:Math.round(blob.size/1024), // KB
+    // ── ESTADO ──────────────────────────────────────────
+    if (!S._grav) S._grav = {
+      audios: [],    // [{id,nome,src,dur,tags,data,tamanho}]
+      filtroTag: null,
+      busca: '',
     };
 
-    if(!S._grav) S._grav={audios:[],filtroTag:null,busca:''};
-    S._grav.audios.unshift(audio);
-    save();
+    // Estado em memória (não persistido)
+    window._gravRec = null;  // MediaRecorder
+    window._gravChunks = [];    // chunks gravados
+    window._gravTimer = null;  // setInterval do timer
+    window._gravSecs = 0;     // segundos gravados
+    window._gravEstado = 'idle';// idle|gravando|pausado
+    window._gravTagsSel = [];    // tags selecionadas
+    window._gravAudAtual = null;  // audio element tocando
+    window._gravIdAtual = null;  // id do card tocando
+    window._gravAnimRAF = null;  // requestAnimationFrame
+    window._gravAnalyser = null;  // AnalyserNode
+    window._gravAudioCtx = null;  // AudioContext
 
-    // Reset
-    window._gravSecs=0;
-    window._gravTagsSel=[];
-    window._gravChunks=[];
-    _gravRender();
-  };
-  reader.readAsDataURL(blob);
-}
+    const _GRAV_TAGS = ['💼 Trabalho', '🏠 Pessoal', '💡 Ideia', '📋 Tarefa', '🎯 Meta', '💊 Saúde', '💰 Finanças', '📖 Estudo'];
 
-function _gravNomeAuto(){
-  const d=new Date();
-  return `Áudio ${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
-}
-
-function _gravIniciarTimer(){
-  window._gravTimer=setInterval(()=>{
-    window._gravSecs++;
-    const el=document.getElementById('gravTimer');
-    if(el) el.textContent=_gravFmtTempo(window._gravSecs);
-  },1000);
-}
-
-function _gravIniciarOndas(){
-  const animar=()=>{
-    if(window._gravEstado!=='gravando') return;
-    const analyser=window._gravAnalyser;
-    if(!analyser){ window._gravAnimRAF=requestAnimationFrame(animar); return; }
-    const data=new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(data);
-    const bars=document.querySelectorAll('.grav-bar');
-    bars.forEach((bar,i)=>{
-      const val=data[i]||0;
-      const h=Math.max(3,Math.round((val/255)*54));
-      bar.style.height=h+'px';
-      bar.classList.remove('idle');
-    });
-    window._gravAnimRAF=requestAnimationFrame(animar);
-  };
-  animar();
-}
-
-function _gravFmtTempo(secs){
-  const h=Math.floor(secs/3600);
-  const m=Math.floor((secs%3600)/60);
-  const s=secs%60;
-  if(h>0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-}
-
-// ── PLAYER ───────────────────────────────────────────
-function gravTocar(id){
-  // Para o atual se houver
-  if(window._gravAudAtual){
-    window._gravAudAtual.pause();
-    window._gravAudAtual.currentTime=0;
-    // Atualiza visual do card anterior
-    const oldBtn=document.getElementById('gravPlay_'+window._gravIdAtual);
-    if(oldBtn){ oldBtn.textContent='▶'; oldBtn.classList.remove('playing'); }
-    const oldCard=document.getElementById('gravCard_'+window._gravIdAtual);
-    if(oldCard) oldCard.classList.remove('playing');
-    if(window._gravIdAtual===id){
-      window._gravAudAtual=null; window._gravIdAtual=null; return;
+    function _gravInit() {
+      if (!document.getElementById('gravadorScreen')) {
+        const s = document.createElement('div');
+        s.id = 'gravadorScreen'; s.className = 'grav-screen';
+        s.style.display = 'none';
+        document.querySelector('.body').appendChild(s);
+      }
+      if (!document.getElementById('gravadorBtn')) {
+        const b = document.createElement('button');
+        b.id = 'gravadorBtn'; b.title = 'Gravador'; b.textContent = '🎙️';
+        b.className = 'ibtn'; b.onclick = openGravadorScreen;
+        document.querySelector('.hright').prepend(b);
+      }
     }
-  }
 
-  const audio=S._grav?.audios.find(a=>a.id===id);
-  if(!audio) return;
+    function openGravadorScreen() {
+      const s = document.getElementById('gravadorScreen');
+      const m = document.querySelector('.main');
+      const b = document.getElementById('gravadorBtn');
+      const fab = document.getElementById('fab');
+      if (!s || !m) return;
+      const isOpen = s.style.display === 'flex';
+      if (isOpen) {
+        s.style.display = 'none'; m.style.display = 'flex';
+        b.style.background = ''; b.style.color = '';
+        fab.style.display = getL() ? 'flex' : 'none';
+      } else {
+        m.style.display = 'none'; s.style.display = 'flex';
+        b.style.background = 'var(--accent)'; b.style.color = 'white';
+        fab.style.display = 'none';
+        _gravRender();
+      }
+    }
 
-  const el=new Audio(audio.src);
-  window._gravAudAtual=el;
-  window._gravIdAtual=id;
+    // ── GRAVAÇÃO ─────────────────────────────────────────
+    async function gravIniciar() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-  const btn=document.getElementById('gravPlay_'+id);
-  const card=document.getElementById('gravCard_'+id);
-  const prog=document.getElementById('gravProg_'+id);
-  const tempo=document.getElementById('gravTempo_'+id);
+        // Setup AudioContext para visualização
+        window._gravAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        window._gravAnalyser = window._gravAudioCtx.createAnalyser();
+        window._gravAnalyser.fftSize = 64;
+        const src = window._gravAudioCtx.createMediaStreamSource(stream);
+        src.connect(window._gravAnalyser);
 
-  if(btn){ btn.textContent='⏸'; btn.classList.add('playing'); }
-  if(card) card.classList.add('playing');
+        window._gravChunks = [];
+        window._gravRec = new MediaRecorder(stream);
+        window._gravRec.ondataavailable = e => { if (e.data.size > 0) window._gravChunks.push(e.data); };
+        window._gravRec.onstop = _gravProcessar;
+        window._gravRec.start(100);
 
-  el.ontimeupdate=()=>{
-    if(!el.duration) return;
-    const pct=(el.currentTime/el.duration)*100;
-    if(prog) prog.style.width=pct+'%';
-    if(tempo) tempo.textContent=_gravFmtTempo(Math.floor(el.currentTime))+' / '+_gravFmtTempo(Math.floor(el.duration));
-  };
+        window._gravEstado = 'gravando';
+        _gravIniciarTimer();
+        _gravIniciarOndas();
+        _gravRenderPainel();
 
-  el.onended=()=>{
-    if(btn){ btn.textContent='▶'; btn.classList.remove('playing'); }
-    if(card) card.classList.remove('playing');
-    if(prog) prog.style.width='0%';
-    window._gravAudAtual=null; window._gravIdAtual=null;
-  };
+      } catch (e) {
+        alert('Não foi possível acessar o microfone. Verifique as permissões.');
+      }
+    }
 
-  el.play();
-}
+    function gravPausar() {
+      if (window._gravRec?.state === 'recording') {
+        window._gravRec.pause();
+        window._gravEstado = 'pausado';
+        clearInterval(window._gravTimer);
+        cancelAnimationFrame(window._gravAnimRAF);
+        _gravRenderPainel();
+      }
+    }
 
-function gravSeek(id,e){
-  const audio=S._grav?.audios.find(a=>a.id===id);
-  if(!audio||window._gravIdAtual!==id) return;
-  const wrap=e.currentTarget;
-  const rect=wrap.getBoundingClientRect();
-  const pct=(e.clientX-rect.left)/rect.width;
-  if(window._gravAudAtual) window._gravAudAtual.currentTime=window._gravAudAtual.duration*pct;
-}
+    function gravRetomar() {
+      if (window._gravRec?.state === 'paused') {
+        window._gravRec.resume();
+        window._gravEstado = 'gravando';
+        _gravIniciarTimer();
+        _gravIniciarOndas();
+        _gravRenderPainel();
+      }
+    }
 
-// ── AÇÕES ────────────────────────────────────────────
-function gravRenomear(id){
-  const audio=S._grav?.audios.find(a=>a.id===id);
-  if(!audio) return;
-  openM('✏️ Renomear áudio',`
+    function gravParar() {
+      if (window._gravRec && window._gravRec.state !== 'inactive') {
+        window._gravRec.stop();
+        window._gravRec.stream.getTracks().forEach(t => t.stop());
+        clearInterval(window._gravTimer);
+        cancelAnimationFrame(window._gravAnimRAF);
+        window._gravEstado = 'idle';
+      }
+    }
+
+    function _gravProcessar() {
+      const blob = new Blob(window._gravChunks, { type: 'audio/webm' });
+      const secs = window._gravSecs;
+      const nomeEl = document.getElementById('gravNomeInp');
+      const nome = nomeEl?.value.trim() || _gravNomeAuto();
+      const id = genId();
+      const audio = {
+        id, nome, dur: secs,
+        tags: [...window._gravTagsSel],
+        data: new Date().toISOString(),
+        tamanho: Math.round(blob.size / 1024),
+      };
+      if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
+      S._grav.audios.unshift(audio);
+      _GravDB.salvar(id, blob).then(() => {
+        save();
+        window._gravSecs = 0;
+        window._gravTagsSel = [];
+        window._gravChunks = [];
+        _gravRender();
+      }).catch(e => {
+        console.error('Erro ao salvar áudio:', e);
+        alert('Erro ao salvar o áudio. Tente novamente.');
+      });
+    }
+
+    function _gravNomeAuto() {
+      const d = new Date();
+      return `Áudio ${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    function _gravIniciarTimer() {
+      window._gravTimer = setInterval(() => {
+        window._gravSecs++;
+        const el = document.getElementById('gravTimer');
+        if (el) el.textContent = _gravFmtTempo(window._gravSecs);
+      }, 1000);
+    }
+
+    function _gravIniciarOndas() {
+      const animar = () => {
+        if (window._gravEstado !== 'gravando') return;
+        const analyser = window._gravAnalyser;
+        if (!analyser) { window._gravAnimRAF = requestAnimationFrame(animar); return; }
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(data);
+        const bars = document.querySelectorAll('.grav-bar');
+        bars.forEach((bar, i) => {
+          const val = data[i] || 0;
+          const h = Math.max(3, Math.round((val / 255) * 54));
+          bar.style.height = h + 'px';
+          bar.classList.remove('idle');
+        });
+        window._gravAnimRAF = requestAnimationFrame(animar);
+      };
+      animar();
+    }
+
+    function _gravFmtTempo(secs) {
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = secs % 60;
+      if (h > 0) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    // ── PLAYER ───────────────────────────────────────────
+    function gravTocar(id) {
+      if (window._gravAudAtual) {
+        window._gravAudAtual.pause();
+        window._gravAudAtual.currentTime = 0;
+        const oldBtn = document.getElementById('gravPlay_' + window._gravIdAtual);
+        const oldCard = document.getElementById('gravCard_' + window._gravIdAtual);
+        if (oldBtn) { oldBtn.textContent = '▶'; oldBtn.classList.remove('playing'); }
+        if (oldCard) oldCard.classList.remove('playing');
+        if (window._gravIdAtual === id) { window._gravAudAtual = null; window._gravIdAtual = null; return; }
+      }
+      const meta = S._grav?.audios.find(a => a.id === id);
+      if (!meta) return;
+      const btn = document.getElementById('gravPlay_' + id);
+      const card = document.getElementById('gravCard_' + id);
+      if (btn) btn.textContent = '⌛';
+      _GravDB.carregar(id).then(blob => {
+        if (!blob) { alert('Áudio não encontrado.'); if (btn) btn.textContent = '▶'; return; }
+        const url = URL.createObjectURL(blob);
+        const el = new Audio(url);
+        window._gravAudAtual = el;
+        window._gravIdAtual = id;
+        const prog = document.getElementById('gravProg_' + id);
+        const tempo = document.getElementById('gravTempo_' + id);
+        if (btn) { btn.textContent = '⏸'; btn.classList.add('playing'); }
+        if (card) card.classList.add('playing');
+        el.ontimeupdate = () => {
+          if (!el.duration) return;
+          const pct = (el.currentTime / el.duration) * 100;
+          if (prog) prog.style.width = pct + '%';
+          if (tempo) tempo.textContent = _gravFmtTempo(Math.floor(el.currentTime)) + ' / ' + _gravFmtTempo(Math.floor(el.duration));
+        };
+        el.onended = () => {
+          if (btn) { btn.textContent = '▶'; btn.classList.remove('playing'); }
+          if (card) card.classList.remove('playing');
+          if (prog) prog.style.width = '0%';
+          URL.revokeObjectURL(url);
+          window._gravAudAtual = null; window._gravIdAtual = null;
+        };
+        el.onerror = () => { alert('Erro ao reproduzir.'); if (btn) btn.textContent = '▶'; URL.revokeObjectURL(url); };
+        el.play();
+      }).catch(e => { console.error(e); if (btn) btn.textContent = '▶'; });
+    }
+
+    function gravSeek(id, e) {
+      const audio = S._grav?.audios.find(a => a.id === id);
+      if (!audio || window._gravIdAtual !== id) return;
+      const wrap = e.currentTarget;
+      const rect = wrap.getBoundingClientRect();
+      const pct = (e.clientX - rect.left) / rect.width;
+      if (window._gravAudAtual) window._gravAudAtual.currentTime = window._gravAudAtual.duration * pct;
+    }
+
+    // ── AÇÕES ────────────────────────────────────────────
+    function gravRenomear(id) {
+      const audio = S._grav?.audios.find(a => a.id === id);
+      if (!audio) return;
+      openM('✏️ Renomear áudio', `
     <div class="fg">
       <div class="fl">Nome</div>
       <input type="text" id="gravRenNome" value="${esc(audio.nome)}" placeholder="Nome do áudio">
     </div>
-  `,()=>{
-    const nome=document.getElementById('gravRenNome')?.value.trim();
-    if(nome){ audio.nome=nome; save(); _gravRender(); }
-  });
-}
+  `, () => {
+        const nome = document.getElementById('gravRenNome')?.value.trim();
+        if (nome) { audio.nome = nome; save(); _gravRender(); }
+      });
+    }
 
-function gravEditarTags(id){
-  const audio=S._grav?.audios.find(a=>a.id===id);
-  if(!audio) return;
-  let selecionadas=[...audio.tags];
-  openM('🏷️ Tags',`
+    function gravEditarTags(id) {
+      const audio = S._grav?.audios.find(a => a.id === id);
+      if (!audio) return;
+      let selecionadas = [...audio.tags];
+      openM('🏷️ Tags', `
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      ${_GRAV_TAGS.map(t=>`
-        <div id="gtag_${t.replace(/\s/g,'_')}"
-          class="grav-tag-chip${selecionadas.includes(t)?' on':''}"
+      ${_GRAV_TAGS.map(t => `
+        <div id="gtag_${t.replace(/\s/g, '_')}"
+          class="grav-tag-chip${selecionadas.includes(t) ? ' on' : ''}"
           onclick="
             const el=this;
             const tag='${t}';
@@ -10519,115 +10548,117 @@ function gravEditarTags(id){
           ">${t}</div>
       `).join('')}
     </div>
-  `,()=>{
-    audio.tags=selecionadas; save(); _gravRender();
-  });
-}
+  `, () => {
+        audio.tags = selecionadas; save(); _gravRender();
+      });
+    }
 
-function gravExportar(id){
-  const audio=S._grav?.audios.find(a=>a.id===id);
-  if(!audio) return;
-  const a=document.createElement('a');
-  a.href=audio.src;
-  a.download=(audio.nome||'audio')+'.webm';
-  a.click();
-}
+    function gravExportar(id) {
+      const meta = S._grav?.audios.find(a => a.id === id);
+      if (!meta) return;
+      _GravDB.carregar(id).then(blob => {
+        if (!blob) { alert('Áudio não encontrado.'); return; }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = (meta.nome || 'audio') + '.webm';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      });
+    }
 
-function gravDeletar(id){
-  confirmarDel('audio_grav',id);
-}
+    function gravDeletar(id) {
+      confirmarDel('audio_grav', id);
+    }
 
-// Override confirmarDel para suportar audio_grav
-const _confirmarDelOrig=confirmarDel;
-confirmarDel=function(tipo,id){
-  if(tipo==='audio_grav'){
-    const audio=S._grav?.audios.find(a=>a.id===id);
-    const nome=audio?.nome||'este áudio';
-    openM('🗑️ Excluir áudio',`
+    // Override confirmarDel para suportar audio_grav
+    const _confirmarDelOrig = confirmarDel;
+    confirmarDel = function (tipo, id) {
+      if (tipo === 'audio_grav') {
+        const audio = S._grav?.audios.find(a => a.id === id);
+        const nome = audio?.nome || 'este áudio';
+        openM('🗑️ Excluir áudio', `
       <div style="text-align:center;padding:8px 0;display:flex;flex-direction:column;gap:12px;align-items:center">
         <div style="font-size:40px">🎙️</div>
         <div style="font-size:15px;color:var(--text)">Excluir "${esc(nome)}"?</div>
         <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">Esta ação não pode ser desfeita.</div>
       </div>
-    `,()=>{
-      if(window._gravIdAtual===id){ window._gravAudAtual?.pause(); window._gravAudAtual=null; window._gravIdAtual=null; }
-      S._grav.audios=S._grav.audios.filter(a=>a.id!==id);
-      save(); _gravRender();
-    });
-    return;
-  }
-  _confirmarDelOrig(tipo,id);
-};
+    `, () => {
+          if (window._gravIdAtual === id) { window._gravAudAtual?.pause(); window._gravAudAtual = null; window._gravIdAtual = null; }
+          _GravDB.deletar(id).catch(e => console.error('Erro ao deletar blob:', e));
+          S._grav.audios = S._grav.audios.filter(a => a.id !== id);
+          save(); _gravRender();
+        });
+        return;
+      }
+      _confirmarDelOrig(tipo, id);
+    };
 
-function gravImportar(){
-  const inp=document.createElement('input');
-  inp.type='file'; inp.accept='audio/*'; inp.multiple=true;
-  inp.onchange=e=>{
-    const files=Array.from(e.target.files);
-    let done=0;
-    files.forEach(f=>{
-      const reader=new FileReader();
-      reader.onload=ev=>{
-        const audio={
-          id:genId(),
-          nome:f.name.replace(/\.[^.]+$/,''),
-          src:ev.target.result,
-          dur:0, tags:[], data:new Date().toISOString(),
-          tamanho:Math.round(f.size/1024),
-        };
-        // Tenta pegar duração
-        const el=new Audio(ev.target.result);
-        el.onloadedmetadata=()=>{ audio.dur=Math.round(el.duration); };
-        if(!S._grav) S._grav={audios:[],filtroTag:null,busca:''};
-        S._grav.audios.unshift(audio);
-        done++;
-        if(done===files.length){ save(); _gravRender(); }
+    function gravImportar() {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'audio/*'; inp.multiple = true;
+      inp.onchange = e => {
+        const files = Array.from(e.target.files);
+        let done = 0;
+        files.forEach(f => {
+          const id = genId();
+          const audio = {
+            id, nome: f.name.replace(/\.[^.]+$/, ''),
+            dur: 0, tags: [], data: new Date().toISOString(),
+            tamanho: Math.round(f.size / 1024),
+          };
+          const url = URL.createObjectURL(f);
+          const el = new Audio(url);
+          el.onloadedmetadata = () => { audio.dur = Math.round(el.duration); URL.revokeObjectURL(url); };
+          _GravDB.salvar(id, f).then(() => {
+            if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
+            S._grav.audios.unshift(audio);
+            done++;
+            if (done === files.length) { save(); _gravRender(); }
+          }).catch(err => { console.error('Erro ao importar:', err); done++; if (done === files.length) { save(); _gravRender(); } });
+        });
       };
-      reader.readAsDataURL(f);
-    });
-  };
-  inp.click();
-}
+      inp.click();
+    }
 
-function gravToggleTag(tag){
-  const g=S._cp; // usa S._grav
-  if(!S._grav) return;
-  S._grav.filtroTag=S._grav.filtroTag===tag?null:tag;
-  save(); _gravRenderLista();
-}
+    function gravToggleTag(tag) {
+      const g = S._cp; // usa S._grav
+      if (!S._grav) return;
+      S._grav.filtroTag = S._grav.filtroTag === tag ? null : tag;
+      save(); _gravRenderLista();
+    }
 
-function gravBuscar(q){
-  if(!S._grav) return;
-  S._grav.busca=q;
-  _gravRenderLista();
-}
+    function gravBuscar(q) {
+      if (!S._grav) return;
+      S._grav.busca = q;
+      _gravRenderLista();
+    }
 
-// ── RENDER ───────────────────────────────────────────
-function _gravRenderPainel(){
-  const el=document.getElementById('gravPainel');
-  if(!el) return;
-  const estado=window._gravEstado;
-  const secs=window._gravSecs;
+    // ── RENDER ───────────────────────────────────────────
+    function _gravRenderPainel() {
+      const el = document.getElementById('gravPainel');
+      if (!el) return;
+      const estado = window._gravEstado;
+      const secs = window._gravSecs;
 
-  const barras=Array(24).fill(0).map((_,i)=>
-    `<div class="grav-bar idle" id="gravBar${i}" style="height:3px"></div>`
-  ).join('');
+      const barras = Array(24).fill(0).map((_, i) =>
+        `<div class="grav-bar idle" id="gravBar${i}" style="height:3px"></div>`
+      ).join('');
 
-  let btnPrincipal='';
-  if(estado==='idle'){
-    btnPrincipal=`<button class="grav-btn-rec iniciar" onclick="gravIniciar()" title="Iniciar gravação">🎙️</button>`;
-  } else if(estado==='gravando'){
-    btnPrincipal=`<button class="grav-btn-rec pausar" onclick="gravPausar()" title="Pausar">⏸</button>`;
-  } else {
-    btnPrincipal=`<button class="grav-btn-rec retomar" onclick="gravRetomar()" title="Continuar">▶</button>`;
-  }
+      let btnPrincipal = '';
+      if (estado === 'idle') {
+        btnPrincipal = `<button class="grav-btn-rec iniciar" onclick="gravIniciar()" title="Iniciar gravação">🎙️</button>`;
+      } else if (estado === 'gravando') {
+        btnPrincipal = `<button class="grav-btn-rec pausar" onclick="gravPausar()" title="Pausar">⏸</button>`;
+      } else {
+        btnPrincipal = `<button class="grav-btn-rec retomar" onclick="gravRetomar()" title="Continuar">▶</button>`;
+      }
 
-  el.innerHTML=`
+      el.innerHTML = `
     <!-- Visualizador -->
     <div class="grav-wave">${barras}</div>
 
     <!-- Timer -->
-    <div class="grav-timer ${estado==='gravando'?'rec':estado==='pausado'?'pause':''}" id="gravTimer">
+    <div class="grav-timer ${estado === 'gravando' ? 'rec' : estado === 'pausado' ? 'pause' : ''}" id="gravTimer">
       ${_gravFmtTempo(secs)}
     </div>
 
@@ -10635,24 +10666,24 @@ function _gravRenderPainel(){
     <div class="grav-btns">
       <button class="grav-btn-sm" onclick="gravImportar()" title="Importar áudio">📁</button>
       ${btnPrincipal}
-      <button class="grav-btn-sm ${estado==='idle'?'':'danger'}"
-        onclick="${estado==='idle'?'gravImportar()':'gravParar()'}"
-        title="${estado==='idle'?'Importar':'Parar e salvar'}"
-        ${estado==='idle'?'disabled':''}>
-        ${estado==='idle'?'📁':'⏹'}
+      <button class="grav-btn-sm ${estado === 'idle' ? '' : 'danger'}"
+        onclick="${estado === 'idle' ? 'gravImportar()' : 'gravParar()'}"
+        title="${estado === 'idle' ? 'Importar' : 'Parar e salvar'}"
+        ${estado === 'idle' ? 'disabled' : ''}>
+        ${estado === 'idle' ? '📁' : '⏹'}
       </button>
     </div>
 
     <!-- Nome e tags (só quando gravando ou pausado) -->
-    ${estado!=='idle'?`
+    ${estado !== 'idle' ? `
     <div class="grav-nome-wrap">
       <input class="grav-nome-inp" id="gravNomeInp"
         placeholder="Nome da gravação (opcional)"
         value="${_gravNomeAuto()}">
     </div>
     <div class="grav-tags-wrap">
-      ${_GRAV_TAGS.map(t=>`
-        <div class="grav-tag-chip${window._gravTagsSel.includes(t)?' on':''}"
+      ${_GRAV_TAGS.map(t => `
+        <div class="grav-tag-chip${window._gravTagsSel.includes(t) ? ' on' : ''}"
           onclick="
             const idx=_gravTagsSel.indexOf('${t}');
             if(idx>-1) _gravTagsSel.splice(idx,1);
@@ -10663,70 +10694,70 @@ function _gravRenderPainel(){
           ">${t}</div>
       `).join('')}
     </div>
-    `:''}
+    `: ''}
   `;
 
-  if(estado==='gravando') _gravIniciarOndas();
-}
+      if (estado === 'gravando') _gravIniciarOndas();
+    }
 
-function _gravRenderLista(){
-  const el=document.getElementById('gravLista');
-  if(!el) return;
-  const g=S._grav;
-  if(!g) return;
+    function _gravRenderLista() {
+      const el = document.getElementById('gravLista');
+      if (!el) return;
+      const g = S._grav;
+      if (!g) return;
 
-  const busca=(g.busca||'').toLowerCase().trim();
-  const filtroTag=g.filtroTag;
+      const busca = (g.busca || '').toLowerCase().trim();
+      const filtroTag = g.filtroTag;
 
-  let audios=[...g.audios];
+      let audios = [...g.audios];
 
-  // Filtra por busca
-  if(busca) audios=audios.filter(a=>
-    a.nome.toLowerCase().includes(busca)||
-    a.tags.some(t=>t.toLowerCase().includes(busca))
-  );
+      // Filtra por busca
+      if (busca) audios = audios.filter(a =>
+        a.nome.toLowerCase().includes(busca) ||
+        a.tags.some(t => t.toLowerCase().includes(busca))
+      );
 
-  // Filtra por tag
-  if(filtroTag) audios=audios.filter(a=>a.tags.includes(filtroTag));
+      // Filtra por tag
+      if (filtroTag) audios = audios.filter(a => a.tags.includes(filtroTag));
 
-  if(!audios.length){
-    el.innerHTML=`<div class="grav-empty">
+      if (!audios.length) {
+        el.innerHTML = `<div class="grav-empty">
       <div class="grav-empty-ico">🎙️</div>
-      <div style="font-size:16px;font-weight:700;color:var(--text2)">${busca||filtroTag?'Nenhum resultado':'Nenhum áudio gravado'}</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text2)">${busca || filtroTag ? 'Nenhum resultado' : 'Nenhum áudio gravado'}</div>
       <div style="font-size:13px;text-align:center;line-height:1.6">
-        ${busca||filtroTag?'Tente outros termos de busca':'Toque em 🎙️ para começar a gravar'}
+        ${busca || filtroTag ? 'Tente outros termos de busca' : 'Toque em 🎙️ para começar a gravar'}
       </div>
     </div>`;
-    return;
-  }
+        return;
+      }
 
-  // Agrupa por data
-  const grupos={};
-  audios.forEach(a=>{
-    const d=new Date(a.data);
-    const hoje=new Date(); const ontem=new Date(hoje); ontem.setDate(hoje.getDate()-1);
-    let label;
-    if(d.toDateString()===hoje.toDateString()) label='Hoje';
-    else if(d.toDateString()===ontem.toDateString()) label='Ontem';
-    else label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
-    if(!grupos[label]) grupos[label]=[];
-    grupos[label].push(a);
-  });
+      // Agrupa por data
+      const grupos = {};
+      audios.forEach(a => {
+        const d = new Date(a.data);
+        const hoje = new Date(); const ontem = new Date(hoje); ontem.setDate(hoje.getDate() - 1);
+        let label;
+        if (d.toDateString() === hoje.toDateString()) label = 'Hoje';
+        else if (d.toDateString() === ontem.toDateString()) label = 'Ontem';
+        else label = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+        if (!grupos[label]) grupos[label] = [];
+        grupos[label].push(a);
+      });
 
-  el.innerHTML=Object.entries(grupos).map(([label,items])=>`
+      el.innerHTML = Object.entries(grupos).map(([label, items]) => `
     <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
       color:var(--text3);padding:4px 2px;font-family:'JetBrains Mono',monospace">${label}</div>
-    ${items.map(a=>`
+    ${items.map(a => `
       <div class="grav-card" id="gravCard_${a.id}">
         <div class="grav-card-header">
           <div class="grav-card-info">
             <div class="grav-card-nome">${esc(a.nome)}</div>
             <div class="grav-card-meta">
-              <span>⏱ ${a.dur?_gravFmtTempo(a.dur):'--:--'}</span>
-              <span>📦 ${a.tamanho>1024?(a.tamanho/1024).toFixed(1)+'MB':a.tamanho+'KB'}</span>
-              <span>🕐 ${new Date(a.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+              <span>⏱ ${a.dur ? _gravFmtTempo(a.dur) : '--:--'}</span>
+              <span>📦 ${a.tamanho > 1024 ? (a.tamanho / 1024).toFixed(1) + 'MB' : a.tamanho + 'KB'}</span>
+              <span>🕐 ${new Date(a.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-            ${a.tags.length?`<div class="grav-card-tags">${a.tags.map(t=>`<span class="grav-card-tag">${t}</span>`).join('')}</div>`:''}
+            ${a.tags.length ? `<div class="grav-card-tags">${a.tags.map(t => `<span class="grav-card-tag">${t}</span>`).join('')}</div>` : ''}
           </div>
         </div>
 
@@ -10738,7 +10769,7 @@ function _gravRenderLista(){
             <div class="grav-progress-fill" id="gravProg_${a.id}" style="width:0%"></div>
           </div>
           <span class="grav-time" id="gravTempo_${a.id}">
-            ${a.dur?_gravFmtTempo(a.dur):'--:--'}
+            ${a.dur ? _gravFmtTempo(a.dur) : '--:--'}
           </span>
         </div>
 
@@ -10752,30 +10783,30 @@ function _gravRenderLista(){
       </div>
     `).join('')}
   `).join('');
-}
+    }
 
-function _gravRender(){
-  const s=document.getElementById('gravadorScreen');
-  if(!s||s.style.display!=='flex') return;
-  const g=S._grav||{audios:[],filtroTag:null,busca:''};
+    function _gravRender() {
+      const s = document.getElementById('gravadorScreen');
+      if (!s || s.style.display !== 'flex') return;
+      const g = S._grav || { audios: [], filtroTag: null, busca: '' };
 
-  // Tags únicas usadas
-  const tagsUsadas=[...new Set(g.audios.flatMap(a=>a.tags))];
+      // Tags únicas usadas
+      const tagsUsadas = [...new Set(g.audios.flatMap(a => a.tags))];
 
-  s.innerHTML=`
+      s.innerHTML = `
     <!-- Header com busca -->
     <div class="grav-header">
       <div class="grav-title">🎙️</div>
       <div class="grav-search-wrap">
         <input class="grav-search" id="gravBusca"
           placeholder="Buscar por nome ou tag..."
-          value="${esc(g.busca||'')}"
+          value="${esc(g.busca || '')}"
           oninput="gravBuscar(this.value);document.getElementById('gravBuscaClear').classList.toggle('vis',this.value.length>0)">
-        <button class="grav-search-clear${g.busca?' vis':''}" id="gravBuscaClear"
+        <button class="grav-search-clear${g.busca ? ' vis' : ''}" id="gravBuscaClear"
           onclick="gravBuscar('');document.getElementById('gravBusca').value='';this.classList.remove('vis')">✕</button>
       </div>
       <div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text3);white-space:nowrap">
-        ${g.audios.length} áudio${g.audios.length!==1?'s':''}
+        ${g.audios.length} áudio${g.audios.length !== 1 ? 's' : ''}
       </div>
     </div>
 
@@ -10783,23 +10814,23 @@ function _gravRender(){
     <div class="grav-rec-panel" id="gravPainel"></div>
 
     <!-- Filtros por tag -->
-    ${tagsUsadas.length?`
+    ${tagsUsadas.length ? `
     <div class="grav-filtros">
-      <div class="grav-filtro${!g.filtroTag?' on':''}" onclick="S._grav.filtroTag=null;save();_gravRenderLista()">Todos</div>
-      ${tagsUsadas.map(t=>`
-        <div class="grav-filtro${g.filtroTag===t?' on':''}"
+      <div class="grav-filtro${!g.filtroTag ? ' on' : ''}" onclick="S._grav.filtroTag=null;save();_gravRenderLista()">Todos</div>
+      ${tagsUsadas.map(t => `
+        <div class="grav-filtro${g.filtroTag === t ? ' on' : ''}"
           onclick="S._grav.filtroTag=S._grav.filtroTag==='${t}'?null:'${t}';save();_gravRenderLista()">
           ${t}
         </div>`).join('')}
-    </div>`:''}
+    </div>`: ''}
 
     <!-- Lista -->
     <div class="grav-lista" id="gravLista"></div>
   `;
 
-  _gravRenderPainel();
-  _gravRenderLista();
-}
+      _gravRenderPainel();
+      _gravRenderLista();
+    }
     // ══════════════════════════════════════════════════════
     //  BOOT
     // ══════════════════════════════════════════════════════
