@@ -4029,9 +4029,9 @@ function setStars(id) {
         const btn = document.getElementById(`play-${markId}`);
         const chip = document.getElementById(`chip-${markId}`);
 
-        if (a.paused || a.ended) {
-          if (a.ended) a.currentTime = 0;
-          const p = a.play();
+        if(a.paused || a.ended){
+      // Não reseta currentTime — mantém posição para continuar de onde parou
+      const p = a.play();
           if (p !== undefined) {
             p.then(() => {
               if (btn) btn.textContent = '⏸';
@@ -4078,15 +4078,15 @@ function setStars(id) {
         };
 
         a.onended = () => {
-          const b = document.getElementById(`play-${markId}`);
-          const c = document.getElementById(`chip-${markId}`);
-          const bar = document.getElementById(`bar-${markId}`);
-          if (b) b.textContent = '▶';
-          if (c) c.classList.remove('aud-playing');
-          if (bar) bar.style.width = '0%';
-          a.currentTime = 0;
-          if (aud.idb) URL.revokeObjectURL(src);
-        };
+      const b   = document.getElementById(`play-${markId}`);
+      const c   = document.getElementById(`chip-${markId}`);
+      const bar = document.getElementById(`bar-${markId}`);
+      if(b)   b.textContent = '▶';
+      if(c)   c.classList.remove('aud-playing');
+      if(bar) bar.style.width = '0%';
+      a.currentTime = 0;
+      // NÃO revoga a URL — deixa o player reutilizável
+    };
 
         const p = a.play();
         if (p !== undefined) {
