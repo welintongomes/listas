@@ -10134,6 +10134,8 @@ Cogito ergo sum | René Descartes'></textarea>
       a.download = 'desenho_' + Date.now() + '.png';
       a.click();
     }
+
+    // ── GRAVADOR DE ÁUDIOS ────────────────────────────────
     //gravar em indexedb
     const _GravDB = {
       db: null,
@@ -10175,7 +10177,6 @@ Cogito ergo sum | René Descartes'></textarea>
         });
       }
     };
-    // ── GRAVADOR DE ÁUDIOS ────────────────────────────────
     reg('gravador', {
       name: 'Gravador de Áudios', icon: '🎙️',
       desc: 'Grave, organize e pesquise anotações em áudio', def: false,
@@ -10737,31 +10738,56 @@ Cogito ergo sum | René Descartes'></textarea>
     };
 
     function gravImportar() {
-      const inp = document.createElement('input');
-      inp.type = 'file'; inp.accept = 'audio/*'; inp.multiple = true;
-      inp.onchange = e => {
-        const files = Array.from(e.target.files);
-        let done = 0;
-        files.forEach(f => {
-          const id = genId();
-          const audio = {
-            id, nome: f.name.replace(/\.[^.]+$/, ''),
-            dur: 0, tags: [], data: new Date().toISOString(),
-            tamanho: Math.round(f.size / 1024),
-          };
-          const url = URL.createObjectURL(f);
-          const el = new Audio(url);
-          el.onloadedmetadata = () => { audio.dur = Math.round(el.duration); URL.revokeObjectURL(url); };
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'audio/*'; inp.multiple = true;
+  inp.onchange = e => {
+    const files = Array.from(e.target.files);
+    let done = 0;
+    files.forEach(f => {
+      const id = genId();
+      const nome = f.name.replace(/\.[^.]+$/, '');
+      const audio = {
+        id, nome,
+        dur: 0, tags: [], data: new Date().toISOString(),
+        tamanho: Math.round(f.size / 1024),
+      };
+      const url = URL.createObjectURL(f);
+      const el = new Audio(url);
+      el.onloadedmetadata = () => {
+        audio.dur = Math.round(el.duration);
+        URL.revokeObjectURL(url);
+        // Agora salva o áudio com a duração correta
+        _GravDB.salvar(id, f).then(() => {
+          if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
+          S._grav.audios.unshift(audio);
+          done++;
+          if (done === files.length) { save(); _gravRender(); }
+        }).catch(err => {
+          console.error('Erro ao importar:', err);
+          done++;
+          if (done === files.length) { save(); _gravRender(); }
+        });
+      };
+      // Fallback caso onloadedmetadata não dispare (arquivo corrompido)
+      setTimeout(() => {
+        if (audio.dur === 0) {
+          URL.revokeObjectURL(url);
           _GravDB.salvar(id, f).then(() => {
             if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
             S._grav.audios.unshift(audio);
             done++;
             if (done === files.length) { save(); _gravRender(); }
-          }).catch(err => { console.error('Erro ao importar:', err); done++; if (done === files.length) { save(); _gravRender(); } });
-        });
-      };
-      inp.click();
-    }
+          }).catch(err => {
+            console.error('Erro ao importar:', err);
+            done++;
+            if (done === files.length) { save(); _gravRender(); }
+          });
+        }
+      }, 1000);
+    });
+  };
+  inp.click();
+}
 
     function gravToggleTag(tag) {
       const g = S._cp; // usa S._grav
