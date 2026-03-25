@@ -4012,7 +4012,7 @@ function setStars(id) {
 
     // ── Player customizado ──
     function audioPlayPause(markId, itemId) {
-      // Para todos os outros
+      // Para todos os outros players
       Object.entries(_audPlayers).forEach(([id, a]) => {
         if (id !== markId) {
           a.pause();
@@ -4023,17 +4023,36 @@ function setStars(id) {
         }
       });
 
-      // Se player já existe, alterna
+      // Se player já existe, alterna play/pause
       if (_audPlayers[markId]) {
         const a = _audPlayers[markId];
         const btn = document.getElementById(`play-${markId}`);
         const chip = document.getElementById(`chip-${markId}`);
-        if (a.paused) { a.play(); if (btn) btn.textContent = '⏸'; if (chip) chip.classList.add('aud-playing'); }
-        else { a.pause(); if (btn) btn.textContent = '▶'; if (chip) chip.classList.remove('aud-playing'); }
+
+        if (a.paused || a.ended) {
+          if (a.ended) a.currentTime = 0;
+          const p = a.play();
+          if (p !== undefined) {
+            p.then(() => {
+              if (btn) btn.textContent = '⏸';
+              if (chip) chip.classList.add('aud-playing');
+            }).catch(e => {
+              console.error('Erro ao tocar:', e);
+              if (btn) btn.textContent = '▶';
+            });
+          } else {
+            if (btn) btn.textContent = '⏸';
+            if (chip) chip.classList.add('aud-playing');
+          }
+        } else {
+          a.pause();
+          if (btn) btn.textContent = '▶';
+          if (chip) chip.classList.remove('aud-playing');
+        }
         return;
       }
 
-      // Busca item em todas as listas
+      // Cria novo player
       let targetItem = null;
       for (const lista of S.lists) {
         const f = find(lista.items, itemId);
@@ -4043,9 +4062,13 @@ function setStars(id) {
       const aud = targetItem.audios?.[markId];
       if (!aud) return;
 
-      const _criarPlayer = (src) => {
+      const _iniciarPlayer = (src) => {
         const a = new Audio(src);
+        const btn = document.getElementById(`play-${markId}`);
+        const chip = document.getElementById(`chip-${markId}`);
+
         _audPlayers[markId] = a;
+
         a.ontimeupdate = () => {
           const pct = a.duration ? (a.currentTime / a.duration * 100) : 0;
           const bar = document.getElementById(`bar-${markId}`);
@@ -4053,6 +4076,7 @@ function setStars(id) {
           if (bar) bar.style.width = pct + '%';
           if (tim) tim.textContent = fmtTime(a.currentTime);
         };
+
         a.onended = () => {
           const b = document.getElementById(`play-${markId}`);
           const c = document.getElementById(`chip-${markId}`);
@@ -4060,24 +4084,41 @@ function setStars(id) {
           if (b) b.textContent = '▶';
           if (c) c.classList.remove('aud-playing');
           if (bar) bar.style.width = '0%';
-          a.currentTime = 0; // ← reseta para poder tocar de novo
+          a.currentTime = 0;
+          if (aud.idb) URL.revokeObjectURL(src);
         };
-        const btn = document.getElementById(`play-${markId}`);
-        const chip = document.getElementById(`chip-${markId}`);
-        a.play();
-        if (btn) btn.textContent = '⏸';
-        if (chip) chip.classList.add('aud-playing');
+
+        const p = a.play();
+        if (p !== undefined) {
+          p.then(() => {
+            if (btn) btn.textContent = '⏸';
+            if (chip) chip.classList.add('aud-playing');
+          }).catch(e => {
+            console.error('Erro ao iniciar:', e);
+            if (btn) btn.textContent = '▶';
+          });
+        } else {
+          if (btn) btn.textContent = '⏸';
+          if (chip) chip.classList.add('aud-playing');
+        }
       };
 
       if (aud.idb) {
         const btn = document.getElementById(`play-${markId}`);
         if (btn) btn.textContent = '⌛';
         _AudInlineDB.carregar(markId).then(blob => {
-          if (!blob) { alert('Áudio não encontrado.'); if (btn) btn.textContent = '▶'; return; }
-          _criarPlayer(URL.createObjectURL(blob));
-        }).catch(e => { console.error(e); if (btn) btn.textContent = '▶'; });
+          if (!blob) {
+            alert('Áudio não encontrado.');
+            if (btn) btn.textContent = '▶';
+            return;
+          }
+          _iniciarPlayer(URL.createObjectURL(blob));
+        }).catch(e => {
+          console.error(e);
+          if (btn) btn.textContent = '▶';
+        });
       } else if (aud.src) {
-        _criarPlayer(aud.src);
+        _iniciarPlayer(aud.src);
       }
     }
 
@@ -10738,56 +10779,56 @@ Cogito ergo sum | René Descartes'></textarea>
     };
 
     function gravImportar() {
-  const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = 'audio/*'; inp.multiple = true;
-  inp.onchange = e => {
-    const files = Array.from(e.target.files);
-    let done = 0;
-    files.forEach(f => {
-      const id = genId();
-      const nome = f.name.replace(/\.[^.]+$/, '');
-      const audio = {
-        id, nome,
-        dur: 0, tags: [], data: new Date().toISOString(),
-        tamanho: Math.round(f.size / 1024),
-      };
-      const url = URL.createObjectURL(f);
-      const el = new Audio(url);
-      el.onloadedmetadata = () => {
-        audio.dur = Math.round(el.duration);
-        URL.revokeObjectURL(url);
-        // Agora salva o áudio com a duração correta
-        _GravDB.salvar(id, f).then(() => {
-          if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
-          S._grav.audios.unshift(audio);
-          done++;
-          if (done === files.length) { save(); _gravRender(); }
-        }).catch(err => {
-          console.error('Erro ao importar:', err);
-          done++;
-          if (done === files.length) { save(); _gravRender(); }
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'audio/*'; inp.multiple = true;
+      inp.onchange = e => {
+        const files = Array.from(e.target.files);
+        let done = 0;
+        files.forEach(f => {
+          const id = genId();
+          const nome = f.name.replace(/\.[^.]+$/, '');
+          const audio = {
+            id, nome,
+            dur: 0, tags: [], data: new Date().toISOString(),
+            tamanho: Math.round(f.size / 1024),
+          };
+          const url = URL.createObjectURL(f);
+          const el = new Audio(url);
+          el.onloadedmetadata = () => {
+            audio.dur = Math.round(el.duration);
+            URL.revokeObjectURL(url);
+            // Agora salva o áudio com a duração correta
+            _GravDB.salvar(id, f).then(() => {
+              if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
+              S._grav.audios.unshift(audio);
+              done++;
+              if (done === files.length) { save(); _gravRender(); }
+            }).catch(err => {
+              console.error('Erro ao importar:', err);
+              done++;
+              if (done === files.length) { save(); _gravRender(); }
+            });
+          };
+          // Fallback caso onloadedmetadata não dispare (arquivo corrompido)
+          setTimeout(() => {
+            if (audio.dur === 0) {
+              URL.revokeObjectURL(url);
+              _GravDB.salvar(id, f).then(() => {
+                if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
+                S._grav.audios.unshift(audio);
+                done++;
+                if (done === files.length) { save(); _gravRender(); }
+              }).catch(err => {
+                console.error('Erro ao importar:', err);
+                done++;
+                if (done === files.length) { save(); _gravRender(); }
+              });
+            }
+          }, 1000);
         });
       };
-      // Fallback caso onloadedmetadata não dispare (arquivo corrompido)
-      setTimeout(() => {
-        if (audio.dur === 0) {
-          URL.revokeObjectURL(url);
-          _GravDB.salvar(id, f).then(() => {
-            if (!S._grav) S._grav = { audios: [], filtroTag: null, busca: '' };
-            S._grav.audios.unshift(audio);
-            done++;
-            if (done === files.length) { save(); _gravRender(); }
-          }).catch(err => {
-            console.error('Erro ao importar:', err);
-            done++;
-            if (done === files.length) { save(); _gravRender(); }
-          });
-        }
-      }, 1000);
-    });
-  };
-  inp.click();
-}
+      inp.click();
+    }
 
     function gravToggleTag(tag) {
       const g = S._cp; // usa S._grav
