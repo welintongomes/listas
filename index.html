@@ -3880,7 +3880,7 @@ function setStars(id) {
               margin:0 3px;vertical-align:middle;white-space:nowrap;
               position:relative;top:-1px}
     .aud-chip.pending{background:rgba(124,106,247,.1);border-color:rgba(124,106,247,.4)}
-    .aud-chip.recording{background:rgba(232,86,94,.12);border-color:var(--red)}
+    .aud-chip.recording{background:rgba(232,86,94,.12);padding:6px; border-color:var(--red)}
 
     /* botão play customizado */
     .aud-play{width:26px;height:26px;border-radius:50%;border:none;
@@ -3901,13 +3901,13 @@ function setStars(id) {
               color:var(--text3);flex-shrink:0;min-width:28px}
 
     /* botão gravar */
-    .aud-rec-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;
+    .aud-rec-btn{display:inline-flex;align-items:center;gap:4px;padding:16px 21px;
                  border-radius:8px;border:1px solid var(--border);background:var(--surface);
                  color:var(--text2);font-family:'Syne',sans-serif;font-size:11px;
                  font-weight:600;cursor:pointer;flex-shrink:0}
     .aud-rec-btn.on{background:rgba(232,86,94,.15);border-color:var(--red);
                     color:var(--red);animation:audpulse .7s infinite alternate}
-    .aud-del-btn{width:18px;height:18px;border:none;background:transparent;
+    .aud-del-btn{width:18px;height:18px;padding:16px 21px;border:none;background:transparent;
                  color:var(--text3);font-size:11px;cursor:pointer;
                  display:flex;align-items:center;justify-content:center;
                  flex-shrink:0;border-radius:4px}
@@ -4029,9 +4029,9 @@ function setStars(id) {
         const btn = document.getElementById(`play-${markId}`);
         const chip = document.getElementById(`chip-${markId}`);
 
-        if(a.paused || a.ended){
-      // Não reseta currentTime — mantém posição para continuar de onde parou
-      const p = a.play();
+        if (a.paused || a.ended) {
+          // Não reseta currentTime — mantém posição para continuar de onde parou
+          const p = a.play();
           if (p !== undefined) {
             p.then(() => {
               if (btn) btn.textContent = '⏸';
@@ -4078,15 +4078,15 @@ function setStars(id) {
         };
 
         a.onended = () => {
-      const b   = document.getElementById(`play-${markId}`);
-      const c   = document.getElementById(`chip-${markId}`);
-      const bar = document.getElementById(`bar-${markId}`);
-      if(b)   b.textContent = '▶';
-      if(c)   c.classList.remove('aud-playing');
-      if(bar) bar.style.width = '0%';
-      a.currentTime = 0;
-      // NÃO revoga a URL — deixa o player reutilizável
-    };
+          const b = document.getElementById(`play-${markId}`);
+          const c = document.getElementById(`chip-${markId}`);
+          const bar = document.getElementById(`bar-${markId}`);
+          if (b) b.textContent = '▶';
+          if (c) c.classList.remove('aud-playing');
+          if (bar) bar.style.width = '0%';
+          a.currentTime = 0;
+          // NÃO revoga a URL — deixa o player reutilizável
+        };
 
         const p = a.play();
         if (p !== undefined) {
